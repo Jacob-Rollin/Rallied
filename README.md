@@ -1,0 +1,2 @@
+# Rallied
+LFG Discord bot

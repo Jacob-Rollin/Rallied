@@ -2,6 +2,11 @@ name = "rallied-bot"
 main = "src/worker.ts"
 compatibility_date = "2024-10-01"
 
+# Keep dashboard Runtime variables/secrets across `wrangler deploy`.
+# Plaintext public values can still live in [vars]; secrets stay in dashboard Secrets.
+# Without keep_vars, CI deploy clears dashboard bindings not listed in this file.
+keep_vars = true
+
 # Set secrets via: wrangler secret put DISCORD_PUBLIC_KEY
 #                  wrangler secret put DISCORD_BOT_TOKEN
 #                  wrangler secret put DISCORD_APP_ID

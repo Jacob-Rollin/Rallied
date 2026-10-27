@@ -11,7 +11,7 @@ export type { SessionData };
 export { mockSessionPayload, sessionOptions };
 
 export async function getSession() {
-  return getIronSession<SessionData>(cookies(), sessionOptions());
+  return getIronSession<SessionData>(await cookies(), sessionOptions());
 }
 
 export async function requireSessionUser() {

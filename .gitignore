@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .next/
+.open-next/
 .wrangler/
 .env
 .env.local
@@ -11,3 +12,5 @@ coverage/
 .turbo/
 out/
 .dev.vars
+cloudflare-env.d.ts
+*.tsbuildinfo

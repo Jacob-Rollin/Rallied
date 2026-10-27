@@ -5,14 +5,12 @@ import { GhostlessBadge } from "@/components/GhostlessBadge";
 import { resolvePublicPlayer } from "@/lib/public-data";
 
 type Props = {
-  params: { slugOrGuildId: string; discordUserId: string };
+  params: Promise<{ slugOrGuildId: string; discordUserId: string }>;
 };
 
-export default function PublicPlayerCardPage({ params }: Props) {
-  const result = resolvePublicPlayer(
-    params.slugOrGuildId,
-    params.discordUserId,
-  );
+export default async function PublicPlayerCardPage({ params }: Props) {
+  const { slugOrGuildId, discordUserId } = await params;
+  const result = resolvePublicPlayer(slugOrGuildId, discordUserId);
   if (!result) notFound();
 
   const { bundle, member, ghostless, inGoodStanding } = result;

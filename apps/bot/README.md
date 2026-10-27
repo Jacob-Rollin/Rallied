@@ -46,12 +46,18 @@ Tunnel → Discord **Interactions Endpoint URL**.
 
 `keep_vars = true` in `wrangler.toml` so CI/`wrangler deploy` does **not** wipe dashboard Runtime bindings. Put plaintext public values in `[vars]` or the dashboard; keep secrets in dashboard **Secrets** (or `wrangler secret put`). Do not commit secret values or guild IDs.
 
+`compatibility_flags = ["nodejs_compat"]` for tweetnacl / supabase-js on Workers.
+
+Slash commands and buttons **defer immediately** (interaction type 5, ephemeral when needed), then finish via webhook edit/follow-up under `executionCtx.waitUntil` so Supabase work cannot blow Discord’s 3s reply window. PING stays synchronous.
+
 ```bash
 cd apps/bot
 npx wrangler secret put DISCORD_PUBLIC_KEY
 # … BOT_TOKEN, APP_ID, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 npx wrangler deploy
 ```
+
+Required Runtime secrets: `DISCORD_PUBLIC_KEY`, `DISCORD_BOT_TOKEN`, `DISCORD_APP_ID`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`. A missing public key returns 401 on verify (Discord shows “The application did not respond”) even if the Interactions URL still looks green from an earlier save.
 
 ## Register commands
 

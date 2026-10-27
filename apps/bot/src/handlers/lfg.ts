@@ -10,6 +10,7 @@ import {
   type Interaction,
 } from "../lib/discord.js";
 import { lfgPartyEmbed, publicEmbed } from "../lib/embeds.js";
+import { formatError } from "../lib/errors.js";
 import { ensureServerAndMember } from "../lib/supabase.js";
 
 function ghostlessLabel(shows: number, ghosts: number): string {
@@ -77,7 +78,7 @@ export async function handleLfg(interaction: Interaction, sb: SupabaseClient | n
       .single();
 
     if (error || !party) {
-      return ephemeral(`Failed to create party: ${error?.message ?? "unknown"}`);
+      return ephemeral(`Failed to create party: ${formatError(error ?? "unknown")}`);
     }
 
     await sb.from("lfg_party_members").insert({
@@ -117,7 +118,7 @@ export async function handleLfg(interaction: Interaction, sb: SupabaseClient | n
       .order("created_at", { ascending: false })
       .limit(10);
 
-    if (error) return ephemeral(`Lookup failed: ${error.message}`);
+    if (error) return ephemeral(`Lookup failed: ${formatError(error)}`);
     if (!parties?.length) return ephemeral("No open LFG parties in this server.");
 
     const lines = parties.map(

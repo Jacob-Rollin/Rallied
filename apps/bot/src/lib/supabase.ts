@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { BotEnv } from "./env.js";
+import { errorFromUnknown } from "./errors.js";
 
 export function createServiceClient(env: BotEnv): SupabaseClient | null {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return null;
@@ -26,7 +27,11 @@ export async function ensureServerAndMember(
     .select("*")
     .single();
 
-  if (sErr || !server) throw sErr ?? new Error("server upsert failed");
+  // PostgREST errors are plain objects — never throw them raw (catch sites
+  // used to collapse non-Error throws into Discord "unknown error").
+  if (sErr || !server) {
+    throw errorFromUnknown("server upsert failed", sErr ?? "no row returned");
+  }
 
   const { data: member, error: mErr } = await sb
     .from("members")
@@ -42,7 +47,9 @@ export async function ensureServerAndMember(
     .select("*")
     .single();
 
-  if (mErr || !member) throw mErr ?? new Error("member upsert failed");
+  if (mErr || !member) {
+    throw errorFromUnknown("member upsert failed", mErr ?? "no row returned");
+  }
 
   return { server, member };
 }

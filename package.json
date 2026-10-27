@@ -19,6 +19,6 @@
     "weekly-digest": "npm run weekly-digest -w @rallied/bot"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   }
 }

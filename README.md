@@ -139,7 +139,7 @@ Monorepo: wrangler must target **`apps/web`**, not the repo root (or you get “
 | Build command | `npm run build:web:cf` |
 | Deploy command | `npm run deploy:web` |
 | Non-production deploy (optional) | `cd apps/web && npx wrangler versions upload` |
-| Node | Pin **20** via Build variable `NODE_VERSION=20` (repo also has `.nvmrc`) |
+| Node | Pin **22** via Build variable `NODE_VERSION=22` (repo also has `.nvmrc`; Wrangler requires ≥22) |
 
 Runtime / build secrets for the **web** Worker (not the bot):
 

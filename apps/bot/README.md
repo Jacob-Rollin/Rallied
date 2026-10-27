@@ -44,6 +44,8 @@ Tunnel → Discord **Interactions Endpoint URL**.
 
 ## Cloudflare Workers
 
+`keep_vars = true` in `wrangler.toml` so CI/`wrangler deploy` does **not** wipe dashboard Runtime bindings. Put plaintext public values in `[vars]` or the dashboard; keep secrets in dashboard **Secrets** (or `wrangler secret put`). Do not commit secret values or guild IDs.
+
 ```bash
 cd apps/bot
 npx wrangler secret put DISCORD_PUBLIC_KEY

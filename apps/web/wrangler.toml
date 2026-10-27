@@ -7,6 +7,11 @@ main = ".open-next/worker.js"
 compatibility_date = "2025-10-01"
 compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 
+# Keep dashboard Runtime variables/secrets across `wrangler deploy`.
+# Plaintext public values can still live in [vars]; secrets stay in dashboard Secrets.
+# Without keep_vars, CI deploy clears dashboard bindings not listed in this file.
+keep_vars = true
+
 [assets]
 directory = ".open-next/assets"
 binding = "ASSETS"

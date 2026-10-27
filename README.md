@@ -154,6 +154,8 @@ Runtime / build secrets for the **web** Worker (not the bot):
 
 Optional web: `DISCORD_BOT_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`. Bot secrets stay on the **bot** Worker (`apps/bot/wrangler.toml`).
 
+`keep_vars = true` in `apps/web/wrangler.toml` (and the bot Worker) so dashboard Runtime variables/secrets survive each `wrangler deploy`. Plaintext public values may live in `[vars]`; secrets stay in dashboard **Secrets**. Without `keep_vars`, CI deploy clears dashboard bindings not listed in the toml.
+
 Local CF preview (Workers runtime):
 
 ```bash

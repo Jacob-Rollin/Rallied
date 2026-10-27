@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BotEnv } from "../lib/env.js";
 import { ephemeral, type Interaction } from "../lib/discord.js";
+import { formatError } from "../lib/errors.js";
 import { handleButton } from "./buttons.js";
 import { handleDispute } from "./dispute.js";
 import { handleGhostless } from "./ghostless.js";
@@ -30,8 +31,8 @@ export async function routeCommand(
         return ephemeral(`Unknown command: ${name ?? "?"}`);
     }
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "unknown error";
-    console.error("command error", name, msg);
+    const msg = formatError(err);
+    console.error("command error", name, msg, err);
     return ephemeral(`Something went wrong: ${msg}`);
   }
 }
@@ -44,8 +45,8 @@ export async function routeComponent(
   try {
     return await handleButton(interaction, sb, env);
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "unknown error";
-    console.error("component error", msg);
+    const msg = formatError(err);
+    console.error("component error", msg, err);
     return ephemeral(`Something went wrong: ${msg}`);
   }
 }

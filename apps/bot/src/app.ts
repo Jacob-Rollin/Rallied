@@ -15,6 +15,7 @@ import {
   deliverErrorFollowup,
   shouldDeferEphemeral,
 } from "./lib/followup.js";
+import { formatError } from "./lib/errors.js";
 import {
   putApplicationCommands,
   secretsMatch,
@@ -136,8 +137,9 @@ export function createApp() {
             deferredEphemeral,
           );
         } catch (err) {
-          const msg = err instanceof Error ? err.message : "unknown error";
+          const msg = formatError(err);
           console.error("deferred interaction failed", msg, err);
+          // Ephemeral error follow-up even when the deferred ACK was public.
           await deliverErrorFollowup(env, interaction, msg, deferredEphemeral);
         }
       })();
@@ -152,7 +154,7 @@ export function createApp() {
 
       return c.json(ack);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "unknown error";
+      const msg = formatError(err);
       console.error("/interactions uncaught", msg, err);
       return c.json(
         {

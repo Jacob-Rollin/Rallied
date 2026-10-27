@@ -123,9 +123,45 @@ cp apps/web/.env.example apps/web/.env.local
 ### 4. Deploy
 | Piece | Host |
 | --- | --- |
-| Web | Cloudflare Pages |
-| Bot | Cloudflare Worker or Node |
+| Web | Cloudflare Workers (OpenNext) — see below |
+| Bot | Separate Cloudflare Worker (`apps/bot`) or Node |
 | DB | Supabase |
+
+### Cloudflare Workers (website)
+
+Monorepo: wrangler must target **`apps/web`**, not the repo root (or you get “workspace instead of targeting a specific project”).
+
+**Dashboard → Workers → your web Worker → Settings → Builds** (paste these):
+
+| Field | Value |
+| --- | --- |
+| Root directory / Path | `/` |
+| Build command | `npm run build:web:cf` |
+| Deploy command | `npm run deploy:web` |
+| Non-production deploy (optional) | `cd apps/web && npx wrangler versions upload` |
+| Node | Pin **20** via Build variable `NODE_VERSION=20` (repo also has `.nvmrc`) |
+
+Runtime / build secrets for the **web** Worker (not the bot):
+
+- `NEXT_PUBLIC_DISCORD_CLIENT_ID`
+- `DISCORD_CLIENT_ID`
+- `DISCORD_CLIENT_SECRET`
+- `DISCORD_REDIRECT_URI` (production callback, e.g. `https://your-domain/api/auth/callback`)
+- `SESSION_SECRET` (≥32 chars)
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_APP_URL` (canonical site URL)
+
+Optional web: `DISCORD_BOT_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`. Bot secrets stay on the **bot** Worker (`apps/bot/wrangler.toml`).
+
+Local CF preview (Workers runtime):
+
+```bash
+npm run build:web:cf
+npm run preview:web
+```
+
+`npm run build` / `npm run dev:web` / `npm start` stay plain Next.js (Node).
 
 ---
 
@@ -133,7 +169,10 @@ cp apps/web/.env.example apps/web/.env.local
 
 | Command | What |
 | --- | --- |
-| `npm run dev:web` | Next.js |
+| `npm run dev:web` | Next.js (Node) |
+| `npm run build:web:cf` | Shared + OpenNext Worker bundle for web |
+| `npm run deploy:web` | `wrangler deploy` for `apps/web` (expects prior CF build) |
+| `npm run preview:web` | OpenNext build + local Workers preview |
 | `npm run dev:bot` | Bot HTTP `:8787` |
 | `npm run typecheck` | All workspaces |
 | `npm run register-commands` | Push slash commands |

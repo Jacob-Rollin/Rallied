@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { discordOAuthConfigured, mockAuthEnabled } from "@/lib/auth/config";
 
-type Props = { searchParams: { error?: string; next?: string } };
+type Props = { searchParams: Promise<{ error?: string; next?: string }> };
 
-export default function LoginPage({ searchParams }: Props) {
+export default async function LoginPage({ searchParams }: Props) {
+  const sp = await searchParams;
   const oauth = discordOAuthConfigured();
   const mock = mockAuthEnabled();
 
@@ -21,9 +22,9 @@ export default function LoginPage({ searchParams }: Props) {
         guild where Rallied is installed.
       </p>
 
-      {searchParams.error ? (
+      {sp.error ? (
         <p className="mt-4 rounded-brand border border-coral/40 bg-coral/10 px-3 py-2 text-sm text-coral">
-          Login error: {searchParams.error}
+          Login error: {sp.error}
         </p>
       ) : null}
 

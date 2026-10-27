@@ -11,6 +11,9 @@
     "dev:web": "npm run dev -w @rallied/web",
     "dev:bot": "npm run dev -w @rallied/bot",
     "build": "npm run build -w @rallied/shared && npm run build -w @rallied/web && npm run build -w @rallied/bot",
+    "build:web:cf": "npm run build -w @rallied/shared && npm run build:cf -w @rallied/web",
+    "deploy:web": "npm run deploy:cf -w @rallied/web",
+    "preview:web": "npm run preview:cf -w @rallied/web",
     "typecheck": "npm run typecheck -w @rallied/shared && npm run typecheck -w @rallied/web && npm run typecheck -w @rallied/bot",
     "register-commands": "npm run register-commands -w @rallied/bot",
     "weekly-digest": "npm run weekly-digest -w @rallied/bot"

@@ -1,0 +1,28 @@
+# Rallied website (Next.js → Cloudflare Workers via OpenNext)
+# Deploy from this package: npm run deploy:cf  (or from repo root: npm run deploy:web)
+# Bot Worker config stays in apps/bot/wrangler.toml — separate CF project.
+
+name = "rallied-web"
+main = ".open-next/worker.js"
+compatibility_date = "2025-10-01"
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+# Optional: incremental cache via R2 (uncomment + create bucket)
+# [[r2_buckets]]
+# binding = "NEXT_INC_CACHE_R2_BUCKET"
+# bucket_name = "rallied-web-cache"
+
+# Secrets / vars (set in Cloudflare dashboard → Settings → Variables and Secrets):
+# NEXT_PUBLIC_DISCORD_CLIENT_ID
+# DISCORD_CLIENT_ID
+# DISCORD_CLIENT_SECRET
+# DISCORD_REDIRECT_URI
+# SESSION_SECRET
+# NEXT_PUBLIC_SUPABASE_URL
+# NEXT_PUBLIC_SUPABASE_ANON_KEY
+# NEXT_PUBLIC_APP_URL
+# Optional: DISCORD_BOT_TOKEN, SUPABASE_SERVICE_ROLE_KEY

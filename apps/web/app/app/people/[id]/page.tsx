@@ -9,10 +9,11 @@ import {
   strikesFor,
 } from "@/lib/mock-data";
 
-type Props = { params: { id: string } };
+type Props = { params: Promise<{ id: string }> };
 
-export default function PersonPage({ params }: Props) {
-  const member = getMember(params.id);
+export default async function PersonPage({ params }: Props) {
+  const { id } = await params;
+  const member = getMember(id);
   if (!member) notFound();
 
   const ghostless = MOCK_GHOSTLESS[member.id] ?? null;

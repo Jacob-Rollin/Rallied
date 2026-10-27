@@ -7,10 +7,11 @@ import {
   resolvePublicServer,
 } from "@/lib/public-data";
 
-type Props = { params: { slugOrGuildId: string } };
+type Props = { params: Promise<{ slugOrGuildId: string }> };
 
-export default function PublicServerPage({ params }: Props) {
-  const bundle = resolvePublicServer(params.slugOrGuildId);
+export default async function PublicServerPage({ params }: Props) {
+  const { slugOrGuildId } = await params;
+  const bundle = resolvePublicServer(slugOrGuildId);
   if (!bundle) notFound();
 
   const {

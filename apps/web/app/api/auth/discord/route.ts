@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
-import { randomBytes } from "crypto";
 import { discordOAuthConfigured, mockAuthEnabled } from "@/lib/auth/config";
 import { buildAuthorizeUrl } from "@/lib/auth/discord";
 import { getSession, mockSessionPayload } from "@/lib/auth/session";
+
+/** Web Crypto — works under Node and Workers (nodejs_compat). */
+function randomHex(byteLength: number): string {
+  const bytes = new Uint8Array(byteLength);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 /** Start Discord OAuth — or seed mock session when secrets missing / MOCK_AUTH=1. */
 export async function GET() {
@@ -26,7 +32,7 @@ export async function GET() {
     );
   }
 
-  const state = randomBytes(16).toString("hex");
+  const state = randomHex(16);
   session.oauthState = state;
   await session.save();
 

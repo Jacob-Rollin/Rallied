@@ -10,7 +10,26 @@ export const InteractionResponseType = {
   PONG: 1,
   CHANNEL_MESSAGE_WITH_SOURCE: 4,
   DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE: 5,
+  /** Deferred ACK for message components (no thinking message). */
+  DEFERRED_UPDATE_MESSAGE: 6,
 } as const;
+
+/** Discord MessageFlags.EPHEMERAL */
+export const EPHEMERAL_FLAG = 64;
+
+export type InteractionMessageData = {
+  content?: string;
+  embeds?: unknown[];
+  components?: unknown[];
+  flags?: number;
+  allowed_mentions?: unknown;
+  [key: string]: unknown;
+};
+
+export type InteractionResponse = {
+  type: number;
+  data?: InteractionMessageData;
+};
 
 export interface DiscordUser {
   id: string;

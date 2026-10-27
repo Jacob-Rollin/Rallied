@@ -1,0 +1,26 @@
+{
+  "name": "@rallied/bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/node-server.ts",
+    "start": "tsx src/node-server.ts",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "register-commands": "tsx scripts/register-commands.ts",
+    "weekly-digest": "tsx scripts/weekly-digest.ts"
+  },
+  "dependencies": {
+    "@rallied/shared": "*",
+    "@supabase/supabase-js": "^2.45.4",
+    "hono": "^4.6.5",
+    "tweetnacl": "^1.0.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241022.0",
+    "@types/node": "^22.7.5",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3"
+  }
+}

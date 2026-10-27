@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-slate: #0f1419;
+  --color-slate-elevated: #1a222c;
+  --color-coral: #ff5a3d;
+  --color-ghostless-lime: #b8f000;
+  --color-muted: #a8b0b8;
+  --font-display: "Archivo Black", "Arial Black", sans-serif;
+  --font-body: "Source Sans 3", "Segoe UI", sans-serif;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background: var(--color-slate);
+  color: #f2f4f6;
+  font-family: var(--font-body);
+}
+
+/* Subtle arcade-ticket grain without purple glow */
+body::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(255, 90, 61, 0.18), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 90% 0%, rgba(184, 240, 0, 0.08), transparent 50%),
+    linear-gradient(180deg, #121820 0%, var(--color-slate) 40%, #0c1014 100%);
+  z-index: -1;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes badge-pop {
+  0% {
+    transform: scale(0.86);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes strike-toast {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-rise {
+  animation: rise-in 0.55s ease-out both;
+}
+
+.animate-badge {
+  animation: badge-pop 0.45s ease-out both;
+}
+
+.animate-strike {
+  animation: strike-toast 0.4s ease-out both;
+}

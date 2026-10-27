@@ -1,0 +1,9 @@
+name = "rallied-bot"
+main = "src/worker.ts"
+compatibility_date = "2024-10-01"
+
+# Set secrets via: wrangler secret put DISCORD_PUBLIC_KEY
+#                  wrangler secret put DISCORD_BOT_TOKEN
+#                  wrangler secret put DISCORD_APP_ID
+#                  wrangler secret put SUPABASE_URL
+#                  wrangler secret put SUPABASE_SERVICE_ROLE_KEY

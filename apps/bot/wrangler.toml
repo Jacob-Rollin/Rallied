@@ -7,3 +7,6 @@ compatibility_date = "2024-10-01"
 #                  wrangler secret put DISCORD_APP_ID
 #                  wrangler secret put SUPABASE_URL
 #                  wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+# Optional (phone register): wrangler secret put REGISTER_COMMANDS_SECRET
+# Optional guild for /register-commands: wrangler secret put DISCORD_DEV_GUILD_ID
+#   (or set as a plain var in the CF dashboard — not committed here)

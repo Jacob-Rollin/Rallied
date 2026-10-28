@@ -6,14 +6,16 @@ Slash commands + message component buttons. Runs as a **Cloudflare Worker** or *
 
 | Command | Who | What |
 | --- | --- | --- |
-| `/lfg create` | anyone | Rich embed party (game, slots, host, Ghostless field) |
-| `/lfg find` / `close` | anyone / host | List or close |
-| `/vibe` | party member | Buttons if `showed_up` omitted; else direct submit |
+| `/lfg create` | anyone | Rich embed party (game autocomplete, slots, host, Ghostless) + Join/Leave/Close/Vibe buttons |
+| `/lfg find` / `close` | anyone / host | Find with optional game filter + join select; close |
+| `/vibe` | party member | Buttons + 1–5 score select if `showed_up` omitted; else direct submit |
 | `/ghostless` | anyone | Compact player-card embed **this guild** |
 | `/strikes` | mod | list / add / remove; lockout from `server_settings` |
 | `/dispute` | anyone / mod | open appeal; resolve upheld/overturned |
 
-**Buttons:** Showed up · Vibes · Ghosted · Dispute (`vibe:*` / `dispute:open:*` custom_ids).
+**Game autocomplete:** `/lfg create` and `/lfg find` `game` options use Discord autocomplete against a curated catalog + aliases (`val`→Valorant). Unmatched text stays as **Other** free text. Parties store the canonical name so find matches create.
+
+**Components:** Party embed Join · Leave · Close · Vibe Check; find join select; Vibe Showed up · Ghosted · Dispute + score 1–5 select (`lfg:*` / `vibe:*` / `dispute:open:*` custom_ids).
 
 **Grace window:** `server_settings.grace_minutes` (default 5) — late arrivals within grace are not treated as ghosts for vibe/strike paths.
 

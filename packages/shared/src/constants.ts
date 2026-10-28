@@ -105,7 +105,14 @@ export const BUTTON_IDS = {
   vibeShowed: "vibe:showed",
   vibeGood: "vibe:good",
   vibeGhosted: "vibe:ghosted",
+  vibeScore: "vibe:score",
+  vibePick: "vibe:pick",
   disputeOpen: "dispute:open",
+  lfgJoin: "lfg:join",
+  lfgLeave: "lfg:leave",
+  lfgClose: "lfg:close",
+  lfgJoinSelect: "lfg:joinselect",
+  lfgVibe: "lfg:vibe",
 } as const;
 
 export function buildBotInviteUrl(clientId: string, permissions = BOT_INVITE_PERMISSIONS_VALUE) {

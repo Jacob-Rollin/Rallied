@@ -21,7 +21,7 @@ import {
   getMember,
   lockoutFor,
 } from "./mock-data";
-import { isDemoGuildId } from "./guild-context";
+import { isDemoGuildId } from "./guild-params";
 import { getServiceSupabase } from "./supabase";
 
 export type PublicParty = LfgParty & {

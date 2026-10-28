@@ -28,7 +28,7 @@ import {
   strikesFor,
 } from "./mock-data";
 import { getServiceSupabase, hasServiceRole } from "./supabase";
-import { isDemoGuildId } from "./guild-context";
+import { isDemoGuildId } from "./guild-params";
 
 export type DashboardParty = {
   id: string;

@@ -13,8 +13,8 @@ type MarkProps = {
 };
 
 /**
- * Canonical Ghostless web mark: white outlined ghost + lime check lockup.
- * One integrated mark — not a solid JPG ghost beside a hollow checkbox.
+ * Locked Ghostless mark #4: solid white ghost silhouette (no eyes) +
+ * bold lime check across the body. No green ring. One lockup for pills.
  */
 export function GhostlessMark({
   className,
@@ -23,30 +23,32 @@ export function GhostlessMark({
 }: MarkProps) {
   return (
     <svg
-      viewBox="0 0 24 24"
+      viewBox="0 0 64 64"
       className={className ?? SIZE_CLASS[size]}
       aria-hidden={title ? undefined : true}
       role={title ? "img" : undefined}
-      fill="none"
     >
       {title ? <title>{title}</title> : null}
-      {/* Outlined ghost silhouette */}
       <path
-        d="M12 3.2c-3.7 0-6.6 2.9-6.6 6.7v7.6c0 .35.4.55.68.35l1.52-1.08c.4-.28.94-.28 1.34 0l1.06.75c.4.28.94.28 1.34 0l1.06-.75c.4-.28.94-.28 1.34 0l1.06.75c.4.28.94.28 1.34 0l1.52-1.08c.28-.2.68 0 .68-.35v-7.6c0-3.8-2.9-6.7-6.68-6.7Z"
-        stroke="#FFFFFF"
-        strokeWidth="1.65"
-        strokeLinejoin="round"
+        fill="#FFFFFF"
+        d="M32 6c-11.2 0-20 8.6-20 20.2v22.1c0 2.4 2.7 3.7 4.6 2.2l4.1-3.2c1.7-1.3 4.1-1.3 5.8 0l3.5 2.7c1.7 1.3 4.1 1.3 5.8 0l3.5-2.7c1.7-1.3 4.1-1.3 5.8 0l4.1 3.2c1.9 1.5 4.6.2 4.6-2.2V26.2C52 14.6 43.2 6 32 6z"
       />
-      {/* Eyes */}
-      <circle cx="9.6" cy="10.2" r="1.05" fill="#FFFFFF" />
-      <circle cx="14.4" cy="10.2" r="1.05" fill="#FFFFFF" />
-      {/* Lime check integrated on the ghost */}
+      {/* Dark knockout so lime check stays crisp on the white ghost */}
       <path
-        d="M8.2 13.1 10.7 15.5 16.4 9.4"
-        stroke="currentColor"
-        strokeWidth="2.1"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        fill="none"
+        stroke="#0F1419"
+        strokeWidth="11"
+        strokeLinecap="square"
+        strokeLinejoin="miter"
+        d="M18.5 34.5 28.2 43.5 48 20.5"
+      />
+      <path
+        fill="none"
+        stroke="#B8F000"
+        strokeWidth="8"
+        strokeLinecap="square"
+        strokeLinejoin="miter"
+        d="M18.5 34.5 28.2 43.5 48 20.5"
       />
     </svg>
   );

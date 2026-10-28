@@ -22,7 +22,7 @@ import {
   secretsMatch,
 } from "./lib/register-commands.js";
 import {
-  LFG_OTHER_GAME,
+  lfgCreateGameSelectMessage,
   lfgCreateModalResponse,
   lfgHowItWorksMessage,
 } from "./lib/embeds.js";
@@ -78,17 +78,20 @@ async function handleRegisterCommands(c: AppContext) {
 
 /**
  * Fast-path component replies (no defer):
- * - Create → modal with game + size + notes (Discord modals cannot embed dropdowns)
+ * - Create → catalog game select (analytics-stable titles; Discord modals
+ *   cannot embed dropdowns, so select is a message step before the modal)
+ * - Game select → modal (size + mic + notes)
  * - Help → ephemeral text
- * - Legacy game-select messages still open the modal
  */
 function syncComponentResponse(interaction: Interaction) {
   const customId = interaction.data?.custom_id;
   if (!customId) return null;
 
   if (customId === "lfg:desk:create") {
-    // One popup: game (text + aliases) / size / notes — no leftover select message.
-    return lfgCreateModalResponse(LFG_OTHER_GAME);
+    return {
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: lfgCreateGameSelectMessage(),
+    };
   }
 
   if (customId === "lfg:desk:help") {
@@ -98,7 +101,6 @@ function syncComponentResponse(interaction: Interaction) {
     };
   }
 
-  // Older desk flows that still show a game select.
   if (customId === "lfg:creategame") {
     const selected = interaction.data?.values?.[0];
     if (!selected) {

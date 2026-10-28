@@ -16,6 +16,7 @@ import {
 } from "../lib/discord.js";
 import {
   LFG_ALL_GAMES,
+  composePartyNotes,
   LFG_OTHER_GAME,
   lfgCloseConfirmMessage,
   lfgDeskMessage,
@@ -358,9 +359,9 @@ export async function handleLfgDeskComponent(
   const user = actorUser(interaction);
   if (!user || !interaction.guild_id) return ephemeral("Could not resolve user.");
 
-  // create opens a sync modal in app.ts — should not reach here.
+  // create opens a sync game select in app.ts — should not reach here.
   if (action === "create") {
-    return ephemeral("Tap **Create party** again to open the form.");
+    return ephemeral("Tap **Create party** again to pick a game.");
   }
 
   if (action === "find") {
@@ -438,7 +439,10 @@ export async function handleCreateModalSubmit(
       ? getModalField(interaction, "game")
       : resolveCreateGameKey(gameFromId);
   const sizeRaw = getModalField(interaction, "size");
-  const notes = getModalField(interaction, "notes");
+  const notes = composePartyNotes(
+    getModalField(interaction, "mic"),
+    getModalField(interaction, "notes"),
+  );
 
   const slots = Number.parseInt(sizeRaw, 10);
   if (!Number.isFinite(slots) || slots < 2 || slots > 20) {

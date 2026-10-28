@@ -2,6 +2,13 @@
 
 import { getRuntimeEnv } from "@/lib/runtime-env";
 
+const OAUTH_KEYS = [
+  "DISCORD_CLIENT_ID",
+  "DISCORD_CLIENT_SECRET",
+  "DISCORD_REDIRECT_URI",
+  "SESSION_SECRET",
+] as const;
+
 export function discordOAuthConfigured(): boolean {
   const secret = getRuntimeEnv("SESSION_SECRET") || "";
   return Boolean(
@@ -13,14 +20,47 @@ export function discordOAuthConfigured(): boolean {
   );
 }
 
-/** Force mock admin session even without OAuth (local UI). */
-export function mockAuthEnabled(): boolean {
+/** Names of OAuth/session vars that are missing (never values). */
+export function oauthMissingKeys(): string[] {
+  const missing: string[] = [];
+  if (
+    !(
+      getRuntimeEnv("DISCORD_CLIENT_ID") ||
+      getRuntimeEnv("NEXT_PUBLIC_DISCORD_CLIENT_ID")
+    )
+  ) {
+    missing.push("DISCORD_CLIENT_ID");
+  }
+  if (!getRuntimeEnv("DISCORD_CLIENT_SECRET")) {
+    missing.push("DISCORD_CLIENT_SECRET");
+  }
+  if (!getRuntimeEnv("DISCORD_REDIRECT_URI")) {
+    missing.push("DISCORD_REDIRECT_URI");
+  }
+  const secret = getRuntimeEnv("SESSION_SECRET") || "";
+  if (secret.length < 32) {
+    missing.push("SESSION_SECRET");
+  }
+  return missing;
+}
+
+/** Explicit MOCK_AUTH=1 — never infer this from missing secrets in production. */
+export function explicitMockAuth(): boolean {
   const mock = getRuntimeEnv("MOCK_AUTH");
-  if (mock === "1" || mock === "true") {
+  return mock === "1" || mock === "true";
+}
+
+/**
+ * Mock admin session for local UI.
+ * Production only mocks when MOCK_AUTH=1 is set on the Worker.
+ * Local/dev also mocks when OAuth secrets are not wired.
+ */
+export function mockAuthEnabled(): boolean {
+  if (explicitMockAuth()) return true;
+  if (process.env.NODE_ENV !== "production" && !discordOAuthConfigured()) {
     return true;
   }
-  // Default: mock when OAuth not wired so `npm run dev` works
-  return !discordOAuthConfigured();
+  return false;
 }
 
 export function getDiscordClientId(): string {
@@ -46,3 +86,5 @@ export function getRedirectUri(): string {
 }
 
 export const SESSION_COOKIE = "rallied_session";
+
+export { OAUTH_KEYS };

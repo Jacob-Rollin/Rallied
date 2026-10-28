@@ -490,13 +490,13 @@ export function lfgCreateGameSelectMessage() {
     {
       label: "Other (type game next)",
       value: LFG_OTHER_GAME,
-      description: "Niche title - type it in the form",
+      description: "Niche title — type it in the form",
     },
   ];
 
   return {
     content:
-      "**Create party** — pick a game. Next step asks for size + optional notes.",
+      "**Create party** — pick a game (keeps titles tidy for Find + analytics). Next popup: size, mic, notes.\n_After you submit, tap **Dismiss message** on this picker._",
     flags: 64,
     components: [
       {
@@ -505,7 +505,7 @@ export function lfgCreateGameSelectMessage() {
           {
             type: 3,
             custom_id: "lfg:creategame",
-            placeholder: "Select a game...",
+            placeholder: "Select a game…",
             min_values: 1,
             max_values: 1,
             options,
@@ -549,9 +549,8 @@ export function lfgFindGameSelectMessage() {
 
 /**
  * Immediate MODAL response (type 9) — must not be deferred.
- * Discord modals cannot include select menus — game is a text field (aliases
- * like val/lol normalize via the catalog). Legacy select passes a slug/name
- * and skips the game field.
+ * Discord modals cannot include select menus or checkboxes — game comes from
+ * the prior select (or a text field for Other). Mic is a short text enum.
  */
 export function lfgCreateModalResponse(gameKey: string) {
   const isOther = gameKey === LFG_OTHER_GAME;
@@ -607,12 +606,27 @@ export function lfgCreateModalResponse(gameKey: string) {
     components: [
       {
         type: 4,
+        custom_id: "mic",
+        label: "Mic (optional)",
+        style: 1,
+        required: false,
+        max_length: 20,
+        placeholder: "required / optional / any",
+      },
+    ],
+  });
+
+  rows.push({
+    type: 1,
+    components: [
+      {
+        type: 4,
         custom_id: "notes",
         label: "Notes / rank (optional)",
         style: 2,
         required: false,
         max_length: 200,
-        placeholder: "Rank, mic, region…",
+        placeholder: "Rank, region, vibe…",
       },
     ],
   });
@@ -627,6 +641,37 @@ export function lfgCreateModalResponse(gameKey: string) {
   };
 }
 
+/** Normalize free-text mic answers into a short enum for cards + analytics. */
+export function normalizeMic(raw: string): string {
+  const key = raw.trim().toLowerCase();
+  if (!key) return "";
+  if (
+    ["required", "req", "yes", "y", "must", "mic on", "on mic"].includes(key) ||
+    key.includes("requir")
+  ) {
+    return "Required";
+  }
+  if (
+    ["optional", "opt", "no", "n", "mute", "no mic", "off"].includes(key) ||
+    key.includes("optional")
+  ) {
+    return "Optional";
+  }
+  if (["any", "either", "n/a", "na", "whatever"].includes(key)) {
+    return "Any";
+  }
+  return raw.trim().slice(0, 40);
+}
+
+/** Compose Notes field: mic enum + free notes (no schema change). */
+export function composePartyNotes(micRaw: string, notesRaw: string): string {
+  const mic = normalizeMic(micRaw);
+  const notes = notesRaw.trim();
+  if (mic && notes) return `Mic: ${mic} · ${notes}`;
+  if (mic) return `Mic: ${mic}`;
+  return notes;
+}
+
 /** Resolve modal/select game key (slug, name, or Other) to a party game string. */
 export function resolveCreateGameKey(gameKey: string): string {
   if (gameKey === LFG_OTHER_GAME) return "";
@@ -637,7 +682,7 @@ export function lfgHowItWorksMessage() {
   return {
     content: [
       "**How Rallied LFG works** (this server only)",
-      "• **Create party** — one form: game (try `val` / `lol`), size, notes → party card + **squad thread**.",
+      "• **Create party** — pick a game → form (size, mic, notes) → party card + **squad thread**.",
       "• **Join** — tap the **squad thread** under the card to share invite codes / VC (no friend-adds).",
       "• **Leave / Close** — Leave if you're a member; hosts Confirm-close, then **Vibe Check**.",
       "• **Find / My parties** — browse open parties in this server.",

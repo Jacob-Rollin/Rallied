@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getIronSession } from "iron-session";
 import {
   discordOAuthConfigured,
+  explicitMockAuth,
   mockAuthEnabled,
   SESSION_COOKIE,
 } from "@/lib/auth/config";
@@ -27,9 +28,20 @@ function requestWithoutSessionCookie(req: NextRequest): NextRequest {
   return new NextRequest(req.url, { headers, method: req.method });
 }
 
+function clearSessionCookie(res: NextResponse, cookieName: string) {
+  res.cookies.set({
+    name: cookieName,
+    value: "",
+    httpOnly: true,
+    path: "/",
+    maxAge: 0,
+  });
+}
+
 /**
  * Gate /app/* — require session cookie.
- * When OAuth env missing / MOCK_AUTH, seed mock admin.
+ * Mock admin only when MOCK_AUTH=1 (or local + OAuth missing).
+ * Stale mock cookies must not block real Discord login once OAuth is wired.
  * Bad/stale session cookies must not 500 the whole dashboard.
  */
 export async function middleware(req: NextRequest) {
@@ -46,13 +58,7 @@ export async function middleware(req: NextRequest) {
     session = await getIronSession<SessionData>(req, res, opts);
   } catch (err) {
     console.error("session unseal failed — clearing cookie", err);
-    res.cookies.set({
-      name: opts.cookieName,
-      value: "",
-      httpOnly: true,
-      path: "/",
-      maxAge: 0,
-    });
+    clearSessionCookie(res, opts.cookieName);
     session = await getIronSession<SessionData>(
       requestWithoutSessionCookie(req),
       res,
@@ -60,10 +66,21 @@ export async function middleware(req: NextRequest) {
     );
   }
 
-  const mockAuth = mockAuthEnabled() || !discordOAuthConfigured();
+  const oauth = discordOAuthConfigured();
+  const allowMock = mockAuthEnabled();
+
+  // Stale demo session from when secrets looked missing — force Discord login.
+  if (session.user && session.isMock && oauth && !explicitMockAuth()) {
+    session.destroy();
+    await session.save();
+    const login = new URL("/login", req.url);
+    login.searchParams.set("next", pathname);
+    login.searchParams.set("error", "session_expired");
+    return NextResponse.redirect(login);
+  }
 
   if (!session.user) {
-    if (mockAuth) {
+    if (allowMock) {
       const mock = mockSessionPayload();
       session.user = mock.user;
       session.guilds = mock.guilds;

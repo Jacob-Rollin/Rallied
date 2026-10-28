@@ -15,24 +15,31 @@ import {
   VibeCheckCardMock,
 } from "../components/LandingFeatureMocks";
 
-const HOW_IT_WORKS = [
+const HOW_IT_WORKS: {
+  title: string;
+  body: string;
+  note?: string;
+  icon: "slash" | "play" | "check";
+  preview: "lfg" | "play" | "vibe";
+}[] = [
   {
     title: "LFG",
     body: "Create a party inside Discord. Join, fill, and close lobbies without messy text channels or free LFG clone wars.",
-    icon: "slash" as const,
-    preview: "lfg" as const,
+    note: "Pinned LFG desk · or `/lfg create` / `/lfg find`",
+    icon: "slash",
+    preview: "lfg",
   },
   {
     title: "Play",
     body: "Automated ready checks and grace windows cut accidental no-shows before they become server drama.",
-    icon: "play" as const,
-    preview: "play" as const,
+    icon: "play",
+    preview: "play",
   },
   {
     title: "Vibe Check",
     body: "Post-session showed-up + vibe tags. Ghostless reliability stays on this server — no cross-server grades.",
-    icon: "check" as const,
-    preview: "vibe" as const,
+    icon: "check",
+    preview: "vibe",
   },
 ];
 
@@ -56,6 +63,7 @@ const LANDING_TIERS = [
       "Public server page",
       "Weekly digest",
     ],
+    trial: "14-day free trial" as const,
     accent: false as const,
     founding: false as const,
   },
@@ -72,6 +80,7 @@ const LANDING_TIERS = [
       "Priority support",
       "Multi-guild discount note",
     ],
+    trial: "14-day free trial" as const,
     accent: false as const,
     founding: false as const,
   },
@@ -88,6 +97,7 @@ const LANDING_TIERS = [
       "Priority support",
       `Limited to ≤${PLANS.founding_pro.seatCap} servers`,
     ],
+    trial: null,
     accent: true as const,
     founding: true as const,
   },
@@ -227,7 +237,7 @@ export default function MarketingPage() {
               Add to Discord
             </a>
             <Link
-              href="/s/demo-esports"
+              href="/demo"
               className="rounded-brand border border-white/25 px-5 py-2.5 font-semibold text-white/90 transition hover:border-lime/50 hover:text-lime"
             >
               Explore live demo
@@ -239,6 +249,13 @@ export default function MarketingPage() {
               Learn more
             </a>
           </div>
+          <p
+            className="animate-rise mt-3 max-w-lg text-sm text-white/55"
+            style={{ animationDelay: "260ms" }}
+          >
+            14-day Community trial — no free-forever tier. Invite needs Manage
+            Server (or Admin).
+          </p>
         </div>
       </section>
 
@@ -265,6 +282,9 @@ export default function MarketingPage() {
               <p className="mt-2.5 text-sm leading-relaxed text-white/80">
                 {step.body}
               </p>
+              {step.note ? (
+                <p className="mt-2 text-xs text-white/45">{step.note}</p>
+              ) : null}
               <FeaturePreview kind={step.preview} />
             </div>
           ))}
@@ -322,6 +342,9 @@ export default function MarketingPage() {
                 ${tier.annual}/yr
                 {tier.founding ? " locked" : ""}
               </p>
+              {tier.trial ? (
+                <p className="mt-2 text-xs font-medium text-lime">{tier.trial}</p>
+              ) : null}
               <p className="mt-3 text-sm leading-relaxed text-white/75">
                 {tier.blurb}
               </p>
@@ -347,33 +370,44 @@ export default function MarketingPage() {
           ))}
         </div>
 
-        <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
-          <a
-            href={inviteHref}
-            className="rounded-brand bg-coral px-5 py-2.5 font-semibold text-slate transition hover:brightness-110"
-          >
-            Add to Discord
-          </a>
-          <Link
-            href="/s/demo-esports"
-            className="rounded-brand border border-white/25 px-5 py-2.5 font-semibold text-white/90 transition hover:border-lime/50 hover:text-lime"
-          >
-            Explore live demo
-          </Link>
-          <Link
-            href="/pricing"
-            className="text-sm text-white/80 underline-offset-4 transition hover:text-lime hover:underline"
-          >
-            See full pricing
-          </Link>
+        <div className="mt-8 flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+            <a
+              href={inviteHref}
+              className="rounded-brand bg-coral px-5 py-2.5 font-semibold text-slate transition hover:brightness-110"
+            >
+              Add to Discord
+            </a>
+            <Link
+              href="/demo"
+              className="rounded-brand border border-white/25 px-5 py-2.5 font-semibold text-white/90 transition hover:border-lime/50 hover:text-lime"
+            >
+              Explore live demo
+            </Link>
+            <Link
+              href="/pricing"
+              className="text-sm text-white/80 underline-offset-4 transition hover:text-lime hover:underline"
+            >
+              See full pricing
+            </Link>
+          </div>
+          <p className="text-sm text-white/55">
+            14-day trial on Community — locked pricing, no free forever. Needs
+            Manage Server to install.
+          </p>
         </div>
       </section>
 
       <footer className="border-t border-white/10 py-10">
         <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-white/55">
-            Example public server (mock):{" "}
-            <Link href="/s/demo-esports" className="text-coral/90 hover:underline">
+            Demo admin:{" "}
+            <Link href="/demo" className="text-coral/90 hover:underline">
+              /demo
+            </Link>
+            {" · "}
+            Public:{" "}
+            <Link href="/s/demo-esports" className="text-white/70 hover:underline">
               /s/demo-esports
             </Link>
             {" · "}

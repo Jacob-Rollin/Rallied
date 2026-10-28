@@ -175,6 +175,18 @@ export default async function PublicServerPage({ params }: Props) {
           )}
         </section>
 
+        {pathKey === "demo-esports" ||
+        pathKey === "night-queue" ||
+        pathKey === "founding-beta" ? (
+          <p className="text-center text-sm text-muted">
+            <Link href="/demo" className="text-coral hover:underline">
+              View admin demo
+            </Link>
+            {" · "}
+            server-owner dashboard with mock data
+          </p>
+        ) : null}
+
         <p className="text-center text-xs text-muted">
           Per-server cred. No global shame board.
           {showPoweredBy ? (

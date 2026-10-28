@@ -6,6 +6,7 @@ Slash commands + message component buttons. Runs as a **Cloudflare Worker** or *
 
 | Command | Who | What |
 | --- | --- | --- |
+| `/setup` or `/lfg desk` | mod | Post the LFG desk panel (Create / Find / My parties / How it works) — pin in `#lfg-board` |
 | `/lfg create` | anyone | Rich embed party (game autocomplete, slots, host, Ghostless) + Join/Leave/Close/Vibe buttons |
 | `/lfg find` / `close` | anyone / host | Find with optional game filter + join select; close |
 | `/vibe` | party member | Buttons + 1–5 score select if `showed_up` omitted; else direct submit |
@@ -13,9 +14,11 @@ Slash commands + message component buttons. Runs as a **Cloudflare Worker** or *
 | `/strikes` | mod | list / add / remove; lockout from `server_settings` |
 | `/dispute` | anyone / mod | open appeal; resolve upheld/overturned |
 
-**Game autocomplete:** `/lfg create` and `/lfg find` `game` options use Discord autocomplete against a curated catalog + aliases (`val`→Valorant). Unmatched text stays as **Other** free text. Parties store the canonical name so find matches create.
+**LFG desk (no slash needed):** Create → game select → modal (size + notes; Other asks for game text) → party embed. Find → optional game filter → join select. My parties → ephemeral list + Close for hosts. How it works → short ephemeral help. Slash `/lfg create|find` and `/vibe` stay as backups.
 
-**Components:** Party embed Join · Leave · Close · Vibe Check; find join select; Vibe Showed up · Ghosted · Dispute + score 1–5 select (`lfg:*` / `vibe:*` / `dispute:open:*` custom_ids).
+**Game autocomplete:** `/lfg create` and `/lfg find` `game` options use Discord autocomplete against a curated catalog + aliases (`val`→Valorant). Desk create uses a select (top catalog + Other) then a modal; free text is normalized via the same catalog. Parties store the canonical name so find matches create.
+
+**Components:** Desk buttons; create game select → modal; find game select; party embed Join · Leave · Close · Vibe Check; find join select; Vibe Showed up · Ghosted · Dispute + score 1–5 select (`lfg:*` / `vibe:*` / `dispute:open:*` custom_ids).
 
 **Grace window:** `server_settings.grace_minutes` (default 5) — late arrivals within grace are not treated as ghosts for vibe/strike paths.
 
@@ -52,7 +55,7 @@ Tunnel → Discord **Interactions Endpoint URL**.
 
 `compatibility_flags = ["nodejs_compat"]` for tweetnacl / supabase-js on Workers.
 
-Slash commands and buttons **defer immediately** (interaction type 5, ephemeral when needed), then finish via webhook edit/follow-up under `executionCtx.waitUntil` so Supabase work cannot blow Discord’s 3s reply window. PING stays synchronous.
+Slash commands, buttons, and modal submits **defer immediately** (interaction type 5, ephemeral when needed), then finish via webhook edit/follow-up under `executionCtx.waitUntil` so Supabase work cannot blow Discord’s 3s reply window. PING, autocomplete, and create-game → **modal** (type 9) stay synchronous.
 
 ```bash
 cd apps/bot
@@ -88,8 +91,8 @@ Use this when you cannot run the CLI. No bot token goes in the browser URL — o
 
    Optional override: `&guild_id=<id>` if the env guild is unset.
 
-   Expect JSON like `{ "ok": true, "count": 5, "guildId": "…" }`. Wrong/missing key → `401`; secret unset → `404`.
-4. In Discord, try a slash command (e.g. `/lfg` or `/ghostless`) in that guild — guild commands appear within seconds.
+   Expect JSON like `{ "ok": true, "count": 6, "guildId": "…" }` (includes `/setup`). Wrong/missing key → `401`; secret unset → `404`.
+4. In Discord, try a slash command (e.g. `/setup`, `/lfg desk`, or `/ghostless`) in that guild — guild commands appear within seconds.
 5. **Remove or rotate** `REGISTER_COMMANDS_SECRET` in CF after use so the route stops working.
 
 You can also send `X-Register-Commands-Key: <secret>` or `Authorization: Bearer <secret>` instead of `?key=`.

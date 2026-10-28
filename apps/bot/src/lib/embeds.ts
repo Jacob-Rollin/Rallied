@@ -1,7 +1,17 @@
-import { BRAND } from "@rallied/shared";
+import { BRAND, GAME_CATALOG } from "@rallied/shared";
 import { InteractionResponseType } from "./discord.js";
 
 /** Discord embed / component helpers (Phase 1.5). */
+
+/** Discord select menus allow at most 25 options. */
+const SELECT_MAX = 25;
+/** Reserved for "Other…" on create-game select. */
+const CREATE_GAME_SLOTS = SELECT_MAX - 1;
+/** Reserved for "All games" on find-game select. */
+const FIND_GAME_SLOTS = SELECT_MAX - 1;
+
+export const LFG_OTHER_GAME = "__other__";
+export const LFG_ALL_GAMES = "__all__";
 
 export interface EmbedField {
   name: string;
@@ -298,5 +308,238 @@ export function ephemeralEmbed(embed: Embed) {
       embeds: [embed],
       flags: 64,
     },
+  };
+}
+
+/** Pinned-style LFG desk panel (public channel message). */
+export function lfgDeskMessage() {
+  return {
+    embeds: [
+      {
+        title: "Rallied LFG — find or start a squad",
+        description:
+          "Tap a button below — no slash commands needed. Parties stay **in this server** only.",
+        color: CORAL,
+        footer: { text: "Rallied · pin this message in your LFG channel" },
+      },
+    ],
+    components: [
+      {
+        type: 1,
+        components: [
+          {
+            type: 2,
+            style: 3,
+            label: "Create party",
+            custom_id: "lfg:desk:create",
+          },
+          {
+            type: 2,
+            style: 1,
+            label: "Find party",
+            custom_id: "lfg:desk:find",
+          },
+          {
+            type: 2,
+            style: 2,
+            label: "My parties",
+            custom_id: "lfg:desk:mine",
+          },
+          {
+            type: 2,
+            style: 2,
+            label: "How it works",
+            custom_id: "lfg:desk:help",
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function catalogSelectOptions(limit: number) {
+  return GAME_CATALOG.slice(0, limit).map((g) => ({
+    label: g.name.slice(0, 100),
+    value: g.name.slice(0, 100),
+  }));
+}
+
+/** Ephemeral: pick a game before the create modal (modals have no autocomplete). */
+export function lfgCreateGameSelectMessage() {
+  const options = [
+    ...catalogSelectOptions(CREATE_GAME_SLOTS),
+    {
+      label: "Other… (type game next)",
+      value: LFG_OTHER_GAME,
+      description: "Niche title — enter free text in the form",
+    },
+  ];
+
+  return {
+    content:
+      "**Create party** — pick a game. Next step asks for size + optional notes.",
+    flags: 64,
+    components: [
+      {
+        type: 1,
+        components: [
+          {
+            type: 3,
+            custom_id: "lfg:creategame",
+            placeholder: "Select a game…",
+            min_values: 1,
+            max_values: 1,
+            options,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+/** Ephemeral: optional game filter before find results. */
+export function lfgFindGameSelectMessage() {
+  const options = [
+    {
+      label: "All games",
+      value: LFG_ALL_GAMES,
+      description: "Show every open party in this server",
+    },
+    ...catalogSelectOptions(FIND_GAME_SLOTS),
+  ];
+
+  return {
+    content: "**Find party** — filter by game, or show all.",
+    flags: 64,
+    components: [
+      {
+        type: 1,
+        components: [
+          {
+            type: 3,
+            custom_id: "lfg:findgame",
+            placeholder: "Filter by game…",
+            min_values: 1,
+            max_values: 1,
+            options,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+/**
+ * Immediate MODAL response (type 9) — must not be deferred.
+ * `game` is a catalog name, or LFG_OTHER_GAME to collect free-text game.
+ */
+export function lfgCreateModalResponse(game: string) {
+  const isOther = game === LFG_OTHER_GAME;
+  const title = isOther ? "Create party" : `Create · ${game}`.slice(0, 45);
+  const customId = `lfg:createsubmit:${game}`.slice(0, 100);
+
+  const rows: unknown[] = [];
+
+  if (isOther) {
+    rows.push({
+      type: 1,
+      components: [
+        {
+          type: 4,
+          custom_id: "game",
+          label: "Game",
+          style: 1,
+          required: true,
+          min_length: 1,
+          max_length: 80,
+          placeholder: "e.g. Lethal Company",
+        },
+      ],
+    });
+  }
+
+  rows.push({
+    type: 1,
+    components: [
+      {
+        type: 4,
+        custom_id: "size",
+        label: "Party size (2–20, including you)",
+        style: 1,
+        required: true,
+        min_length: 1,
+        max_length: 2,
+        value: "5",
+        placeholder: "5",
+      },
+    ],
+  });
+
+  rows.push({
+    type: 1,
+    components: [
+      {
+        type: 4,
+        custom_id: "notes",
+        label: "Notes / rank (optional)",
+        style: 2,
+        required: false,
+        max_length: 200,
+        placeholder: "Rank, mic, region…",
+      },
+    ],
+  });
+
+  return {
+    type: InteractionResponseType.MODAL,
+    data: {
+      custom_id: customId,
+      title,
+      components: rows,
+    },
+  };
+}
+
+export function lfgHowItWorksMessage() {
+  return {
+    content: [
+      "**How Rallied LFG works** (this server only)",
+      "• **Create party** — pick a game, set size, optional notes → posts a party card with Join / Leave / Close / Vibe Check.",
+      "• **Find party** — filter by game (or all) → tap a party to join.",
+      "• **My parties** — see parties you're in; hosts can Close.",
+      "• After the session, use **Vibe Check** on the party card (or `/vibe @user`).",
+      "Slash backups: `/lfg create` · `/lfg find` · `/vibe`",
+    ].join("\n"),
+    flags: 64,
+  };
+}
+
+/** Ephemeral list of the actor's open parties with Close for hosts. */
+export function lfgMyPartiesMessage(opts: {
+  lines: string[];
+  hostParties: { id: string; game: string }[];
+}) {
+  const components =
+    opts.hostParties.length > 0
+      ? [
+          {
+            type: 1,
+            components: opts.hostParties.slice(0, 5).map((p) => ({
+              type: 2,
+              style: 4,
+              label: `Close ${p.game}`.slice(0, 80),
+              custom_id: `lfg:close:${p.id}`,
+            })),
+          },
+        ]
+      : [];
+
+  return {
+    content:
+      opts.lines.length > 0
+        ? `**Your open parties**\n${opts.lines.join("\n")}`
+        : "You're not in any open parties in this server.",
+    flags: 64,
+    components,
   };
 }

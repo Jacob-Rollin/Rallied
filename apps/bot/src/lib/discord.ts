@@ -5,6 +5,7 @@ export const InteractionType = {
   APPLICATION_COMMAND: 2,
   MESSAGE_COMPONENT: 3,
   APPLICATION_COMMAND_AUTOCOMPLETE: 4,
+  MODAL_SUBMIT: 5,
 } as const;
 
 export const InteractionResponseType = {
@@ -14,6 +15,8 @@ export const InteractionResponseType = {
   /** Deferred ACK for message components (no thinking message). */
   DEFERRED_UPDATE_MESSAGE: 6,
   APPLICATION_COMMAND_AUTOCOMPLETE_RESULT: 8,
+  /** Immediate modal popup — cannot be deferred. */
+  MODAL: 9,
 } as const;
 
 /** Discord MessageFlags.EPHEMERAL */
@@ -58,17 +61,31 @@ export interface CommandOption {
   focused?: boolean;
 }
 
+/** Text input inside a modal action row (MODAL_SUBMIT). */
+export interface ModalTextInput {
+  type: number;
+  custom_id: string;
+  value?: string;
+}
+
+export interface ModalActionRow {
+  type: number;
+  components?: ModalTextInput[];
+}
+
 export interface ApplicationCommandInteractionData {
   id: string;
   name: string;
   type: number;
   options?: CommandOption[];
   resolved?: Record<string, unknown>;
-  /** Present on MESSAGE_COMPONENT interactions */
+  /** Present on MESSAGE_COMPONENT / MODAL_SUBMIT */
   custom_id?: string;
   component_type?: number;
   /** String/user/role select menu values */
   values?: string[];
+  /** Modal submit rows (type 1 → type 4 text inputs) */
+  components?: ModalActionRow[];
 }
 
 export interface Interaction {
@@ -135,4 +152,20 @@ export function isMod(interaction: Interaction): boolean {
 export function avatarUrl(user: DiscordUser): string | null {
   if (!user.avatar) return null;
   return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
+}
+
+/** Read a modal text-input value by custom_id. */
+export function getModalField(
+  interaction: Interaction,
+  customId: string,
+): string {
+  const rows = interaction.data?.components ?? [];
+  for (const row of rows) {
+    for (const field of row.components ?? []) {
+      if (field.custom_id === customId) {
+        return String(field.value ?? "").trim();
+      }
+    }
+  }
+  return "";
 }

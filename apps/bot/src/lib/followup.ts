@@ -18,16 +18,28 @@ function webhookBase(env: BotEnv, interaction: Interaction): string {
 /** Whether the deferred ACK should be ephemeral (must match final visibility). */
 export function shouldDeferEphemeral(interaction: Interaction): boolean {
   if (interaction.type === InteractionType.MESSAGE_COMPONENT) {
-    // Button handlers reply with ephemeral acks / results.
+    // Desk / party buttons reply ephemeral (public posts go via bot token when needed).
+    return true;
+  }
+
+  if (interaction.type === InteractionType.MODAL_SUBMIT) {
+    const customId = interaction.data?.custom_id ?? "";
+    // Create-party modal posts a public party embed.
+    if (customId.startsWith("lfg:createsubmit:")) return false;
     return true;
   }
 
   const name = interaction.data?.name;
   if (name === "lfg") {
     const sub = interaction.data?.options?.[0]?.name;
-    // create / close post public channel messages
-    if (sub === "create" || sub === "close") return false;
+    // create / close / desk post public channel messages
+    if (sub === "create" || sub === "close" || sub === "desk") return false;
     return true;
+  }
+
+  if (name === "setup") {
+    // Posts the public LFG desk panel.
+    return false;
   }
 
   if (name === "vibe") {

@@ -27,6 +27,12 @@ const HOW_IT_WORKS = [
   },
 ];
 
+const HERO_PILLARS = [
+  { label: "LFG", icon: "slash" as const },
+  { label: "Play", icon: "play" as const },
+  { label: "Ghostless", icon: "check" as const },
+];
+
 const LANDING_TIERS = [
   {
     name: "Community",
@@ -49,78 +55,140 @@ const LANDING_TIERS = [
   },
 ];
 
+/** Edge-to-edge Discord LFG embed silhouette — texture only, not a mockup card. */
+function HeroLfgSilhouette() {
+  return (
+    <svg
+      className="hero-lfg-silhouette absolute inset-0 h-full w-full"
+      viewBox="0 0 960 640"
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden
+    >
+      <g fill="none" stroke="currentColor" strokeWidth="1.25">
+        <rect x="72" y="96" width="420" height="268" rx="10" opacity="0.55" />
+        <rect x="96" y="120" width="36" height="36" rx="8" opacity="0.7" />
+        <path d="M148 132h168M148 148h112" opacity="0.55" />
+        <path d="M96 178h372" opacity="0.28" />
+        <rect x="96" y="198" width="372" height="72" rx="6" opacity="0.35" />
+        <path d="M112 220h210M112 240h160" opacity="0.45" />
+        <rect x="96" y="290" width="88" height="28" rx="6" opacity="0.5" />
+        <rect x="196" y="290" width="72" height="28" rx="6" opacity="0.35" />
+        <circle cx="360" cy="304" r="10" opacity="0.4" />
+        <circle cx="386" cy="304" r="10" opacity="0.4" />
+        <circle cx="412" cy="304" r="10" opacity="0.4" />
+        <path d="M428 304h28" opacity="0.3" />
+
+        <rect x="540" y="168" width="348" height="220" rx="10" opacity="0.4" />
+        <rect x="564" y="192" width="28" height="28" rx="7" opacity="0.55" />
+        <path d="M606 202h140M606 216h96" opacity="0.4" />
+        <rect x="564" y="248" width="300" height="56" rx="6" opacity="0.28" />
+        <rect x="564" y="324" width="76" height="26" rx="6" opacity="0.4" />
+        <rect x="652" y="324" width="64" height="26" rx="6" opacity="0.28" />
+      </g>
+    </svg>
+  );
+}
+
 export default function MarketingPage() {
   const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
   const inviteHref = clientId ? buildBotInviteUrl(clientId) : "#add-bot";
 
   return (
     <div className="min-h-screen">
-      <header className="mx-auto flex max-w-5xl items-center justify-between bg-transparent px-4 py-5">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/brand/rallied-wm-transparent-dark.png"
-          alt="Rallied"
-          className="h-12 w-auto bg-transparent sm:h-14"
-        />
-        <a
-          href="/api/auth/discord"
-          className="rounded-brand border border-white/20 px-4 py-2.5 text-base font-medium text-white/90 transition hover:border-coral/50 hover:text-white"
-        >
-          Log in
-        </a>
-      </header>
+      <section className="hero-stage relative flex min-h-[100svh] flex-col overflow-hidden">
+        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+          <div className="hero-wash hero-wash--coral" />
+          <div className="hero-wash hero-wash--lime" />
+          <div className="hero-wash hero-wash--slate" />
 
-      <section className="relative mx-auto flex min-h-[min(100svh,820px)] max-w-5xl flex-col justify-center px-4 pb-20 pt-4">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-[-8%] top-0 -z-10 flex justify-center overflow-hidden"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/brand/rallied-square-dark.jpg"
-            alt=""
-            className="animate-rise h-[min(88vw,560px)] w-[min(88vw,560px)] object-cover opacity-[0.22] sm:opacity-[0.28]"
-            style={{
-              maskImage:
-                "radial-gradient(ellipse 70% 65% at 50% 42%, black 20%, transparent 72%)",
-              WebkitMaskImage:
-                "radial-gradient(ellipse 70% 65% at 50% 42%, black 20%, transparent 72%)",
-            }}
-          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/brand/rallied-square-dark.jpg"
+              alt=""
+              className="hero-brand-mark h-[min(118vw,720px)] w-[min(118vw,720px)] object-cover"
+            />
+          </div>
+
+          <div className="absolute inset-0 text-white/[0.07]">
+            <HeroLfgSilhouette />
+          </div>
+
+          <div className="hero-vignette absolute inset-0" />
         </div>
 
-        <p className="animate-rise font-display text-5xl leading-none tracking-wide text-white sm:text-7xl md:text-8xl">
-          {BRAND.name}
-        </p>
-        <h1
-          className="animate-rise mt-5 max-w-xl text-xl text-white/90 sm:text-2xl"
-          style={{ animationDelay: "60ms" }}
-        >
-          {BRAND.tagline}
-        </h1>
-        <p
-          className="animate-rise mt-3 max-w-md text-muted"
-          style={{ animationDelay: "120ms" }}
-        >
-          Parties, Vibe Check, and Ghostless reliability — scoped to each Discord
-          server. No global shame board.
-        </p>
-        <div
-          className="animate-rise mt-8 flex flex-wrap gap-3"
-          style={{ animationDelay: "180ms" }}
-        >
+        <header className="relative z-10 mx-auto flex w-full max-w-5xl items-center justify-between bg-transparent px-4 py-5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/brand/rallied-wm-transparent-dark.png"
+            alt="Rallied"
+            className="h-12 w-auto bg-transparent sm:h-14"
+          />
           <a
-            href={inviteHref}
-            className="rounded-brand bg-coral px-5 py-2.5 font-semibold text-slate transition hover:brightness-110"
+            href="/api/auth/discord"
+            className="rounded-brand border border-white/20 px-4 py-2.5 text-base font-medium text-white/90 transition hover:border-coral/50 hover:text-white"
           >
-            Add to Discord
+            Log in
           </a>
-          <a
-            href="#how-it-works"
-            className="rounded-brand border border-white/25 px-5 py-2.5 font-semibold text-white/90 transition hover:border-lime/50 hover:text-lime"
+        </header>
+
+        <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-4 pb-14 pt-2 sm:pb-16">
+          <p className="animate-rise font-display text-5xl leading-none tracking-wide text-white sm:text-7xl md:text-8xl">
+            {BRAND.name}
+          </p>
+          <h1
+            className="animate-rise mt-4 max-w-xl text-xl text-white/90 sm:mt-5 sm:text-2xl"
+            style={{ animationDelay: "60ms" }}
           >
-            Learn more
-          </a>
+            {BRAND.tagline}
+          </h1>
+          <p
+            className="animate-rise mt-2.5 max-w-md text-muted sm:mt-3"
+            style={{ animationDelay: "120ms" }}
+          >
+            Parties, Vibe Check, and Ghostless reliability — scoped to each Discord
+            server. No global shame board.
+          </p>
+
+          <p
+            className="animate-rise mt-5 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm tracking-wide text-white/70 sm:mt-6"
+            style={{ animationDelay: "160ms" }}
+          >
+            {HERO_PILLARS.map((pillar, i) => (
+              <span key={pillar.label} className="inline-flex items-center gap-1.5">
+                {i > 0 ? (
+                  <span className="mr-0.5 text-white/30" aria-hidden>
+                    ·
+                  </span>
+                ) : null}
+                <span
+                  className="animate-hero-pillar inline-flex"
+                  style={{ animationDelay: `${220 + i * 90}ms` }}
+                >
+                  <FeatureStepIcon kind={pillar.icon} variant="bare" />
+                </span>
+                <span>{pillar.label}</span>
+              </span>
+            ))}
+          </p>
+
+          <div
+            className="animate-rise mt-6 flex flex-wrap gap-3 sm:mt-7"
+            style={{ animationDelay: "220ms" }}
+          >
+            <a
+              href={inviteHref}
+              className="rounded-brand bg-coral px-5 py-2.5 font-semibold text-slate transition hover:brightness-110"
+            >
+              Add to Discord
+            </a>
+            <a
+              href="#how-it-works"
+              className="rounded-brand border border-white/25 px-5 py-2.5 font-semibold text-white/90 transition hover:border-lime/50 hover:text-lime"
+            >
+              Learn more
+            </a>
+          </div>
         </div>
       </section>
 

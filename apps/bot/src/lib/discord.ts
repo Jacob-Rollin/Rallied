@@ -43,6 +43,12 @@ export type InteractionResponseMeta = {
   pinHint?: boolean;
   /** After fill/close: ephemeral Vibe Check nudge. */
   vibeNudge?: { partyId: string; game: string };
+  /**
+   * Delete this interaction's ephemeral @original after N ms.
+   * Only clears *this* private note — Discord cannot delete older ephemerals
+   * from a later click (different interaction tokens).
+   */
+  dismissAfterMs?: number;
 };
 
 export type InteractionResponse = {

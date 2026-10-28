@@ -135,6 +135,7 @@ export async function handleButton(
           components: [],
           flags: 64,
         },
+        meta: { dismissAfterMs: 3_000 },
       };
     }
 

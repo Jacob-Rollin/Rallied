@@ -1,29 +1,33 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { DataSourceBanner } from "@/components/DataSourceBanner";
 import { GhostlessBadge } from "@/components/GhostlessBadge";
 import { StrikeBadge } from "@/components/StrikeBadge";
-import {
-  MOCK_GHOSTLESS,
-  getMember,
-  lockoutFor,
-  strikesFor,
-} from "@/lib/mock-data";
+import { loadDashboard, loadPerson } from "@/lib/dashboard-data";
+import { resolveSelectedGuild, withGuildQuery } from "@/lib/guild-context";
 
-type Props = { params: Promise<{ id: string }> };
+type Props = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
-export default async function PersonPage({ params }: Props) {
+export default async function PersonPage({ params, searchParams }: Props) {
   const { id } = await params;
-  const member = getMember(id);
-  if (!member) notFound();
+  const sp = await searchParams;
+  const { guildId, useMock } = await resolveSelectedGuild({ searchParams: sp });
+  const person = await loadPerson(guildId, id, useMock);
+  if (!person) notFound();
 
-  const ghostless = MOCK_GHOSTLESS[member.id] ?? null;
-  const strikes = strikesFor(member.id);
-  const lockout = lockoutFor(member.id);
+  const meta = await loadDashboard(guildId, useMock);
+  const { member, ghostless, strikes, lockout } = person;
 
   return (
     <div className="space-y-8">
       <div>
-        <Link href="/app/people" className="text-sm text-muted hover:text-coral">
+        <Link
+          href={withGuildQuery("/app/people", guildId)}
+          className="text-sm text-muted hover:text-coral"
+        >
           ← People
         </Link>
         <h1 className="mt-2 font-display text-4xl tracking-wide">
@@ -33,6 +37,8 @@ export default async function PersonPage({ params }: Props) {
           Player card · this Discord server only
         </p>
       </div>
+
+      <DataSourceBanner source={meta.source} notice={meta.notice} />
 
       <div className="flex flex-wrap gap-2">
         <GhostlessBadge showRatePct={ghostless?.show_rate_pct ?? null} />

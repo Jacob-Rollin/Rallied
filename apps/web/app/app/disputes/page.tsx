@@ -1,4 +1,6 @@
-import { MOCK_DISPUTES } from "@/lib/mock-data";
+import { DataSourceBanner } from "@/components/DataSourceBanner";
+import { loadDashboard } from "@/lib/dashboard-data";
+import { resolveSelectedGuild } from "@/lib/guild-context";
 
 const STATUS_STYLE: Record<string, string> = {
   open: "border-lime/40 text-lime",
@@ -6,9 +8,16 @@ const STATUS_STYLE: Record<string, string> = {
   overturned: "border-muted/40 text-muted",
 };
 
-export default function DisputesPage() {
-  const open = MOCK_DISPUTES.filter((d) => d.status === "open");
-  const closed = MOCK_DISPUTES.filter((d) => d.status !== "open");
+type Props = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function DisputesPage({ searchParams }: Props) {
+  const sp = await searchParams;
+  const { guildId, useMock } = await resolveSelectedGuild({ searchParams: sp });
+  const data = await loadDashboard(guildId, useMock);
+  const open = data.disputes.filter((d) => d.status === "open");
+  const closed = data.disputes.filter((d) => d.status !== "open");
 
   return (
     <div className="space-y-8">
@@ -20,6 +29,8 @@ export default function DisputesPage() {
           resolve here or with <code className="text-coral">/strikes</code>.
         </p>
       </div>
+
+      <DataSourceBanner source={data.source} notice={data.notice} />
 
       <section className="space-y-3">
         <h2 className="font-display text-xl tracking-wide">Open queue</h2>
@@ -53,7 +64,7 @@ export default function DisputesPage() {
                     type="button"
                     disabled
                     className="cursor-not-allowed rounded-brand border border-lime/30 px-3 py-1.5 text-xs text-lime/60"
-                    title="Wire to Supabase + Discord when env is set"
+                    title="Resolve actions wire later"
                   >
                     Overturn (soon)
                   </button>
@@ -73,23 +84,27 @@ export default function DisputesPage() {
 
       <section className="space-y-3">
         <h2 className="font-display text-xl tracking-wide">Resolved</h2>
-        <ul className="space-y-2">
-          {closed.map((d) => (
-            <li
-              key={d.id}
-              className="flex items-center justify-between gap-3 border-b border-white/5 py-2 text-sm last:border-0"
-            >
-              <span>
-                {d.opener_name} · {d.subject}
-              </span>
-              <span
-                className={`rounded-brand border px-2 py-0.5 text-xs uppercase ${STATUS_STYLE[d.status]}`}
+        {closed.length === 0 ? (
+          <p className="text-sm text-muted">No resolved disputes yet.</p>
+        ) : (
+          <ul className="space-y-2">
+            {closed.map((d) => (
+              <li
+                key={d.id}
+                className="flex items-center justify-between gap-3 border-b border-white/5 py-2 text-sm last:border-0"
               >
-                {d.status}
-              </span>
-            </li>
-          ))}
-        </ul>
+                <span>
+                  {d.opener_name} · {d.subject}
+                </span>
+                <span
+                  className={`rounded-brand border px-2 py-0.5 text-xs uppercase ${STATUS_STYLE[d.status]}`}
+                >
+                  {d.status}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );

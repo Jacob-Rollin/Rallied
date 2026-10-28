@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { AdminGuild } from "@rallied/shared";
 import { buildBotInviteUrl } from "@rallied/shared";
 import { MOCK_SERVERS } from "@/lib/mock-data";
+import { GUILD_COOKIE, GUILD_QUERY } from "@/lib/guild-context";
 
 const NAV = [
   { href: "/app", label: "Overview" },
@@ -24,8 +25,22 @@ type MeResponse = {
   guilds?: AdminGuild[];
 };
 
+function readGuildCookie(): string {
+  if (typeof document === "undefined") return "";
+  const match = document.cookie
+    .split("; ")
+    .find((c) => c.startsWith(`${GUILD_COOKIE}=`));
+  return match ? decodeURIComponent(match.split("=")[1] || "") : "";
+}
+
+function writeGuildCookie(guildId: string) {
+  const maxAge = 60 * 60 * 24 * 30;
+  document.cookie = `${GUILD_COOKIE}=${encodeURIComponent(guildId)}; path=/; max-age=${maxAge}; samesite=lax`;
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [me, setMe] = useState<MeResponse | null>(null);
   const [serverId, setServerId] = useState<string>("");
@@ -35,14 +50,34 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       .then((r) => r.json())
       .then((data: MeResponse) => {
         setMe(data);
+        const fromQuery = searchParams.get(GUILD_QUERY);
+        const fromCookie = readGuildCookie();
         const first =
           data.guilds?.find((g) => g.bot_present)?.id ||
           data.guilds?.[0]?.id ||
           MOCK_SERVERS[0].discord_guild_id;
-        setServerId(first);
+        const next = fromQuery || fromCookie || first;
+        setServerId(next);
+        if (next) writeGuildCookie(next);
+        if (fromQuery !== next) {
+          const params = new URLSearchParams(searchParams.toString());
+          params.set(GUILD_QUERY, next);
+          router.replace(`${pathname}?${params.toString()}`);
+        }
       })
       .catch(() => setMe({ authenticated: false }));
+    // Only on mount / auth load — guild query changes handled by select
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function selectGuild(id: string) {
+    setServerId(id);
+    writeGuildCookie(id);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set(GUILD_QUERY, id);
+    router.push(`${pathname}?${params.toString()}`);
+    router.refresh();
+  }
 
   const guilds: AdminGuild[] =
     me?.guilds && me.guilds.length > 0
@@ -61,11 +96,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     searchParams.get("empty") === "1" ||
     (me?.authenticated && withBot.length === 0 && !me.mock);
 
-  const clientId =
-    process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
+  const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
   const inviteUrl = clientId
     ? buildBotInviteUrl(clientId)
     : "https://discord.com/developers/applications";
+
+  const mockFlag = searchParams.get("mock") === "1";
+
+  function navHref(href: string) {
+    const params = new URLSearchParams();
+    if (server?.id) params.set(GUILD_QUERY, server.id);
+    if (mockFlag) params.set("mock", "1");
+    const q = params.toString();
+    return q ? `${href}?${q}` : href;
+  }
 
   return (
     <div className="min-h-screen">
@@ -86,7 +130,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <select
                   className="rounded-brand border border-white/15 bg-slate-elevated px-2 py-1.5 text-white"
                   value={server?.id ?? ""}
-                  onChange={(e) => setServerId(e.target.value)}
+                  onChange={(e) => selectGuild(e.target.value)}
                 >
                   {guilds.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -101,6 +145,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <span className="hidden text-xs text-muted sm:inline">
                 {me.user.globalName || me.user.username}
                 {me.mock ? " · mock" : ""}
+                {mockFlag ? " · mock preview" : ""}
               </span>
             ) : null}
             <a
@@ -118,7 +163,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <h1 className="font-display text-3xl tracking-wide">No servers yet</h1>
           <p className="mt-3 text-sm text-muted">
             Add Rallied to a Discord server you manage, then refresh. You need
-            Manage Server (or Administrator) on that guild.
+            Manage Server (or Administrator) on that guild. After the bot joins
+            and runs a command, the guild appears in Supabase{" "}
+            <code className="text-coral">servers</code> (
+            <code className="text-coral">bot_present</code>).
           </p>
           <a
             href={inviteUrl}
@@ -138,7 +186,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={navHref(item.href)}
                   className={`rounded-brand px-3 py-2 text-sm transition ${
                     active
                       ? "bg-coral/15 text-coral"

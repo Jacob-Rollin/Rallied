@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { mockAuthEnabled } from "@/lib/auth/config";
+import { getBotPresenceAndPlans } from "@/lib/auth/discord";
 import { getSession, mockSessionPayload } from "@/lib/auth/session";
 
 export async function GET() {
@@ -19,10 +20,32 @@ export async function GET() {
     return NextResponse.json({ authenticated: false }, { status: 401 });
   }
 
+  let guilds = session.guilds ?? [];
+
+  // Refresh bot_present + plan from Discord bot token / Supabase servers
+  // so inviting the bot shows up without forcing a re-login.
+  if (!session.isMock && guilds.length > 0) {
+    try {
+      const { botGuildIds, plans } = await getBotPresenceAndPlans(
+        guilds.map((g) => g.id),
+      );
+      guilds = guilds.map((g) => ({
+        ...g,
+        bot_present:
+          botGuildIds === null ? g.bot_present : botGuildIds.has(g.id),
+        plan: plans.get(g.id) ?? g.plan,
+      }));
+      session.guilds = guilds;
+      await session.save();
+    } catch (err) {
+      console.warn("guild refresh failed", err);
+    }
+  }
+
   return NextResponse.json({
     authenticated: true,
     mock: Boolean(session.isMock),
     user: session.user,
-    guilds: session.guilds ?? [],
+    guilds,
   });
 }

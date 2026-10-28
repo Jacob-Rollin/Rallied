@@ -10,7 +10,7 @@ type Props = {
 
 export default async function PublicPlayerCardPage({ params }: Props) {
   const { slugOrGuildId, discordUserId } = await params;
-  const result = resolvePublicPlayer(slugOrGuildId, discordUserId);
+  const result = await resolvePublicPlayer(slugOrGuildId, discordUserId);
   if (!result) notFound();
 
   const { bundle, member, ghostless, inGoodStanding } = result;

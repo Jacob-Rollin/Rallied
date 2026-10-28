@@ -32,7 +32,9 @@ npm run dev:web
 # → http://localhost:3000
 ```
 
-- No Supabase env → mock LFG / People / Disputes / Settings / **public pages**
+- No Supabase **service role** → `/app` shows empty live states (or mock for demo guilds); public `/s/demo-*` stays mock
+- Real guild (e.g. Official Rallied) + `SUPABASE_SERVICE_ROLE_KEY` → Overview / LFG / People / Disputes / Analytics / Settings / Billing read live rows
+- Demo: `/s/demo-esports`, mock auth guilds, or `/app?mock=1` keep mock UI
 - No Discord OAuth env (or `MOCK_AUTH=1`) → visiting `/app` or **Log in with Discord** seeds a mock admin session
 - Real OAuth: set `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URI`, `SESSION_SECRET` (≥32 chars)
 
@@ -141,18 +143,22 @@ Monorepo: wrangler must target **`apps/web`**, not the repo root (or you get “
 | Non-production deploy (optional) | `cd apps/web && npx wrangler versions upload` |
 | Node | Pin **22** via Build variable `NODE_VERSION=22` (repo also has `.nvmrc`; Wrangler requires ≥22) |
 
-Runtime / build secrets for the **web** Worker (not the bot):
+Runtime / build secrets for the **web** Worker (not the bot) — set in CF dashboard, then redeploy:
 
-- `NEXT_PUBLIC_DISCORD_CLIENT_ID`
-- `DISCORD_CLIENT_ID`
-- `DISCORD_CLIENT_SECRET`
-- `DISCORD_REDIRECT_URI` (production callback, e.g. `https://your-domain/api/auth/callback`)
-- `SESSION_SECRET` (≥32 chars)
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `NEXT_PUBLIC_APP_URL` (canonical site URL)
+| Var | Required | Notes |
+| --- | --- | --- |
+| `NEXT_PUBLIC_DISCORD_CLIENT_ID` | yes | OAuth / invite button |
+| `DISCORD_CLIENT_ID` | yes | OAuth |
+| `DISCORD_CLIENT_SECRET` | yes | Secret |
+| `DISCORD_REDIRECT_URI` | yes | e.g. `https://your-domain/api/auth/callback` |
+| `SESSION_SECRET` | yes | ≥32 chars |
+| `NEXT_PUBLIC_APP_URL` | yes | Canonical site URL |
+| `NEXT_PUBLIC_SUPABASE_URL` | yes (live) | Project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes (live) | Public; RLS still blocks table reads |
+| `SUPABASE_SERVICE_ROLE_KEY` | **yes for live /app** | Secret — server-only dashboard + public `/s/[real]` reads |
+| `DISCORD_BOT_TOKEN` | optional | `bot_present` via Discord API; else uses `servers` rows |
 
-Optional web: `DISCORD_BOT_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`. Bot secrets stay on the **bot** Worker (`apps/bot/wrangler.toml`).
+Bot secrets stay on the **bot** Worker (`apps/bot/wrangler.toml`). After bot joins a guild and runs a slash command, a `servers` row appears → web marks `bot_present` and loads that guild’s data.
 
 `keep_vars = true` in `apps/web/wrangler.toml` (and the bot Worker) so dashboard Runtime variables/secrets survive each `wrangler deploy`. Plaintext public values may live in `[vars]`; secrets stay in dashboard **Secrets**. Without `keep_vars`, CI deploy clears dashboard bindings not listed in the toml.
 

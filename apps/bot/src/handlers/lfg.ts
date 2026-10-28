@@ -21,7 +21,6 @@ import {
   lfgCreateGameSelectMessage,
   lfgDeskMessage,
   lfgFindEmptyMessage,
-  lfgFindGameSelectMessage,
   lfgFindMessage,
   lfgHowItWorksMessage,
   lfgMyPartiesMessage,
@@ -370,10 +369,15 @@ export async function handleLfgDeskComponent(
   }
 
   if (action === "find") {
-    return {
-      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-      data: lfgFindGameSelectMessage(),
-    };
+    // One tap: list open parties (no intermediate filter select — that path
+    // was failing interactions on mobile after the sync Create fix).
+    return findParties({
+      sb,
+      guildId: interaction.guild_id,
+      discordUserId: user.id,
+      displayName: displayName(interaction),
+      gameFilter: null,
+    });
   }
 
   if (action === "help") {

@@ -24,7 +24,6 @@ import {
 import {
   lfgCreateGameSelectMessage,
   lfgCreateModalResponse,
-  lfgFindGameSelectMessage,
   lfgHowItWorksMessage,
 } from "./lib/embeds.js";
 import { handleAutocomplete } from "./handlers/autocomplete.js";
@@ -92,12 +91,7 @@ function syncComponentResponse(interaction: Interaction) {
       data: lfgCreateGameSelectMessage(),
     };
   }
-  if (customId === "lfg:desk:find") {
-    return {
-      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-      data: lfgFindGameSelectMessage(),
-    };
-  }
+  // desk:find needs Supabase — handled via defer (lists all open parties).
   if (customId === "lfg:desk:help") {
     return {
       type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,

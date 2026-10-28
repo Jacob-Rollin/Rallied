@@ -488,9 +488,9 @@ export function lfgCreateGameSelectMessage() {
   const options = [
     ...catalogSelectOptions(CREATE_GAME_SLOTS),
     {
-      label: "Other… (type game next)",
+      label: "Other (type game next)",
       value: LFG_OTHER_GAME,
-      description: "Niche title — enter free text in the form",
+      description: "Niche title - type it in the form",
     },
   ];
 
@@ -505,7 +505,7 @@ export function lfgCreateGameSelectMessage() {
           {
             type: 3,
             custom_id: "lfg:creategame",
-            placeholder: "Select a game…",
+            placeholder: "Select a game...",
             min_values: 1,
             max_values: 1,
             options,
@@ -522,7 +522,6 @@ export function lfgFindGameSelectMessage() {
     {
       label: "All games",
       value: LFG_ALL_GAMES,
-      description: "Show every open party in this server",
     },
     ...catalogSelectOptions(FIND_GAME_SLOTS),
   ];
@@ -537,7 +536,7 @@ export function lfgFindGameSelectMessage() {
           {
             type: 3,
             custom_id: "lfg:findgame",
-            placeholder: "Filter by game…",
+            placeholder: "Filter by game...",
             min_values: 1,
             max_values: 1,
             options,

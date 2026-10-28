@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { GhostlessLogo } from "@/components/GhostlessMark";
+import { GhostlessMark } from "@/components/GhostlessMark";
 import { PublicGhostlessCard } from "@/components/PublicGhostlessCard";
 import {
   discordPartyDeepLink,
@@ -146,9 +146,9 @@ export default async function PublicServerPage({ params }: Props) {
         </section>
 
         <section>
-          <h2 className="flex items-center gap-2 font-display text-xl tracking-wide">
-            <GhostlessLogo className="h-6 w-6" alt="" />
-            Ghostless spotlight
+          <h2 className="flex items-center gap-2 font-display text-xl tracking-wide text-lime">
+            <GhostlessMark size="lg" />
+            <span className="text-white">Ghostless spotlight</span>
           </h2>
           <p className="mt-1 text-sm text-muted">
             Top reliable players in this server.

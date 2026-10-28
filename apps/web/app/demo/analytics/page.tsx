@@ -22,6 +22,9 @@ export default async function DemoAnalyticsPage() {
       <DemoAnalyticsClient
         serverName={name}
         trend={data.analyticsTrend}
+        priorTrend={data.analyticsTrendPrior}
+        extras={data.analyticsExtras}
+        topPlayers={data.analyticsTopPlayers}
         sourceLabel={data.source}
       />
     </div>

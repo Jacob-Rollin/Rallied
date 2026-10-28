@@ -32,8 +32,9 @@ function webhookBase(env: BotEnv, interaction: Interaction): string {
 export function shouldUpdateComponentMessage(interaction: Interaction): boolean {
   if (interaction.type !== InteractionType.MESSAGE_COMPONENT) return false;
   const id = interaction.data?.custom_id ?? "";
+  // findgame uses a fresh ephemeral (type 5) — type 6 update was flaky on mobile
+  // after the sync Find picker and showed "This interaction failed".
   return (
-    id === "lfg:findgame" ||
     id === "lfg:joinselect" ||
     id.startsWith("lfg:closeconfirm:") ||
     id.startsWith("lfg:closecancel:")
@@ -244,16 +245,27 @@ export async function deliverDeferredResponse(
   let postedMessage: { id: string; channel_id?: string } | null = null;
 
   if (shouldUpdateComponentMessage(interaction)) {
-    postedMessage = await editOriginalResponse(env, interaction, {
+    const updateBody = {
       content: data.content ?? "Done.",
       embeds: data.embeds ?? [],
       components: data.components ?? [],
-    });
+    };
+    postedMessage = await editOriginalResponse(env, interaction, updateBody);
+    if (!postedMessage) {
+      // Don't leave Discord spinning — fall back to a new ephemeral note.
+      await createFollowupMessage(env, interaction, {
+        ...updateBody,
+        flags: EPHEMERAL_FLAG,
+      });
+    }
   } else {
     const wantsEphemeral = isEphemeralData(data);
 
     if (deferredEphemeral === wantsEphemeral) {
       postedMessage = await editOriginalResponse(env, interaction, data);
+      if (!postedMessage && wantsEphemeral) {
+        await createFollowupMessage(env, interaction, data);
+      }
     } else if (!deferredEphemeral && wantsEphemeral) {
       await deleteOriginalResponse(env, interaction);
       await createFollowupMessage(env, interaction, data);

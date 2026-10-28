@@ -31,39 +31,47 @@ export interface Embed {
 export const CORAL = parseInt(BRAND.colors.coral.replace("#", ""), 16);
 export const LIME = parseInt(BRAND.colors.ghostlessLime.replace("#", ""), 16);
 
-/** Join / Leave / Close / Vibe actions on a public party embed. */
-export function lfgPartyComponents(partyId: string) {
-  return [
-    {
-      type: 1,
-      components: [
-        {
-          type: 2,
-          style: 3,
-          label: "Join",
-          custom_id: `lfg:join:${partyId}`,
-        },
-        {
-          type: 2,
-          style: 2,
-          label: "Leave",
-          custom_id: `lfg:leave:${partyId}`,
-        },
-        {
-          type: 2,
-          style: 4,
-          label: "Close",
-          custom_id: `lfg:close:${partyId}`,
-        },
-        {
-          type: 2,
-          style: 1,
-          label: "Vibe Check",
-          custom_id: `lfg:vibe:${partyId}`,
-        },
-      ],
-    },
-  ];
+/** Join / Leave / Close / Vibe — Join hidden when filled/closed. */
+export function lfgPartyComponents(
+  partyId: string,
+  status: "open" | "filled" | "closed" = "open",
+) {
+  const row: unknown[] = [];
+
+  if (status === "open") {
+    row.push({
+      type: 2,
+      style: 3,
+      label: "Join",
+      custom_id: `lfg:join:${partyId}`,
+    });
+  }
+
+  if (status === "open" || status === "filled") {
+    row.push(
+      {
+        type: 2,
+        style: 2,
+        label: "Leave",
+        custom_id: `lfg:leave:${partyId}`,
+      },
+      {
+        type: 2,
+        style: 4,
+        label: "Close",
+        custom_id: `lfg:close:${partyId}`,
+      },
+    );
+  }
+
+  row.push({
+    type: 2,
+    style: 1,
+    label: "Vibe Check",
+    custom_id: `lfg:vibe:${partyId}`,
+  });
+
+  return [{ type: 1, components: row.slice(0, 5) }];
 }
 
 export function lfgPartyEmbed(opts: {
@@ -75,34 +83,57 @@ export function lfgPartyEmbed(opts: {
   hostMention: string;
   partyId: string;
   ghostlessLabel?: string | null;
+  members?: { mention: string; role: string }[];
+  threadId?: string | null;
+  status?: "open" | "filled" | "closed";
 }): Embed {
+  const status = opts.status ?? "open";
+  const titlePrefix =
+    status === "filled" ? "Filled" : status === "closed" ? "Closed" : "LFG";
+  const roster =
+    opts.members && opts.members.length > 0
+      ? opts.members
+          .map((m) =>
+            m.role === "host" ? `${m.mention} (host)` : m.mention,
+          )
+          .join("\n")
+          .slice(0, 1024)
+      : opts.hostMention;
+
+  const fields: EmbedField[] = [
+    { name: "Notes", value: opts.rankText || "Any", inline: true },
+    {
+      name: "Slots",
+      value: `${opts.filled}/${opts.slots}`,
+      inline: true,
+    },
+    {
+      name: "Ghostless",
+      value: opts.ghostlessLabel ?? "New in this server",
+      inline: true,
+    },
+    { name: "Squad", value: roster, inline: false },
+  ];
+
+  if (opts.threadId) {
+    fields.push({
+      name: "Squad chat",
+      value: `<#${opts.threadId}> — hop in to share codes / VC`,
+      inline: false,
+    });
+  }
+
   return {
-    title: `LFG · ${opts.game}`,
-    color: CORAL,
-    fields: [
-      { name: "Rank", value: opts.rankText || "Any", inline: true },
-      {
-        name: "Slots",
-        value: `${opts.filled}/${opts.slots}`,
-        inline: true,
-      },
-      {
-        name: "Host",
-        value: `${opts.hostMention} (${opts.hostName})`,
-        inline: true,
-      },
-      {
-        name: "Ghostless",
-        value: opts.ghostlessLabel ?? "New in this server",
-        inline: true,
-      },
-      {
-        name: "Party id",
-        value: `\`${opts.partyId}\``,
-        inline: false,
-      },
-    ],
-    footer: { text: "Rallied · this server only" },
+    title: `${titlePrefix} · ${opts.game}`,
+    color: status === "closed" ? 0x6b7280 : status === "filled" ? LIME : CORAL,
+    description:
+      status === "open"
+        ? "Tap **Join**, then coordinate in the squad thread."
+        : status === "filled"
+          ? "Party full — Leave frees a slot; Close when you're done."
+          : "Party closed. Use **Vibe Check** to rate teammates.",
+    fields,
+    footer: { text: `Rallied · this server only · \`${opts.partyId.slice(0, 8)}\`` },
     timestamp: new Date().toISOString(),
   };
 }
@@ -150,6 +181,86 @@ export function lfgFindMessage(opts: {
     content: `${header}\n${opts.lines.join("\n")}`,
     flags: 64,
     components,
+  };
+}
+
+/** Empty find — nudge Create instead of a dead end. */
+export function lfgFindEmptyMessage(gameFilter?: string | null) {
+  const line = gameFilter
+    ? `No open **${gameFilter}** parties in this server.`
+    : "No open LFG parties in this server.";
+  return {
+    content: `${line}\nStart one?`,
+    flags: 64,
+    components: [
+      {
+        type: 1,
+        components: [
+          {
+            type: 2,
+            style: 3,
+            label: "Create party",
+            custom_id: "lfg:desk:create",
+          },
+        ],
+      },
+    ],
+  };
+}
+
+/** Ephemeral confirm before closing a party. */
+export function lfgCloseConfirmMessage(partyId: string, game: string) {
+  return {
+    content: `Close **${game}** party? This can't be undone.`,
+    flags: 64,
+    components: [
+      {
+        type: 1,
+        components: [
+          {
+            type: 2,
+            style: 4,
+            label: "Confirm close",
+            custom_id: `lfg:closeconfirm:${partyId}`,
+          },
+          {
+            type: 2,
+            style: 2,
+            label: "Cancel",
+            custom_id: `lfg:closecancel:${partyId}`,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+/** After fill/close — nudge into Vibe Check. */
+export function lfgVibeNudgeMessage(partyId: string, game: string) {
+  return {
+    content: `**${game}** session wrapping up — rate your teammates?`,
+    flags: 64,
+    components: [
+      {
+        type: 1,
+        components: [
+          {
+            type: 2,
+            style: 1,
+            label: "Vibe Check",
+            custom_id: `lfg:vibe:${partyId}`,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+export function lfgDeskPinHintMessage() {
+  return {
+    content:
+      "Desk posted. **Long-press → Pin** so it stays at the top of this channel (use `#lfg-board` if you have one).",
+    flags: 64,
   };
 }
 
@@ -431,8 +542,7 @@ export function lfgFindGameSelectMessage() {
 
 /**
  * Immediate MODAL response (type 9) — must not be deferred.
- * `game` is a catalog name, or LFG_OTHER_GAME to collect free-text game
- * (desk Create always uses the free-text path; aliases like `val` normalize).
+ * Catalog pick → size + notes only. Other… → free-text game + size + notes.
  */
 export function lfgCreateModalResponse(game: string) {
   const isOther = game === LFG_OTHER_GAME;
@@ -453,7 +563,7 @@ export function lfgCreateModalResponse(game: string) {
           required: true,
           min_length: 1,
           max_length: 80,
-          placeholder: "Valorant, val, lol, Lethal Company…",
+          placeholder: "Lethal Company, custom title…",
         },
       ],
     });
@@ -505,10 +615,10 @@ export function lfgHowItWorksMessage() {
   return {
     content: [
       "**How Rallied LFG works** (this server only)",
-      "• **Create party** — form for game, size, optional notes → posts a party card with Join / Leave / Close / Vibe Check.",
-      "• **Find party** — filter by game (or all) → tap a party to join (the filter message updates in place).",
-      "• **My parties** — see parties you're in; hosts can Close.",
-      "• After the session, use **Vibe Check** on the party card (or `/vibe @user`).",
+      "• **Create party** — pick a game from the list → size/notes form → party card + **squad thread**.",
+      "• **Join** — your name lands on the Squad list; open the thread to coordinate (no manual friend-adds required).",
+      "• **Find party** — filter by game → tap to join.",
+      "• **My parties** — hosts Confirm-close when done; then **Vibe Check** teammates.",
       "Slash backups: `/lfg create` · `/lfg find` · `/vibe`",
     ].join("\n"),
     flags: 64,

@@ -35,10 +35,26 @@ export type InteractionMessageData = {
   [key: string]: unknown;
 };
 
+/** Bot-only delivery hints — stripped before Discord API calls. */
+export type InteractionResponseMeta = {
+  /** After public party post: save message ids + start squad thread. */
+  persistPartyMessage?: { partyId: string };
+  /** After /setup or /lfg desk: ephemeral pin tip. */
+  pinHint?: boolean;
+  /** After fill/close: ephemeral Vibe Check nudge. */
+  vibeNudge?: { partyId: string; game: string };
+};
+
 export type InteractionResponse = {
   type: number;
   data?: InteractionMessageData;
+  meta?: InteractionResponseMeta;
 };
+
+export interface InteractionMessageRef {
+  id: string;
+  channel_id?: string;
+}
 
 export interface DiscordUser {
   id: string;
@@ -97,6 +113,8 @@ export interface Interaction {
   member?: DiscordMember;
   user?: DiscordUser;
   data?: ApplicationCommandInteractionData;
+  /** Present on MESSAGE_COMPONENT — the message the button/select lives on. */
+  message?: InteractionMessageRef;
 }
 
 export function ephemeral(content: string) {

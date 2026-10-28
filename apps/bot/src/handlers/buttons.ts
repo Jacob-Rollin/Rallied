@@ -15,6 +15,7 @@ import {
   handleLfgDeskComponent,
   joinParty,
   leaveParty,
+  promptCloseParty,
 } from "./lfg.js";
 import { recordVibe } from "./vibe.js";
 import { ensureServerAndMember } from "../lib/supabase.js";
@@ -26,10 +27,10 @@ import { ensureServerAndMember } from "../lib/supabase.js";
  *   vibe:pick:<partyId>                   (+ values[0] = ratee member id)
  *   dispute:open:<partyId>:<rateeMemberId>
  *   lfg:join|leave|close|vibe:<partyId>
+ *   lfg:closeconfirm|closecancel:<partyId>
  *   lfg:joinselect                        (+ values[0] = party id)
  *   lfg:desk:create|find|mine|help
- *   lfg:creategame                        (+ values[0] = game | __other__) — sync modal elsewhere
- *   lfg:findgame                          (+ values[0] = game | __all__)
+ *   lfg:creategame / lfg:findgame
  */
 export async function handleButton(
   interaction: Interaction,
@@ -47,6 +48,14 @@ export async function handleButton(
   const parts = customId.split(":");
   const [ns, action, partyId, rateeMemberId] = parts;
   const selected = interaction.data?.values?.[0];
+  const messageFallback = interaction.message
+    ? {
+        channelId: interaction.message.channel_id ?? interaction.channel_id,
+        messageId: interaction.message.id,
+      }
+    : interaction.channel_id
+      ? { channelId: interaction.channel_id }
+      : undefined;
 
   if (ns === "lfg") {
     if (action === "desk") {
@@ -61,28 +70,44 @@ export async function handleButton(
     if (action === "joinselect" && selected) {
       return joinParty({
         sb,
+        env,
         guildId: interaction.guild_id,
         partyId: selected,
         discordUserId: user.id,
         displayName: displayName(interaction),
         avatarUrl: null,
+        messageFallback,
       });
     }
 
     if (action === "join" && partyId) {
       return joinParty({
         sb,
+        env,
         guildId: interaction.guild_id,
         partyId,
         discordUserId: user.id,
         displayName: displayName(interaction),
         avatarUrl: null,
+        messageFallback,
       });
     }
 
     if (action === "leave" && partyId) {
       return leaveParty({
         sb,
+        env,
+        guildId: interaction.guild_id,
+        partyId,
+        discordUserId: user.id,
+        displayName: displayName(interaction),
+        messageFallback,
+      });
+    }
+
+    if (action === "close" && partyId) {
+      return promptCloseParty({
+        sb,
         guildId: interaction.guild_id,
         partyId,
         discordUserId: user.id,
@@ -90,14 +115,27 @@ export async function handleButton(
       });
     }
 
-    if (action === "close" && partyId) {
+    if (action === "closeconfirm" && partyId) {
       return closePartyById({
         sb,
+        env,
         guildId: interaction.guild_id,
         partyId,
         discordUserId: user.id,
         displayName: displayName(interaction),
+        messageFallback,
       });
+    }
+
+    if (action === "closecancel" && partyId) {
+      return {
+        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+        data: {
+          content: "Close cancelled — party still open.",
+          components: [],
+          flags: 64,
+        },
+      };
     }
 
     if (action === "vibe" && partyId) {

@@ -517,7 +517,16 @@ export async function loadDashboard(
   if (useMock || isDemoGuildId(guildId)) {
     return buildMockBundle(guildId);
   }
-  return loadLiveBundle(guildId);
+  try {
+    return await loadLiveBundle(guildId);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("loadDashboard live failed", msg, err);
+    return emptyBundle(
+      guildId,
+      `Dashboard error: ${msg}. Try ?mock=1 or check SUPABASE_SERVICE_ROLE_KEY / SESSION_SECRET on the web Worker.`,
+    );
+  }
 }
 
 export async function loadPerson(

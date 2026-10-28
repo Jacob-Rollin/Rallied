@@ -52,7 +52,7 @@ function Glyph({ kind }: { kind: FeatureIconKind }) {
 export function FeatureStepIcon({ kind, className = "" }: Props) {
   return (
     <span
-      className={`feature-step-icon inline-flex h-7 w-7 shrink-0 items-center justify-center rounded border bg-black/25 ${accents[kind]} ${className}`}
+      className={`feature-step-icon inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border bg-black/25 ${accents[kind]} ${className}`}
       aria-hidden
     >
       <Glyph kind={kind} />

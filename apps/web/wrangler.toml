@@ -21,13 +21,22 @@ binding = "ASSETS"
 # binding = "NEXT_INC_CACHE_R2_BUCKET"
 # bucket_name = "rallied-web-cache"
 
-# Secrets / vars (set in Cloudflare dashboard → Settings → Variables and Secrets):
-# NEXT_PUBLIC_DISCORD_CLIENT_ID
-# DISCORD_CLIENT_ID
-# DISCORD_CLIENT_SECRET
-# DISCORD_REDIRECT_URI
-# SESSION_SECRET
-# NEXT_PUBLIC_SUPABASE_URL
-# NEXT_PUBLIC_SUPABASE_ANON_KEY
-# NEXT_PUBLIC_APP_URL
-# Optional: DISCORD_BOT_TOKEN, SUPABASE_SERVICE_ROLE_KEY
+# Secrets / vars (Cloudflare dashboard → Worker → Settings → Variables and Secrets).
+# Redeploy after setting so OpenNext/runtime picks them up.
+#
+# Required for OAuth + session:
+#   NEXT_PUBLIC_DISCORD_CLIENT_ID
+#   DISCORD_CLIENT_ID
+#   DISCORD_CLIENT_SECRET
+#   DISCORD_REDIRECT_URI
+#   SESSION_SECRET
+#   NEXT_PUBLIC_APP_URL
+#
+# Required for live dashboard (real guild → Supabase):
+#   NEXT_PUBLIC_SUPABASE_URL
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY   (public; RLS still denies table reads)
+#   SUPABASE_SERVICE_ROLE_KEY      (SECRET — server-only admin reads; never NEXT_PUBLIC_)
+#
+# Optional bot_present detection:
+#   DISCORD_BOT_TOKEN              (SECRET — bot guild list)
+#   Without it, web uses `servers.discord_guild_id` via service role after bot upserts.

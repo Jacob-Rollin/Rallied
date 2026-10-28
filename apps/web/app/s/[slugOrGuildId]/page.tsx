@@ -11,7 +11,7 @@ type Props = { params: Promise<{ slugOrGuildId: string }> };
 
 export default async function PublicServerPage({ params }: Props) {
   const { slugOrGuildId } = await params;
-  const bundle = resolvePublicServer(slugOrGuildId);
+  const bundle = await resolvePublicServer(slugOrGuildId);
   if (!bundle) notFound();
 
   const {

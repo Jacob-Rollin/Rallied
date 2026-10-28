@@ -1,43 +1,66 @@
 import Link from "next/link";
-import { MOCK_PARTIES, MOCK_MEMBERS, MOCK_STRIKES } from "@/lib/mock-data";
-import { hasSupabaseEnv } from "@/lib/supabase";
+import { DataSourceBanner } from "@/components/DataSourceBanner";
+import { loadDashboard } from "@/lib/dashboard-data";
+import { resolveSelectedGuild, withGuildQuery } from "@/lib/guild-context";
 
-export default function OverviewPage() {
-  const open = MOCK_PARTIES.filter((p) => p.status === "open").length;
-  const strikes = MOCK_STRIKES.filter((s) => s.active).length;
+type Props = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function OverviewPage({ searchParams }: Props) {
+  const sp = await searchParams;
+  const { guildId, useMock } = await resolveSelectedGuild({ searchParams: sp });
+  const data = await loadDashboard(guildId, useMock);
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="font-display text-3xl tracking-wide">Overview</h1>
         <p className="mt-1 text-sm text-muted">
-          {hasSupabaseEnv()
-            ? "Connected to Supabase (anon). Tighten RLS before production."
-            : "Mock data — set NEXT_PUBLIC_SUPABASE_* to load live rows."}
+          {data.server?.name ?? "Selected server"} · Discord guild{" "}
+          <code className="text-coral/80">{guildId}</code>
         </p>
       </div>
 
+      <DataSourceBanner source={data.source} notice={data.notice} />
+
       <div className="grid gap-4 sm:grid-cols-3">
         {[
-          { label: "Open parties", value: open, href: "/app/lfg" },
-          { label: "Members", value: MOCK_MEMBERS.length, href: "/app/people" },
-          { label: "Active strikes", value: strikes, href: "/app/people" },
+          {
+            label: "Open parties",
+            value: data.openPartyCount,
+            href: withGuildQuery("/app/lfg", guildId),
+          },
+          {
+            label: "Members",
+            value: data.memberCount,
+            href: withGuildQuery("/app/people", guildId),
+          },
+          {
+            label: "Active strikes",
+            value: data.activeStrikeCount,
+            href: withGuildQuery("/app/people", guildId),
+          },
         ].map((kpi) => (
           <Link
             key={kpi.label}
             href={kpi.href}
             className="animate-rise rounded-brand border border-white/10 bg-slate-elevated/60 p-4 transition hover:border-coral/40"
           >
-            <p className="text-xs uppercase tracking-wider text-muted">{kpi.label}</p>
+            <p className="text-xs uppercase tracking-wider text-muted">
+              {kpi.label}
+            </p>
             <p className="mt-2 font-display text-4xl text-white">{kpi.value}</p>
           </Link>
         ))}
       </div>
 
-      <p className="text-sm text-muted">
-        Phase 1 dashboard: LFG board, people (Ghostless + strikes this server),
-        settings + billing placeholder. Disputes and analytics come later.
-      </p>
+      {data.source === "live" && data.openPartyCount === 0 ? (
+        <p className="text-sm text-muted">
+          No open parties yet — create one with{" "}
+          <code className="text-coral">/lfg create</code> in Discord.
+        </p>
+      ) : null}
     </div>
   );
 }

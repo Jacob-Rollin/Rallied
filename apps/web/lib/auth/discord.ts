@@ -83,26 +83,74 @@ export function canManageGuild(guild: DiscordOAuthGuild): boolean {
 }
 
 /**
- * Filter to guilds the user can manage AND where the bot is present.
- * Bot presence: DISCORD_BOT_TOKEN → GET /users/@me/guilds as bot,
- * or fall back to rows in `servers` when Supabase is configured.
+ * Filter to guilds the user can manage; mark bot_present + plan.
+ * Bot presence (in order):
+ * 1. DISCORD_BOT_TOKEN → GET /users/@me/guilds as the bot
+ * 2. Else Supabase `servers.discord_guild_id` (bot upserts on first slash command)
+ * 3. Else null → treat all manageable as present (local stub without env)
  */
 export async function filterAdminGuilds(
   guilds: DiscordOAuthGuild[],
 ): Promise<AdminGuild[]> {
   const manageable = guilds.filter(canManageGuild);
   const botGuildIds = await getBotGuildIds();
+  const plans = await fetchPlansForGuilds(manageable.map((g) => g.id));
 
   return manageable.map((g) => ({
     id: g.id,
     name: g.name,
     icon: g.icon,
     bot_present: botGuildIds === null ? true : botGuildIds.has(g.id),
-    plan: undefined,
+    plan: plans.get(g.id),
   }));
 }
 
-/** Returns null if bot token missing (treat all manageable as present for stub UX). */
+async function fetchPlansForGuilds(
+  guildIds: string[],
+): Promise<Map<string, AdminGuild["plan"]>> {
+  const map = new Map<string, AdminGuild["plan"]>();
+  if (guildIds.length === 0) return map;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return map;
+  try {
+    const q = encodeURIComponent(`in.(${guildIds.join(",")})`);
+    const res = await fetch(
+      `${url}/rest/v1/servers?select=discord_guild_id,plan&discord_guild_id=${q}`,
+      {
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+        },
+      },
+    );
+    if (!res.ok) return map;
+    const rows = (await res.json()) as {
+      discord_guild_id: string;
+      plan: AdminGuild["plan"];
+    }[];
+    for (const r of rows) map.set(r.discord_guild_id, r.plan);
+  } catch {
+    /* ignore */
+  }
+  return map;
+}
+
+/** Refresh helpers for /api/auth/me — bot_present set + plan map. */
+export async function getBotPresenceAndPlans(guildIds: string[]): Promise<{
+  botGuildIds: Set<string> | null;
+  plans: Map<string, AdminGuild["plan"]>;
+}> {
+  const [botGuildIds, plans] = await Promise.all([
+    getBotGuildIds(),
+    fetchPlansForGuilds(guildIds),
+  ]);
+  return { botGuildIds, plans };
+}
+
+/** Returns null if detection unavailable (stub: treat manageable as present). */
 async function getBotGuildIds(): Promise<Set<string> | null> {
   const token = process.env.DISCORD_BOT_TOKEN;
   if (!token) {
@@ -127,6 +175,11 @@ async function getBotGuildIds(): Promise<Set<string> | null> {
   }
 }
 
+/**
+ * Guilds where the bot has upserted a `servers` row.
+ * Prefer SUPABASE_SERVICE_ROLE_KEY (RLS denies anon). Returns empty Set when
+ * query succeeds with zero rows; null only when env/query unavailable.
+ */
 async function getInstalledGuildIdsFromSupabase(): Promise<Set<string> | null> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const key =
@@ -144,10 +197,14 @@ async function getInstalledGuildIdsFromSupabase(): Promise<Set<string> | null> {
         },
       },
     );
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn("servers guild list failed", res.status);
+      return null;
+    }
     const rows = (await res.json()) as { discord_guild_id: string }[];
     return new Set(rows.map((r) => r.discord_guild_id));
-  } catch {
+  } catch (err) {
+    console.warn("servers guild list error", err);
     return null;
   }
 }

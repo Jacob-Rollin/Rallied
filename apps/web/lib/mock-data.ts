@@ -316,3 +316,21 @@ export const MOCK_ANALYTICS_TREND = [
   { day: "Sat", parties: 14, vibes: 40, ghosts: 4 },
   { day: "Sun", parties: 9, vibes: 25, ghosts: 1 },
 ];
+
+/** Prior 7 days — for week-over-week deltas in Pro analytics. */
+export const MOCK_ANALYTICS_TREND_PRIOR = [
+  { day: "Mon", parties: 3, vibes: 10, ghosts: 2 },
+  { day: "Tue", parties: 5, vibes: 14, ghosts: 1 },
+  { day: "Wed", parties: 4, vibes: 11, ghosts: 1 },
+  { day: "Thu", parties: 6, vibes: 16, ghosts: 2 },
+  { day: "Fri", parties: 9, vibes: 24, ghosts: 3 },
+  { day: "Sat", parties: 11, vibes: 32, ghosts: 5 },
+  { day: "Sun", parties: 7, vibes: 20, ghosts: 2 },
+];
+
+/** Soft Pro extras (demo / mock only). */
+export const MOCK_ANALYTICS_EXTRAS = {
+  showRatePct: 91.2,
+  avgVibe: 4.3,
+  readyCheckCompletionPct: 86,
+};

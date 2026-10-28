@@ -29,6 +29,8 @@ export default async function AnalyticsPage({ searchParams }: Props) {
         serverName={name}
         plan={plan}
         trend={data.analyticsTrend}
+        priorTrend={data.analyticsTrendPrior}
+        extras={data.analyticsExtras}
         billingHref={withGuildQuery("/app/billing", guildId)}
         sourceLabel={data.source}
       />

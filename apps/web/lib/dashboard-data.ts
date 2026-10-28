@@ -13,7 +13,9 @@ import type {
   Strike,
 } from "@rallied/shared";
 import {
+  MOCK_ANALYTICS_EXTRAS,
   MOCK_ANALYTICS_TREND,
+  MOCK_ANALYTICS_TREND_PRIOR,
   MOCK_DISPUTES,
   MOCK_FOUNDING_SETTINGS,
   MOCK_GHOSTLESS,
@@ -65,6 +67,12 @@ export type AnalyticsTrendPoint = {
   ghosts: number;
 };
 
+export type AnalyticsExtras = {
+  showRatePct: number | null;
+  avgVibe: number | null;
+  readyCheckCompletionPct: number | null;
+};
+
 export type DashboardSource = "live" | "mock" | "empty";
 
 export type DashboardBundle = {
@@ -81,6 +89,9 @@ export type DashboardBundle = {
   activeStrikeCount: number;
   disputes: DashboardDispute[];
   analyticsTrend: AnalyticsTrendPoint[];
+  /** Prior 7 days when available (mock / later live). */
+  analyticsTrendPrior: AnalyticsTrendPoint[];
+  analyticsExtras: AnalyticsExtras | null;
   notice: string | null;
 };
 
@@ -180,6 +191,8 @@ function buildMockBundle(guildId: string): DashboardBundle {
     activeStrikeCount,
     disputes,
     analyticsTrend: MOCK_ANALYTICS_TREND,
+    analyticsTrendPrior: MOCK_ANALYTICS_TREND_PRIOR,
+    analyticsExtras: MOCK_ANALYTICS_EXTRAS,
     notice: "Demo / mock data — not a live guild.",
   };
 }
@@ -202,6 +215,8 @@ function emptyBundle(
     activeStrikeCount: 0,
     disputes: [],
     analyticsTrend: [],
+    analyticsTrendPrior: [],
+    analyticsExtras: null,
     notice,
   };
 }
@@ -502,6 +517,8 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
     activeStrikeCount,
     disputes,
     analyticsTrend: [...dayBuckets.values()],
+    analyticsTrendPrior: [],
+    analyticsExtras: null,
     notice: null,
   };
 }

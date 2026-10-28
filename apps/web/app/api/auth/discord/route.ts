@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { discordOAuthConfigured, mockAuthEnabled } from "@/lib/auth/config";
+import {
+  discordOAuthConfigured,
+  mockAuthEnabled,
+  oauthMissingKeys,
+} from "@/lib/auth/config";
 import { buildAuthorizeUrl } from "@/lib/auth/discord";
 import { getSession, mockSessionPayload } from "@/lib/auth/session";
 
@@ -10,9 +14,19 @@ function randomHex(byteLength: number): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-/** Start Discord OAuth — or seed mock session when secrets missing / MOCK_AUTH=1. */
-export async function GET() {
+function appOrigin(req: Request): string {
+  const fromEnv =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.APP_URL ||
+    "";
+  if (fromEnv) return fromEnv.replace(/\/$/, "");
+  return new URL(req.url).origin;
+}
+
+/** Start Discord OAuth — or seed mock only when MOCK_AUTH / local-dev allows it. */
+export async function GET(req: Request) {
   const session = await getSession();
+  const origin = appOrigin(req);
 
   if (!discordOAuthConfigured()) {
     if (mockAuthEnabled()) {
@@ -21,20 +35,30 @@ export async function GET() {
       session.guilds = mock.guilds;
       session.isMock = true;
       await session.save();
-      return NextResponse.redirect(new URL("/app", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"));
+      return NextResponse.redirect(new URL("/app", origin));
     }
-    return NextResponse.json(
-      {
-        error: "Discord OAuth not configured",
-        hint: "Set DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_REDIRECT_URI, SESSION_SECRET (32+ chars), or MOCK_AUTH=1",
-      },
-      { status: 503 },
+    const missing = oauthMissingKeys().join(",");
+    const login = new URL("/login", origin);
+    login.searchParams.set(
+      "error",
+      missing
+        ? `oauth_not_configured:${missing}`
+        : "oauth_not_configured",
     );
+    return NextResponse.redirect(login);
   }
 
+  // Drop stale mock demo session before starting real OAuth.
+  if (session.isMock || session.user?.id === "mock-admin") {
+    session.destroy();
+    await session.save();
+  }
+
+  const fresh = await getSession();
   const state = randomHex(16);
-  session.oauthState = state;
-  await session.save();
+  fresh.oauthState = state;
+  fresh.isMock = false;
+  await fresh.save();
 
   return NextResponse.redirect(buildAuthorizeUrl(state));
 }

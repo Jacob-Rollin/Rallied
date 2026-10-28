@@ -1,12 +1,32 @@
 import Link from "next/link";
-import { discordOAuthConfigured, mockAuthEnabled } from "@/lib/auth/config";
+import {
+  discordOAuthConfigured,
+  mockAuthEnabled,
+  oauthMissingKeys,
+} from "@/lib/auth/config";
 
 type Props = { searchParams: Promise<{ error?: string; next?: string }> };
+
+function formatLoginError(error: string): string {
+  if (error === "session_expired") {
+    return "Demo session cleared — log in with Discord for your real servers.";
+  }
+  if (error.startsWith("oauth_not_configured")) {
+    const keys = error.includes(":")
+      ? error.slice("oauth_not_configured:".length)
+      : oauthMissingKeys().join(", ");
+    return keys
+      ? `Discord OAuth is not configured on the web Worker (missing: ${keys}). Set these as Runtime Secrets/vars, then redeploy with keep_vars.`
+      : "Discord OAuth is not configured on the web Worker.";
+  }
+  return `Login error: ${error}`;
+}
 
 export default async function LoginPage({ searchParams }: Props) {
   const sp = await searchParams;
   const oauth = discordOAuthConfigured();
   const mock = mockAuthEnabled();
+  const missing = !oauth ? oauthMissingKeys() : [];
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
@@ -24,7 +44,13 @@ export default async function LoginPage({ searchParams }: Props) {
 
       {sp.error ? (
         <p className="mt-4 rounded-brand border border-coral/40 bg-coral/10 px-3 py-2 text-sm text-coral">
-          Login error: {sp.error}
+          {formatLoginError(sp.error)}
+        </p>
+      ) : null}
+
+      {!oauth && missing.length > 0 && !sp.error ? (
+        <p className="mt-4 rounded-brand border border-coral/40 bg-coral/10 px-3 py-2 text-sm text-coral">
+          OAuth not ready on this Worker (missing: {missing.join(", ")}).
         </p>
       ) : null}
 
@@ -37,8 +63,15 @@ export default async function LoginPage({ searchParams }: Props) {
         </a>
         {mock && !oauth ? (
           <p className="text-xs text-muted">
-            OAuth secrets missing — this button seeds a <strong className="text-lime">mock</strong>{" "}
-            admin session so you can browse `/app`.
+            Dev mock mode — this button seeds a{" "}
+            <strong className="text-lime">demo</strong> admin session (set{" "}
+            <code className="text-coral">MOCK_AUTH=1</code> only when intentional).
+          </p>
+        ) : null}
+        {oauth ? (
+          <p className="text-xs text-muted">
+            Continues to Discord authorize, then lists servers you can manage
+            where Rallied is installed.
           </p>
         ) : null}
         <Link href="/" className="text-center text-sm text-muted hover:text-coral">

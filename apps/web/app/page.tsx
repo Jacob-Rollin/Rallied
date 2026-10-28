@@ -1,5 +1,24 @@
 import Link from "next/link";
 import { BRAND, COMMUNITY_PRICE_USD, buildBotInviteUrl } from "@rallied/shared";
+import { FeatureStepIcon } from "../components/FeatureStepIcon";
+
+const HOW_IT_WORKS = [
+  {
+    title: "LFG",
+    body: "Create a party in Discord. Join, fill, close — without another free LFG clone war.",
+    icon: "slash" as const,
+  },
+  {
+    title: "Play",
+    body: "Ready checks and grace windows cut accidental no-shows before they become drama.",
+    icon: "play" as const,
+  },
+  {
+    title: "Vibe Check",
+    body: "Post-session showed-up + vibe tags. Ghostless badge stays on this server only.",
+    icon: "check" as const,
+  },
+];
 
 export default function MarketingPage() {
   const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
@@ -88,23 +107,24 @@ export default function MarketingPage() {
 
       <section id="how-it-works" className="border-t border-white/10 bg-black/20 py-16">
         <div className="mx-auto grid max-w-5xl gap-10 px-4 sm:grid-cols-3">
-          {[
-            {
-              title: "LFG",
-              body: "Create a party in Discord. Join, fill, close — without another free LFG clone war.",
-            },
-            {
-              title: "Play",
-              body: "Ready checks and grace windows cut accidental no-shows before they become drama.",
-            },
-            {
-              title: "Vibe Check",
-              body: "Post-session showed-up + vibe tags. Ghostless badge stays on this server only.",
-            },
-          ].map((step, i) => (
-            <div key={step.title} className="animate-rise" style={{ animationDelay: `${i * 80}ms` }}>
-              <p className="font-display text-coral">{String(i + 1).padStart(2, "0")}</p>
-              <h2 className="mt-2 font-display text-2xl tracking-wide">{step.title}</h2>
+          {HOW_IT_WORKS.map((step, i) => (
+            <div
+              key={step.title}
+              className="animate-rise"
+              style={{ animationDelay: `${i * 80}ms` }}
+            >
+              <div className="flex items-center gap-2.5">
+                <FeatureStepIcon
+                  kind={step.icon}
+                  className="animate-feature-icon"
+                />
+                <p className="font-display text-coral">
+                  {String(i + 1).padStart(2, "0")}
+                </p>
+              </div>
+              <h2 className="mt-2 font-display text-2xl tracking-wide">
+                {step.title}
+              </h2>
               <p className="mt-2 text-sm text-muted">{step.body}</p>
             </div>
           ))}

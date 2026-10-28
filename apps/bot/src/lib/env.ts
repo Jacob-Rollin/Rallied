@@ -1,3 +1,7 @@
+import { normalizeSupabaseUrl } from "@rallied/shared";
+
+export { normalizeSupabaseUrl };
+
 export interface BotEnv {
   DISCORD_PUBLIC_KEY: string;
   DISCORD_BOT_TOKEN: string;
@@ -9,16 +13,6 @@ export interface BotEnv {
   DISCORD_DEV_GUILD_ID?: string;
   /** One-shot secret for GET/POST /register-commands (phone-friendly). Rotate after use. */
   REGISTER_COMMANDS_SECRET?: string;
-}
-
-/**
- * Project URL only (`https://xxx.supabase.co`). Strips a pasted `/rest/v1`
- * so supabase-js does not double the path (PostgREST PGRST125).
- */
-export function normalizeSupabaseUrl(url: string): string {
-  let normalized = url.trim().replace(/\/+$/, "");
-  normalized = normalized.replace(/\/rest\/v1$/i, "");
-  return normalized.replace(/\/+$/, "");
 }
 
 export function readNodeEnv(): BotEnv {

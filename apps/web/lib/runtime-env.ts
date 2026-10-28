@@ -1,4 +1,5 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { normalizeSupabaseUrl } from "@rallied/shared";
 
 /**
  * Read a Worker Runtime var/secret for OpenNext on Cloudflare.
@@ -22,10 +23,16 @@ export function getRuntimeEnv(name: string): string | undefined {
   return undefined;
 }
 
+/**
+ * Project base URL for createClient and manual `/rest/v1` fetches.
+ * Strips trailing slashes and a pasted `/rest/v1` (PGRST125).
+ */
 export function getSupabaseUrl(): string | undefined {
-  return (
-    getRuntimeEnv("NEXT_PUBLIC_SUPABASE_URL") || getRuntimeEnv("SUPABASE_URL")
-  );
+  const raw =
+    getRuntimeEnv("NEXT_PUBLIC_SUPABASE_URL") || getRuntimeEnv("SUPABASE_URL");
+  if (!raw) return undefined;
+  const normalized = normalizeSupabaseUrl(raw);
+  return normalized || undefined;
 }
 
 export function getServiceRoleKey(): string | undefined {

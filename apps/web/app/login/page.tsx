@@ -2,21 +2,26 @@ import Link from "next/link";
 import {
   discordOAuthConfigured,
   mockAuthEnabled,
-  oauthMissingKeys,
+  oauthConfigProblems,
 } from "@/lib/auth/config";
 
 type Props = { searchParams: Promise<{ error?: string; next?: string }> };
 
-function formatLoginError(error: string): string {
+function formatLoginError(error: string, liveProblems: string[]): string {
   if (error === "session_expired") {
     return "Demo session cleared — log in with Discord for your real servers.";
   }
   if (error.startsWith("oauth_not_configured")) {
-    const keys = error.includes(":")
-      ? error.slice("oauth_not_configured:".length)
-      : oauthMissingKeys().join(", ");
-    return keys
-      ? `Discord OAuth is not configured on the web Worker (missing: ${keys}). Set these as Runtime Secrets/vars, then redeploy with keep_vars.`
+    const fromQuery = error.includes(":")
+      ? error
+          .slice("oauth_not_configured:".length)
+          .split(/[|,]/)
+          .map((p) => p.trim())
+          .filter(Boolean)
+      : [];
+    const problems = liveProblems.length > 0 ? liveProblems : fromQuery;
+    return problems.length > 0
+      ? `Discord OAuth is not ready on this Worker: ${problems.join("; ")}. Check Variables and Secrets on the Worker that serves this URL (exact name SESSION_SECRET, 32+ chars), then redeploy with keep_vars.`
       : "Discord OAuth is not configured on the web Worker.";
   }
   return `Login error: ${error}`;
@@ -26,7 +31,7 @@ export default async function LoginPage({ searchParams }: Props) {
   const sp = await searchParams;
   const oauth = discordOAuthConfigured();
   const mock = mockAuthEnabled();
-  const missing = !oauth ? oauthMissingKeys() : [];
+  const problems = !oauth ? oauthConfigProblems() : [];
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
@@ -44,13 +49,13 @@ export default async function LoginPage({ searchParams }: Props) {
 
       {sp.error ? (
         <p className="mt-4 rounded-brand border border-coral/40 bg-coral/10 px-3 py-2 text-sm text-coral">
-          {formatLoginError(sp.error)}
+          {formatLoginError(sp.error, problems)}
         </p>
       ) : null}
 
-      {!oauth && missing.length > 0 && !sp.error ? (
+      {!oauth && problems.length > 0 && !sp.error ? (
         <p className="mt-4 rounded-brand border border-coral/40 bg-coral/10 px-3 py-2 text-sm text-coral">
-          OAuth not ready on this Worker (missing: {missing.join(", ")}).
+          OAuth not ready on this Worker: {problems.join("; ")}.
         </p>
       ) : null}
 

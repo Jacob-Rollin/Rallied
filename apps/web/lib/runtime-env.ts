@@ -3,21 +3,22 @@ import { normalizeSupabaseUrl } from "@rallied/shared";
 
 /**
  * Read a Worker Runtime var/secret for OpenNext on Cloudflare.
- * Checks process.env first (Next local + OpenNext populate), then
- * getCloudflareContext().env so dashboard Secrets work even when not on process.env.
+ * Prefers getCloudflareContext().env (dashboard Secrets/vars) so a short or
+ * stale build-time process.env value cannot shadow the real Runtime Secret.
+ * Falls back to process.env for local `next dev` / tests.
  */
 export function getRuntimeEnv(name: string): string | undefined {
-  const fromProcess = process.env[name];
-  if (typeof fromProcess === "string" && fromProcess.length > 0) {
-    return fromProcess;
-  }
-
   try {
     const env = getCloudflareContext().env as Record<string, unknown>;
     const value = env?.[name];
     if (typeof value === "string" && value.length > 0) return value;
   } catch {
     // Outside Workers request context (next dev, build, tests).
+  }
+
+  const fromProcess = process.env[name];
+  if (typeof fromProcess === "string" && fromProcess.length > 0) {
+    return fromProcess;
   }
 
   return undefined;

@@ -20,28 +20,40 @@ export function discordOAuthConfigured(): boolean {
   );
 }
 
-/** Names of OAuth/session vars that are missing (never values). */
-export function oauthMissingKeys(): string[] {
-  const missing: string[] = [];
+/**
+ * Human-readable OAuth/session config problems (never secret values).
+ * Distinguishes unset vs SESSION_SECRET shorter than iron-session's 32-char min.
+ */
+export function oauthConfigProblems(): string[] {
+  const problems: string[] = [];
   if (
     !(
       getRuntimeEnv("DISCORD_CLIENT_ID") ||
       getRuntimeEnv("NEXT_PUBLIC_DISCORD_CLIENT_ID")
     )
   ) {
-    missing.push("DISCORD_CLIENT_ID");
+    problems.push("DISCORD_CLIENT_ID not set");
   }
   if (!getRuntimeEnv("DISCORD_CLIENT_SECRET")) {
-    missing.push("DISCORD_CLIENT_SECRET");
+    problems.push("DISCORD_CLIENT_SECRET not set");
   }
   if (!getRuntimeEnv("DISCORD_REDIRECT_URI")) {
-    missing.push("DISCORD_REDIRECT_URI");
+    problems.push("DISCORD_REDIRECT_URI not set");
   }
   const secret = getRuntimeEnv("SESSION_SECRET") || "";
-  if (secret.length < 32) {
-    missing.push("SESSION_SECRET");
+  if (!secret) {
+    problems.push("SESSION_SECRET not set on this Worker");
+  } else if (secret.length < 32) {
+    problems.push(
+      `SESSION_SECRET too short (${secret.length} chars — need 32+)`,
+    );
   }
-  return missing;
+  return problems;
+}
+
+/** @deprecated use oauthConfigProblems */
+export function oauthMissingKeys(): string[] {
+  return oauthConfigProblems();
 }
 
 /** Explicit MOCK_AUTH=1 — never infer this from missing secrets in production. */

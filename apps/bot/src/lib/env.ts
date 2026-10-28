@@ -11,6 +11,16 @@ export interface BotEnv {
   REGISTER_COMMANDS_SECRET?: string;
 }
 
+/**
+ * Project URL only (`https://xxx.supabase.co`). Strips a pasted `/rest/v1`
+ * so supabase-js does not double the path (PostgREST PGRST125).
+ */
+export function normalizeSupabaseUrl(url: string): string {
+  let normalized = url.trim().replace(/\/+$/, "");
+  normalized = normalized.replace(/\/rest\/v1$/i, "");
+  return normalized.replace(/\/+$/, "");
+}
+
 export function readNodeEnv(): BotEnv {
   // Allow boot without secrets for typecheck / dry runs; handlers fail soft.
   return {
@@ -18,7 +28,7 @@ export function readNodeEnv(): BotEnv {
     DISCORD_BOT_TOKEN: process.env.DISCORD_BOT_TOKEN ?? "",
     DISCORD_APP_ID: process.env.DISCORD_APP_ID ?? "",
     DISCORD_CLIENT_ID: process.env.DISCORD_CLIENT_ID,
-    SUPABASE_URL: process.env.SUPABASE_URL ?? "",
+    SUPABASE_URL: normalizeSupabaseUrl(process.env.SUPABASE_URL ?? ""),
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
     DISCORD_DEV_GUILD_ID: process.env.DISCORD_DEV_GUILD_ID,
     REGISTER_COMMANDS_SECRET: process.env.REGISTER_COMMANDS_SECRET,

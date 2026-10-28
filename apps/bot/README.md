@@ -29,9 +29,11 @@ DISCORD_BOT_TOKEN=
 DISCORD_APP_ID=
 DISCORD_DEV_GUILD_ID=
 REGISTER_COMMANDS_SECRET=
-SUPABASE_URL=
+SUPABASE_URL=                 # project URL only: https://xxx.supabase.co (not …/rest/v1)
 SUPABASE_SERVICE_ROLE_KEY=
 ```
+
+`SUPABASE_URL` must be the **project URL** from Supabase → Project Settings → API (`https://<ref>.supabase.co`). Do not paste the REST endpoint (`…/rest/v1`) — supabase-js appends that itself; a doubled path returns PostgREST `PGRST125`. The bot strips a trailing `/rest/v1` if present, but set the project URL correctly.
 
 ## Local Node
 

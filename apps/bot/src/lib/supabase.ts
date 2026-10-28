@@ -1,10 +1,11 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { BotEnv } from "./env.js";
+import { normalizeSupabaseUrl, type BotEnv } from "./env.js";
 import { errorFromUnknown } from "./errors.js";
 
 export function createServiceClient(env: BotEnv): SupabaseClient | null {
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return null;
-  return createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+  const url = normalizeSupabaseUrl(env.SUPABASE_URL ?? "");
+  if (!url || !env.SUPABASE_SERVICE_ROLE_KEY) return null;
+  return createClient(url, env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }

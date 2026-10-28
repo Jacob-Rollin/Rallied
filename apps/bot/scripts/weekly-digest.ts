@@ -5,19 +5,16 @@
  *   DISCORD_BOT_TOKEN=… SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=…
  *   npx tsx apps/bot/scripts/weekly-digest.ts
  */
-import { createClient } from "@supabase/supabase-js";
 import { runWeeklyDigest } from "../src/lib/digest.js";
 import { readNodeEnv } from "../src/lib/env.js";
+import { createServiceClient } from "../src/lib/supabase.js";
 
 const env = readNodeEnv();
-if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+const sb = createServiceClient(env);
+if (!sb) {
   console.error("Need SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY");
   process.exit(1);
 }
-
-const sb = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
 
 const { data: servers, error } = await sb
   .from("servers")

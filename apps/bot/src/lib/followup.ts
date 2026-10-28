@@ -15,9 +15,26 @@ function webhookBase(env: BotEnv, interaction: Interaction): string {
   return `${API}/webhooks/${appId}/${interaction.token}`;
 }
 
+/**
+ * Components that should replace their own message (type 6) instead of
+ * stacking a new ephemeral. Never use for desk buttons on the pinned panel
+ * or Join/Leave/Vibe on public party cards — those need a fresh ephemeral.
+ */
+export function shouldUpdateComponentMessage(interaction: Interaction): boolean {
+  if (interaction.type !== InteractionType.MESSAGE_COMPONENT) return false;
+  const id = interaction.data?.custom_id ?? "";
+  return (
+    id === "lfg:findgame" ||
+    id === "lfg:joinselect" ||
+    id.startsWith("lfg:close:")
+  );
+}
+
 /** Whether the deferred ACK should be ephemeral (must match final visibility). */
 export function shouldDeferEphemeral(interaction: Interaction): boolean {
   if (interaction.type === InteractionType.MESSAGE_COMPONENT) {
+    // In-place updates inherit the source message visibility.
+    if (shouldUpdateComponentMessage(interaction)) return false;
     // Desk / party buttons reply ephemeral (public posts go via bot token when needed).
     return true;
   }
@@ -54,16 +71,13 @@ export function shouldDeferEphemeral(interaction: Interaction): boolean {
 
 /** Immediate Discord ACK within the 3s window. */
 export function deferredAck(interaction: Interaction): InteractionResponse {
+  if (shouldUpdateComponentMessage(interaction)) {
+    // Replace the select / button message in place (no extra chat clutter).
+    return { type: InteractionResponseType.DEFERRED_UPDATE_MESSAGE };
+  }
+
   const ephemeral = shouldDeferEphemeral(interaction);
   const data = ephemeral ? { flags: EPHEMERAL_FLAG } : undefined;
-
-  if (interaction.type === InteractionType.MESSAGE_COMPONENT) {
-    // New reply (not editing the button message) — type 5 matches prior type-4 replies.
-    return {
-      type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE,
-      data,
-    };
-  }
 
   return {
     type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE,
@@ -176,6 +190,16 @@ export async function deliverDeferredResponse(
   const data: InteractionMessageData =
     response.data ?? { content: "Done." };
 
+  // Type-6 component updates: always edit the source message; drop stale selects.
+  if (shouldUpdateComponentMessage(interaction)) {
+    await editOriginalResponse(env, interaction, {
+      content: data.content ?? "Done.",
+      embeds: data.embeds ?? [],
+      components: data.components ?? [],
+    });
+    return;
+  }
+
   const wantsEphemeral = isEphemeralData(data);
 
   if (deferredEphemeral === wantsEphemeral) {
@@ -199,6 +223,7 @@ export async function deliverDeferredResponse(
     content: posted
       ? "Posted to the channel."
       : "Could not post publicly — check bot permissions / channel.",
+    components: [],
   });
 }
 
@@ -213,6 +238,14 @@ export async function deliverErrorFollowup(
     flags: EPHEMERAL_FLAG,
   };
   try {
+    if (shouldUpdateComponentMessage(interaction)) {
+      await editOriginalResponse(env, interaction, {
+        content: data.content,
+        embeds: [],
+        components: [],
+      });
+      return;
+    }
     if (deferredEphemeral) {
       await editOriginalResponse(env, interaction, data);
     } else {

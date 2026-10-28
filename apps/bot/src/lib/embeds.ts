@@ -431,7 +431,8 @@ export function lfgFindGameSelectMessage() {
 
 /**
  * Immediate MODAL response (type 9) — must not be deferred.
- * `game` is a catalog name, or LFG_OTHER_GAME to collect free-text game.
+ * `game` is a catalog name, or LFG_OTHER_GAME to collect free-text game
+ * (desk Create always uses the free-text path; aliases like `val` normalize).
  */
 export function lfgCreateModalResponse(game: string) {
   const isOther = game === LFG_OTHER_GAME;
@@ -452,7 +453,7 @@ export function lfgCreateModalResponse(game: string) {
           required: true,
           min_length: 1,
           max_length: 80,
-          placeholder: "e.g. Lethal Company",
+          placeholder: "Valorant, val, lol, Lethal Company…",
         },
       ],
     });
@@ -504,8 +505,8 @@ export function lfgHowItWorksMessage() {
   return {
     content: [
       "**How Rallied LFG works** (this server only)",
-      "• **Create party** — pick a game, set size, optional notes → posts a party card with Join / Leave / Close / Vibe Check.",
-      "• **Find party** — filter by game (or all) → tap a party to join.",
+      "• **Create party** — form for game, size, optional notes → posts a party card with Join / Leave / Close / Vibe Check.",
+      "• **Find party** — filter by game (or all) → tap a party to join (the filter message updates in place).",
       "• **My parties** — see parties you're in; hosts can Close.",
       "• After the session, use **Vibe Check** on the party card (or `/vibe @user`).",
       "Slash backups: `/lfg create` · `/lfg find` · `/vibe`",

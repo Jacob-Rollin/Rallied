@@ -21,7 +21,7 @@ import {
   putApplicationCommands,
   secretsMatch,
 } from "./lib/register-commands.js";
-import { lfgCreateModalResponse } from "./lib/embeds.js";
+import { LFG_OTHER_GAME, lfgCreateModalResponse } from "./lib/embeds.js";
 import { handleAutocomplete } from "./handlers/autocomplete.js";
 import {
   routeCommand,
@@ -73,17 +73,24 @@ async function handleRegisterCommands(c: AppContext) {
 }
 
 /**
- * Create-party game select must open a modal as the *immediate* response.
+ * Create-party modal must be the *immediate* response (type 9).
  * Discord forbids deferring then opening a modal.
+ * Desk Create opens the form directly (no leftover game-select ephemeral).
+ * Legacy `lfg:creategame` select (older desk messages) still opens a modal.
  */
 function syncModalFromComponent(interaction: Interaction) {
   const customId = interaction.data?.custom_id;
-  if (customId !== "lfg:creategame") return null;
-  const selected = interaction.data?.values?.[0];
-  if (!selected) {
-    return ephemeral("Pick a game from the list.");
+  if (customId === "lfg:desk:create") {
+    return lfgCreateModalResponse(LFG_OTHER_GAME);
   }
-  return lfgCreateModalResponse(selected);
+  if (customId === "lfg:creategame") {
+    const selected = interaction.data?.values?.[0];
+    if (!selected) {
+      return ephemeral("Pick a game from the list.");
+    }
+    return lfgCreateModalResponse(selected);
+  }
+  return null;
 }
 
 export function createApp() {

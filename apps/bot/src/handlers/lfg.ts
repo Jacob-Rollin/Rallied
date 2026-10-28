@@ -37,16 +37,10 @@ import {
   refreshPartyCard,
   type PartyCardState,
 } from "../lib/party-message.js";
+import { ghostlessCardLabel } from "../lib/ghostless.js";
+import { getServerSettings } from "../lib/settings.js";
 import { ensureServerAndMember } from "../lib/supabase.js";
-
-function ghostlessLabel(shows: number, ghosts: number): string {
-  const total = shows + ghosts;
-  if (total === 0) return "New in this server";
-  const pct = Math.round((shows / total) * 1000) / 10;
-  if (pct >= 90) return `Ghostless ${pct}%`;
-  if (pct >= 75) return `Reliable ${pct}%`;
-  return `Watch ${pct}%`;
-}
+import { startReadyCheck } from "./ready-check.js";
 
 async function countFilled(
   sb: SupabaseClient,
@@ -147,6 +141,7 @@ export async function createParty(opts: {
     role: "host",
   });
 
+  const settings = await getServerSettings(sb, server.id);
   const { data: stats } = await sb
     .from("ghostless_stats")
     .select("shows, ghosts")
@@ -162,7 +157,11 @@ export async function createParty(opts: {
     hostName: opts.displayName,
     hostMention: `<@${opts.discordUserId}>`,
     partyId: party.id,
-    ghostlessLabel: ghostlessLabel(stats?.shows ?? 0, stats?.ghosts ?? 0),
+    ghostlessLabel: ghostlessCardLabel(
+      stats?.shows ?? 0,
+      stats?.ghosts ?? 0,
+      settings,
+    ),
     members: [
       {
         mention: `<@${opts.discordUserId}>`,
@@ -199,10 +198,11 @@ export async function findParties(opts: {
 
   const { data: parties, error } = await sb
     .from("lfg_parties")
-    .select("id, game, rank_text, slots, status, host_member_id")
+    .select("id, game, rank_text, slots, status, host_member_id, expires_at")
     .eq("server_id", server.id)
     .eq("status", "open")
     .is("deleted_at", null)
+    .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
     .order("created_at", { ascending: false })
     .limit(25);
 
@@ -713,6 +713,12 @@ export async function joinParty(opts: {
     response.meta = {
       ...response.meta,
       vibeNudge: { partyId: party.id, game: party.game },
+      // Auto ready-check when the squad fills (host can also tap Ready Check).
+      startReadyCheck: {
+        partyId: party.id,
+        discordUserId: opts.discordUserId,
+        displayName: opts.displayName,
+      },
     };
   }
 

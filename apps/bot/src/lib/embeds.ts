@@ -1,4 +1,4 @@
-import { BRAND, GAME_CATALOG } from "@rallied/shared";
+import { BRAND, GAME_CATALOG, GHOSTLESS } from "@rallied/shared";
 import { InteractionResponseType } from "./discord.js";
 
 /** Discord embed / component helpers (Phase 1.5). */
@@ -31,15 +31,19 @@ export interface Embed {
 export const CORAL = parseInt(BRAND.colors.coral.replace("#", ""), 16);
 export const LIME = parseInt(BRAND.colors.ghostlessLime.replace("#", ""), 16);
 
-/** Join / Leave / Close / Vibe — Join hidden when filled/closed. */
+/**
+ * Join / Leave / Close / Ready Check / Vibe.
+ * Join hidden when filled/closed. Ready Check on open|filled (host starts Play mock).
+ */
 export function lfgPartyComponents(
   partyId: string,
   status: "open" | "filled" | "closed" = "open",
 ) {
-  const row: unknown[] = [];
+  const rows: unknown[] = [];
+  const primary: unknown[] = [];
 
   if (status === "open") {
-    row.push({
+    primary.push({
       type: 2,
       style: 3,
       label: "Join",
@@ -48,7 +52,7 @@ export function lfgPartyComponents(
   }
 
   if (status === "open" || status === "filled") {
-    row.push(
+    primary.push(
       {
         type: 2,
         style: 2,
@@ -64,14 +68,28 @@ export function lfgPartyComponents(
     );
   }
 
-  row.push({
+  if (primary.length > 0) {
+    rows.push({ type: 1, components: primary.slice(0, 5) });
+  }
+
+  const secondary: unknown[] = [];
+  if (status === "open" || status === "filled") {
+    secondary.push({
+      type: 2,
+      style: 1,
+      label: status === "filled" ? "Ready Check" : "Ready Check",
+      custom_id: `lfg:ready:${partyId}`,
+    });
+  }
+  secondary.push({
     type: 2,
-    style: 1,
+    style: 2,
     label: "Vibe Check",
     custom_id: `lfg:vibe:${partyId}`,
   });
+  rows.push({ type: 1, components: secondary.slice(0, 5) });
 
-  return [{ type: 1, components: row.slice(0, 5) }];
+  return rows;
 }
 
 export function lfgPartyEmbed(opts: {
@@ -272,26 +290,26 @@ export function ghostlessPlayerEmbed(opts: {
   showRatePct: number | null;
   vibeAvg: number | null;
   strikeCount: number;
+  /** Settings-driven badge (Ghostless only when rate + min sessions met). */
+  badge: string;
+  subtitle: string;
+  eligibleGhostless: boolean;
 }): Embed {
   const rate =
-    opts.showRatePct == null ? "—" : `${opts.showRatePct}% show rate`;
-  const badge =
-    opts.showRatePct == null
-      ? "New"
-      : opts.showRatePct >= 90
-        ? "Ghostless"
-        : opts.showRatePct >= 75
-          ? "Reliable"
-          : "Watch";
+    opts.showRatePct == null ? "—" : `${opts.showRatePct}%`;
 
   return {
-    title: `${opts.displayName} · ${badge}`,
-    description: `${opts.mention} — **this server only** (not a global grade)`,
-    color: opts.showRatePct != null && opts.showRatePct >= 90 ? LIME : CORAL,
+    title: opts.displayName,
+    description: [
+      opts.mention,
+      opts.subtitle,
+      opts.eligibleGhostless
+        ? `${GHOSTLESS.mark} **${GHOSTLESS.name}** — earned on this server`
+        : `Badge: **${opts.badge}** (this server only — not a global grade)`,
+    ].join("\n"),
+    color: opts.eligibleGhostless ? LIME : CORAL,
     fields: [
-      { name: "Shows", value: String(opts.shows), inline: true },
-      { name: "Ghosts", value: String(opts.ghosts), inline: true },
-      { name: "Rate", value: rate, inline: true },
+      { name: "Show rate", value: rate, inline: true },
       {
         name: "Avg vibe",
         value: opts.vibeAvg != null ? `${opts.vibeAvg}/5` : "—",
@@ -303,8 +321,108 @@ export function ghostlessPlayerEmbed(opts: {
         inline: true,
       },
     ],
-    footer: { text: "Rallied Ghostless · per-server" },
+    footer: { text: "Rallied Ghostless · this server only" },
   };
+}
+
+/** Ready-check embed matching landing Play mock (roster + grace timestamp). */
+export function readyCheckEmbed(opts: {
+  game: string;
+  partyId: string;
+  graceEndsUnix: number;
+  members: {
+    mention: string;
+    displayName: string;
+    role: string;
+    ready: boolean;
+  }[];
+  resolved?: boolean;
+}): Embed {
+  const readyCount = opts.members.filter((m) => m.ready).length;
+  const total = opts.members.length;
+  const roster = opts.members
+    .map((m) => {
+      const host = m.role === "host" ? " (host)" : "";
+      const mark = m.ready ? "✅ Ready" : "⏳ Waiting…";
+      return `${mark} — ${m.mention}${host}`;
+    })
+    .join("\n")
+    .slice(0, 1024);
+
+  if (opts.resolved) {
+    return {
+      title: `Ready check · ${opts.game}`,
+      description: "Grace ended — waiting members marked as no-shows (this server).",
+      color: 0x6b7280,
+      fields: [
+        { name: "Roster", value: roster || "—", inline: false },
+        {
+          name: "Progress",
+          value: `${readyCount}/${total} ready`,
+          inline: true,
+        },
+      ],
+      footer: { text: `Rallied · \`${opts.partyId.slice(0, 8)}\`` },
+    };
+  }
+
+  return {
+    title: `Ready check · ${opts.game}`,
+    description: `Tap **Ready** before grace ends <t:${opts.graceEndsUnix}:R>. No-shows get a strike after grace (this server).`,
+    color: LIME,
+    fields: [
+      { name: "Roster", value: roster || "—", inline: false },
+      {
+        name: "Progress",
+        value: `${readyCount}/${total} ready · auto-strike after grace`,
+        inline: false,
+      },
+      {
+        name: "Grace",
+        value: `<t:${opts.graceEndsUnix}:R> (<t:${opts.graceEndsUnix}:t>)`,
+        inline: true,
+      },
+    ],
+    footer: { text: `Rallied · \`${opts.partyId.slice(0, 8)}\`` },
+    timestamp: new Date().toISOString(),
+  };
+}
+
+export function readyCheckComponents(partyId: string, resolved = false) {
+  if (resolved) {
+    return [
+      {
+        type: 1,
+        components: [
+          {
+            type: 2,
+            style: 1,
+            label: "Vibe Check",
+            custom_id: `lfg:vibe:${partyId}`,
+          },
+        ],
+      },
+    ];
+  }
+  return [
+    {
+      type: 1,
+      components: [
+        {
+          type: 2,
+          style: 3,
+          label: "Ready",
+          custom_id: `lfg:readyup:${partyId}`,
+        },
+        {
+          type: 2,
+          style: 2,
+          label: "Vibe Check",
+          custom_id: `lfg:vibe:${partyId}`,
+        },
+      ],
+    },
+  ];
 }
 
 export function vibeCheckMessage(opts: {
@@ -683,10 +801,12 @@ export function lfgHowItWorksMessage() {
     content: [
       "**How Rallied LFG works** (this server only)",
       "• **Create party** — pick a game → form (size, mic, notes) → party card + **squad thread**.",
-      "• **Join** — tap the **squad thread** under the card to share invite codes / VC (no friend-adds).",
+      "• **Join** — tap the **squad thread** under the card to share invite codes / VC.",
+      "• **Ready Check** — when the squad fills (or host taps it): Ready / Waiting + grace timer; no-shows get a strike.",
       "• **Leave / Close** — Leave if you're a member; hosts Confirm-close, then **Vibe Check**.",
       "• **Find / My parties** — browse open parties in this server.",
-      "Slash backups: `/lfg create` · `/lfg find` · `/vibe`",
+      "• **`/ghostless`** — this-server show rate + Ghostless badge (not a global grade).",
+      "Slash backups: `/lfg create` · `/lfg find` · `/vibe` · `/ghostless`",
     ].join("\n"),
     flags: 64,
   };

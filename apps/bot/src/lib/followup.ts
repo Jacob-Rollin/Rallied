@@ -16,6 +16,7 @@ import {
   type PartyCardState,
 } from "./party-message.js";
 import { createServiceClient } from "./supabase.js";
+import { startReadyCheck } from "../handlers/ready-check.js";
 
 const API = "https://discord.com/api/v10";
 
@@ -312,6 +313,25 @@ export async function deliverDeferredResponse(
       interaction,
       lfgVibeNudgeMessage(meta.vibeNudge.partyId, meta.vibeNudge.game),
     );
+  }
+
+  if (meta?.startReadyCheck && interaction.guild_id) {
+    const sb = createServiceClient(env);
+    if (sb) {
+      try {
+        await startReadyCheck({
+          sb,
+          env,
+          guildId: interaction.guild_id,
+          partyId: meta.startReadyCheck.partyId,
+          discordUserId: meta.startReadyCheck.discordUserId,
+          displayName: meta.startReadyCheck.displayName,
+          allowAuto: true,
+        });
+      } catch (err) {
+        console.error("auto startReadyCheck failed", err);
+      }
+    }
   }
 
   if (meta?.dismissAfterMs && meta.dismissAfterMs > 0) {

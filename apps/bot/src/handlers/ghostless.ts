@@ -8,6 +8,12 @@ import {
   type Interaction,
 } from "../lib/discord.js";
 import { ephemeralEmbed, ghostlessPlayerEmbed } from "../lib/embeds.js";
+import {
+  ghostlessBadge,
+  ghostlessSubtitle,
+  showRatePct,
+} from "../lib/ghostless.js";
+import { getServerSettings } from "../lib/settings.js";
 import { ensureServerAndMember } from "../lib/supabase.js";
 
 export async function handleGhostless(
@@ -43,6 +49,8 @@ export async function handleGhostless(
     null,
   );
 
+  const settings = await getServerSettings(sb, server.id);
+
   const { data: stats } = await sb
     .from("ghostless_stats")
     .select("shows, ghosts, vibe_sum, vibe_count")
@@ -59,8 +67,8 @@ export async function handleGhostless(
 
   const shows = stats?.shows ?? 0;
   const ghosts = stats?.ghosts ?? 0;
-  const total = shows + ghosts;
-  const rate = total === 0 ? null : Math.round((shows / total) * 1000) / 10;
+  const rate = showRatePct(shows, ghosts);
+  const badge = ghostlessBadge(shows, ghosts, settings);
   const vibeAvg =
     stats && stats.vibe_count > 0
       ? Math.round((stats.vibe_sum / stats.vibe_count) * 100) / 100
@@ -74,6 +82,9 @@ export async function handleGhostless(
     showRatePct: rate,
     vibeAvg,
     strikeCount: strikeCount ?? 0,
+    badge,
+    subtitle: ghostlessSubtitle(shows, ghosts),
+    eligibleGhostless: badge === "Ghostless",
   });
 
   return ephemeralEmbed(embed);

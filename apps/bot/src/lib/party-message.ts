@@ -5,6 +5,8 @@ import {
   lfgPartyComponents,
   lfgPartyEmbed,
 } from "./embeds.js";
+import { ghostlessCardLabel } from "./ghostless.js";
+import { getServerSettings } from "./settings.js";
 
 const API = "https://discord.com/api/v10";
 
@@ -149,14 +151,6 @@ export async function loadPartyMembers(
   });
 }
 
-function ghostlessLabel(shows: number, ghosts: number): string {
-  const total = shows + ghosts;
-  if (total === 0) return "New in this server";
-  const pct = Math.round((shows / total) * 1000) / 10;
-  if (pct >= 90) return `Ghostless ${pct}%`;
-  if (pct >= 75) return `Reliable ${pct}%`;
-  return `Watch ${pct}%`;
-}
 
 export async function buildPartyCardPayload(
   sb: SupabaseClient,
@@ -175,13 +169,18 @@ export async function buildPartyCardPayload(
       .eq("id", party.id)
       .maybeSingle();
     if (partyRow) {
+      const settings = await getServerSettings(sb, partyRow.server_id);
       const { data: stats } = await sb
         .from("ghostless_stats")
         .select("shows, ghosts")
         .eq("server_id", partyRow.server_id)
         .eq("member_id", host.memberId)
         .maybeSingle();
-      hostGhostless = ghostlessLabel(stats?.shows ?? 0, stats?.ghosts ?? 0);
+      hostGhostless = ghostlessCardLabel(
+        stats?.shows ?? 0,
+        stats?.ghosts ?? 0,
+        settings,
+      );
     }
   }
 

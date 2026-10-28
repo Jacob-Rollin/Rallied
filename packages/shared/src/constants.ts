@@ -19,6 +19,13 @@ export const GHOSTLESS = {
   description: "Per-server show-up reliability",
   defaultRoleThresholdPct: 90,
   defaultMinSessions: 10,
+  /**
+   * Badge mark: check *inside* the box (U+2611), matching the landing SVG cue.
+   * Do not use square-beside-check (▢✓) — that reads as two glyphs.
+   */
+  mark: "☑",
+  /** Empty ballot box when not eligible (optional UI). */
+  markEmpty: "☐",
 } as const;
 
 /**
@@ -114,6 +121,8 @@ export const BUTTON_IDS = {
   lfgClose: "lfg:close",
   lfgJoinSelect: "lfg:joinselect",
   lfgVibe: "lfg:vibe",
+  lfgReady: "lfg:ready",
+  lfgReadyUp: "lfg:readyup",
   lfgDeskCreate: "lfg:desk:create",
   lfgDeskFind: "lfg:desk:find",
   lfgDeskMine: "lfg:desk:mine",

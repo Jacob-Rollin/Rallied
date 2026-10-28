@@ -160,7 +160,7 @@ Runtime / build secrets for the **web** Worker (not the bot) — set in CF dashb
 
 Bot secrets stay on the **bot** Worker (`apps/bot/wrangler.toml`). After bot joins a guild and runs a slash command, a `servers` row appears → web marks `bot_present` and loads that guild’s data.
 
-`keep_vars = true` in `apps/web/wrangler.toml` (and the bot Worker) so dashboard Runtime variables/secrets survive each `wrangler deploy`. Plaintext public values may live in `[vars]`; secrets stay in dashboard **Secrets**. Without `keep_vars`, CI deploy clears dashboard bindings not listed in the toml.
+`keep_vars = true` in `apps/web/wrangler.toml` (and the bot Worker), and `npm run deploy:web` / `deploy:cf` always pass `--keep-vars` (OpenNext full deploy uses `-- --keep-vars`), so dashboard Runtime variables/secrets survive each deploy. Plaintext public values may live in `[vars]`; secrets stay in dashboard **Secrets** (Runtime, not Build-only). Without `keep_vars`, CI deploy clears dashboard bindings not listed in the toml.
 
 Local CF preview (Workers runtime):
 

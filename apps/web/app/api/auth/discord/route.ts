@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import {
   discordOAuthConfigured,
   mockAuthEnabled,
-  oauthMissingKeys,
+  oauthConfigProblems,
 } from "@/lib/auth/config";
 import { buildAuthorizeUrl } from "@/lib/auth/discord";
 import { getSession, mockSessionPayload } from "@/lib/auth/session";
@@ -37,12 +37,12 @@ export async function GET(req: Request) {
       await session.save();
       return NextResponse.redirect(new URL("/app", origin));
     }
-    const missing = oauthMissingKeys().join(",");
+    const problems = oauthConfigProblems().join("|");
     const login = new URL("/login", origin);
     login.searchParams.set(
       "error",
-      missing
-        ? `oauth_not_configured:${missing}`
+      problems
+        ? `oauth_not_configured:${problems}`
         : "oauth_not_configured",
     );
     return NextResponse.redirect(login);

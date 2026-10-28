@@ -1,18 +1,22 @@
 /** Discord OAuth + session config. Missing secrets → mock/dev path. */
 
+import { getRuntimeEnv } from "@/lib/runtime-env";
+
 export function discordOAuthConfigured(): boolean {
+  const secret = getRuntimeEnv("SESSION_SECRET") || "";
   return Boolean(
-    process.env.DISCORD_CLIENT_ID &&
-      process.env.DISCORD_CLIENT_SECRET &&
-      process.env.DISCORD_REDIRECT_URI &&
-      process.env.SESSION_SECRET &&
-      process.env.SESSION_SECRET.length >= 32,
+    (getRuntimeEnv("DISCORD_CLIENT_ID") ||
+      getRuntimeEnv("NEXT_PUBLIC_DISCORD_CLIENT_ID")) &&
+      getRuntimeEnv("DISCORD_CLIENT_SECRET") &&
+      getRuntimeEnv("DISCORD_REDIRECT_URI") &&
+      secret.length >= 32,
   );
 }
 
 /** Force mock admin session even without OAuth (local UI). */
 export function mockAuthEnabled(): boolean {
-  if (process.env.MOCK_AUTH === "1" || process.env.MOCK_AUTH === "true") {
+  const mock = getRuntimeEnv("MOCK_AUTH");
+  if (mock === "1" || mock === "true") {
     return true;
   }
   // Default: mock when OAuth not wired so `npm run dev` works
@@ -20,19 +24,23 @@ export function mockAuthEnabled(): boolean {
 }
 
 export function getDiscordClientId(): string {
-  return process.env.DISCORD_CLIENT_ID || process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
+  return (
+    getRuntimeEnv("DISCORD_CLIENT_ID") ||
+    getRuntimeEnv("NEXT_PUBLIC_DISCORD_CLIENT_ID") ||
+    ""
+  );
 }
 
 export function getSessionPassword(): string {
-  return (
-    process.env.SESSION_SECRET ||
-    "rallied-dev-only-session-secret-min-32-chars!!"
-  );
+  const secret = getRuntimeEnv("SESSION_SECRET");
+  if (secret && secret.length >= 32) return secret;
+  // Local/dev only — production must set SESSION_SECRET as a Runtime Secret.
+  return "rallied-dev-only-session-secret-min-32-chars!!";
 }
 
 export function getRedirectUri(): string {
   return (
-    process.env.DISCORD_REDIRECT_URI ||
+    getRuntimeEnv("DISCORD_REDIRECT_URI") ||
     "http://localhost:3000/api/auth/callback"
   );
 }

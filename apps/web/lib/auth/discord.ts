@@ -32,8 +32,8 @@ export async function exchangeCode(code: string): Promise<{
   scope: string;
 }> {
   const body = new URLSearchParams({
-    client_id: process.env.DISCORD_CLIENT_ID!,
-    client_secret: process.env.DISCORD_CLIENT_SECRET!,
+    client_id: getDiscordClientId(),
+    client_secret: getRuntimeEnv("DISCORD_CLIENT_SECRET") || "",
     grant_type: "authorization_code",
     code,
     redirect_uri: getRedirectUri(),

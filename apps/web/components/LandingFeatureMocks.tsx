@@ -1,3 +1,5 @@
+import { GhostlessMark } from "./GhostlessMark";
+
 /** Static CSS/React mocks for landing feature previews — not interactive. */
 
 export function LfgPartyEmbedMock() {
@@ -135,7 +137,7 @@ export function VibeCheckCardMock() {
           </p>
         </div>
         <span className="inline-flex shrink-0 items-center gap-1 rounded-brand border border-lime/60 bg-lime/10 px-2 py-0.5 text-[11px] font-semibold tracking-wide text-lime">
-          <GhostlessCue />
+          <GhostlessMark size="sm" />
           Ghostless
         </span>
       </div>
@@ -155,32 +157,6 @@ function CheckMark({ className = "h-3.5 w-3.5" }: { className?: string }) {
         fill="none"
         stroke="currentColor"
         strokeWidth="1.85"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function GhostlessCue() {
-  return (
-    <svg viewBox="0 0 14 14" className="h-3 w-3" aria-hidden>
-      <rect
-        x="1.5"
-        y="1.5"
-        width="11"
-        height="11"
-        rx="2"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        opacity="0.7"
-      />
-      <path
-        d="M3.8 7.2 6.1 9.4 10.2 4.8"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />

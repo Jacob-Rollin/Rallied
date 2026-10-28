@@ -41,7 +41,10 @@ export function PublicGhostlessCard({
         </div>
       </div>
       <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-        <GhostlessBadge showRatePct={ghostless?.show_rate_pct ?? null} compact />
+        <GhostlessBadge
+          showRatePct={ghostless?.show_rate_pct ?? null}
+          compact
+        />
         {showStanding && inGoodStanding ? (
           <span className="rounded-brand border border-lime/30 px-2 py-0.5 text-[11px] text-lime/90">
             In good standing

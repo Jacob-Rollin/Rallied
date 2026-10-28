@@ -100,6 +100,28 @@ body::before {
   animation-delay: 0.12s;
 }
 
+@keyframes feature-mock-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.feature-mock {
+  animation: feature-mock-in 0.55s ease-out both;
+  animation-delay: 0.18s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feature-mock {
+    animation: none !important;
+  }
+}
+
 /* Marketing hero: full-bleed atmosphere (coral/lime, not purple) */
 .hero-stage {
   isolation: isolate;

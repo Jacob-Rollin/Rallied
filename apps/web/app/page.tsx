@@ -8,22 +8,31 @@ import {
   buildBotInviteUrl,
 } from "@rallied/shared";
 import { FeatureStepIcon } from "../components/FeatureStepIcon";
+import {
+  LfgPartyEmbedMock,
+  ReadyCheckMock,
+  TierCheck,
+  VibeCheckCardMock,
+} from "../components/LandingFeatureMocks";
 
 const HOW_IT_WORKS = [
   {
     title: "LFG",
-    body: "Create a party in Discord. Join, fill, close — without another free LFG clone war.",
+    body: "Create a party inside Discord. Join, fill, and close lobbies without messy text channels or free LFG clone wars.",
     icon: "slash" as const,
+    preview: "lfg" as const,
   },
   {
     title: "Play",
-    body: "Ready checks and grace windows cut accidental no-shows before they become drama.",
+    body: "Automated ready checks and grace windows cut accidental no-shows before they become server drama.",
     icon: "play" as const,
+    preview: "play" as const,
   },
   {
     title: "Vibe Check",
-    body: "Post-session showed-up + vibe tags. Ghostless badge stays on this server only.",
+    body: "Post-session showed-up + vibe tags. Ghostless reliability stays on this server — no cross-server grades.",
     icon: "check" as const,
+    preview: "vibe" as const,
   },
 ];
 
@@ -35,23 +44,52 @@ const HERO_PILLARS = [
 
 const LANDING_TIERS = [
   {
+    id: "community" as const,
     name: "Community",
     price: COMMUNITY_PRICE_USD,
     annual: PLANS.community.annualCents / 100,
     blurb: "Core LFG, strikes, Ghostless, and admin web per server.",
+    features: [
+      "LFG parties + Vibe Check",
+      "Per-server strikes & lockouts",
+      "Disputes queue",
+      "Public server page",
+      "Weekly digest",
+    ],
+    accent: false as const,
+    founding: false as const,
   },
   {
+    id: "pro" as const,
     name: "Pro",
     price: PRO_PRICE_USD,
     annual: PLANS.pro.annualCents / 100,
     blurb: "Export, trends, vanity branding, and priority support.",
+    features: [
+      "Everything in Community",
+      "Analytics trends + CSV export",
+      "Hide “Powered by” + accent",
+      "Priority support",
+      "Multi-guild discount note",
+    ],
+    accent: false as const,
+    founding: false as const,
   },
   {
-    name: "Founding",
+    id: "founding_pro" as const,
+    name: "Founding Pro",
     price: FOUNDING_PRO_PRICE_USD,
     annual: PLANS.founding_pro.annualCents / 100,
-    blurb: `Pro locked at $${FOUNDING_PRO_PRICE_USD}/mo for early servers (≤${PLANS.founding_pro.seatCap}).`,
+    blurb: `Pro locked at $${FOUNDING_PRO_PRICE_USD}/mo for early servers.`,
+    features: [
+      "Everything in Pro",
+      "Price lock while sub active",
+      "Founding badge (opt-in)",
+      "Priority support",
+      `Limited to ≤${PLANS.founding_pro.seatCap} servers`,
+    ],
     accent: true as const,
+    founding: true as const,
   },
 ];
 
@@ -87,6 +125,12 @@ function HeroLfgSilhouette() {
       </g>
     </svg>
   );
+}
+
+function FeaturePreview({ kind }: { kind: "lfg" | "play" | "vibe" }) {
+  if (kind === "lfg") return <LfgPartyEmbedMock />;
+  if (kind === "play") return <ReadyCheckMock />;
+  return <VibeCheckCardMock />;
 }
 
 export default function MarketingPage() {
@@ -143,7 +187,7 @@ export default function MarketingPage() {
             {BRAND.tagline}
           </h1>
           <p
-            className="animate-rise mt-2.5 max-w-md text-muted sm:mt-3"
+            className="animate-rise mt-2.5 max-w-md text-white/70 sm:mt-3"
             style={{ animationDelay: "120ms" }}
           >
             Parties, Vibe Check, and Ghostless reliability — scoped to each Discord
@@ -182,9 +226,15 @@ export default function MarketingPage() {
             >
               Add to Discord
             </a>
+            <Link
+              href="/s/demo-esports"
+              className="rounded-brand border border-white/25 px-5 py-2.5 font-semibold text-white/90 transition hover:border-lime/50 hover:text-lime"
+            >
+              Explore live demo
+            </Link>
             <a
               href="#how-it-works"
-              className="rounded-brand border border-white/25 px-5 py-2.5 font-semibold text-white/90 transition hover:border-lime/50 hover:text-lime"
+              className="rounded-brand border border-transparent px-4 py-2.5 font-medium text-white/65 transition hover:text-white"
             >
               Learn more
             </a>
@@ -193,7 +243,7 @@ export default function MarketingPage() {
       </section>
 
       <section id="how-it-works" className="border-t border-white/10 bg-black/20 py-14">
-        <div className="mx-auto grid max-w-5xl gap-9 px-4 sm:grid-cols-3 sm:gap-8">
+        <div className="mx-auto grid max-w-5xl gap-10 px-4 sm:grid-cols-3 sm:gap-8">
           {HOW_IT_WORKS.map((step, i) => (
             <div
               key={step.title}
@@ -212,9 +262,10 @@ export default function MarketingPage() {
                   {step.title}
                 </h2>
               </div>
-              <p className="mt-2.5 text-sm leading-relaxed text-muted">
+              <p className="mt-2.5 text-sm leading-relaxed text-white/80">
                 {step.body}
               </p>
+              <FeaturePreview kind={step.preview} />
             </div>
           ))}
         </div>
@@ -222,38 +273,79 @@ export default function MarketingPage() {
 
       <section id="pricing" className="mx-auto max-w-5xl px-4 py-16">
         <h2 className="font-display text-3xl tracking-wide">Pricing</h2>
-        <p className="mt-2 max-w-lg text-muted">
+        <p className="mt-2 max-w-lg text-white/75">
           Per Discord server. Reliability core on Community; Pro adds export and
-          vanity.
+          vanity. Founding Pro locks Pro at ${FOUNDING_PRO_PRICE_USD}/mo.
         </p>
 
-        <ul className="mt-8 divide-y divide-white/10 border-y border-white/10">
+        <div className="mt-8 grid gap-4 sm:grid-cols-3 sm:gap-5">
           {LANDING_TIERS.map((tier) => (
-            <li
-              key={tier.name}
-              className="flex flex-col gap-1 py-4 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6"
+            <div
+              key={tier.id}
+              className={`flex flex-col rounded-brand border p-5 ${
+                tier.founding
+                  ? "border-coral bg-slate-elevated/50"
+                  : "border-white/12 bg-slate-elevated/30"
+              }`}
             >
-              <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
                 <p
                   className={`font-display text-xl tracking-wide ${
-                    "accent" in tier && tier.accent ? "text-lime" : "text-white"
+                    tier.founding ? "text-white" : "text-white"
                   }`}
                 >
                   {tier.name}
                 </p>
-                <p className="mt-1 text-sm text-muted">{tier.blurb}</p>
+                {tier.founding ? (
+                  <span className="rounded-brand border border-coral/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-coral">
+                    Limited · ≤{PLANS.founding_pro.seatCap} servers
+                  </span>
+                ) : null}
               </div>
-              <p className="shrink-0 text-white sm:text-right">
-                <span className="text-lg">${tier.price}</span>
-                <span className="text-sm text-muted">/mo</span>
-                <span className="mt-0.5 block text-xs text-muted">
-                  ${tier.annual}/yr
-                  {"accent" in tier && tier.accent ? " locked" : ""}
+              <p
+                className={`mt-3 tabular-nums ${
+                  tier.founding
+                    ? "font-display text-4xl tracking-wide text-white"
+                    : "text-2xl text-white"
+                }`}
+              >
+                ${tier.price}
+                <span
+                  className={`font-body text-sm font-normal ${
+                    tier.founding ? "text-white/65" : "text-white/55"
+                  }`}
+                >
+                  /mo
                 </span>
               </p>
-            </li>
+              <p className="mt-1 text-xs text-white/55">
+                ${tier.annual}/yr
+                {tier.founding ? " locked" : ""}
+              </p>
+              <p className="mt-3 text-sm leading-relaxed text-white/75">
+                {tier.blurb}
+              </p>
+              <ul className="mt-5 flex-1 space-y-2 text-sm text-white/85">
+                {tier.features.map((f) => (
+                  <li key={f} className="flex gap-2">
+                    <TierCheck accent={tier.founding ? "coral" : "lime"} />
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <a
+                href={inviteHref}
+                className={`mt-6 inline-flex items-center justify-center rounded-brand px-4 py-2.5 text-center text-sm font-semibold transition ${
+                  tier.founding
+                    ? "bg-coral text-slate hover:brightness-110"
+                    : "border border-white/20 text-white/90 hover:border-coral/50 hover:text-white"
+                }`}
+              >
+                Add to Discord
+              </a>
+            </div>
           ))}
-        </ul>
+        </div>
 
         <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
           <a
@@ -262,6 +354,12 @@ export default function MarketingPage() {
           >
             Add to Discord
           </a>
+          <Link
+            href="/s/demo-esports"
+            className="rounded-brand border border-white/25 px-5 py-2.5 font-semibold text-white/90 transition hover:border-lime/50 hover:text-lime"
+          >
+            Explore live demo
+          </Link>
           <Link
             href="/pricing"
             className="text-sm text-white/80 underline-offset-4 transition hover:text-lime hover:underline"
@@ -273,7 +371,7 @@ export default function MarketingPage() {
 
       <footer className="border-t border-white/10 py-10">
         <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted">
+          <p className="text-sm text-white/55">
             Example public server (mock):{" "}
             <Link href="/s/demo-esports" className="text-coral/90 hover:underline">
               /s/demo-esports
@@ -290,7 +388,7 @@ export default function MarketingPage() {
               Your cards
             </Link>
           </p>
-          <p className="text-xs text-muted/80">
+          <p className="text-xs text-white/45">
             {BRAND.name} · {BRAND.domain}
           </p>
         </div>

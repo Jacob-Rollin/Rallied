@@ -1,16 +1,17 @@
 import Link from "next/link";
 import {
+  COMMUNITY_PRICE_USD,
   FOUNDING_PRO_PRICE_USD,
   PLANS,
   PRO_PRICE_USD,
-  COMMUNITY_PRICE_USD,
 } from "@rallied/shared";
 
 const TIERS = [
   {
-    id: "community",
+    id: "community" as const,
     name: "Community",
     price: COMMUNITY_PRICE_USD,
+    annual: PLANS.community.annualCents / 100,
     blurb: "Full LFG + Ghostless + strikes + disputes. The reliability core.",
     features: [
       "LFG parties + Vibe Check",
@@ -24,10 +25,11 @@ const TIERS = [
     featured: false,
   },
   {
-    id: "founding_pro",
+    id: "founding_pro" as const,
     name: "Founding Pro",
     price: FOUNDING_PRO_PRICE_USD,
-    blurb: `Pro features locked at $${FOUNDING_PRO_PRICE_USD}/mo · ≤${PLANS.founding_pro.seatCap} seats. Not Community $3.99.`,
+    annual: PLANS.founding_pro.annualCents / 100,
+    blurb: `Pro features locked at $${FOUNDING_PRO_PRICE_USD}/mo · ≤${PLANS.founding_pro.seatCap} seats.`,
     features: [
       "Everything in Community",
       "Analytics trends + CSV export",
@@ -40,9 +42,10 @@ const TIERS = [
     featured: true,
   },
   {
-    id: "pro",
+    id: "pro" as const,
     name: "Pro",
     price: PRO_PRICE_USD,
+    annual: PLANS.pro.annualCents / 100,
     blurb: "List Pro after Founding fills — export, vanity, priority.",
     features: [
       "Everything in Community",
@@ -55,7 +58,7 @@ const TIERS = [
     cta: "Upgrade to Pro",
     featured: false,
   },
-] as const;
+];
 
 export default function PricingPage() {
   return (
@@ -83,16 +86,20 @@ export default function PricingPage() {
         </h1>
         <p className="mt-3 max-w-xl text-muted">
           No free-forever full LFG. Community{" "}
-          <strong className="font-normal text-white">${COMMUNITY_PRICE_USD}/mo</strong>
+          <strong className="font-normal text-white">
+            ${COMMUNITY_PRICE_USD}/mo
+          </strong>{" "}
+          (${PLANS.community.annualCents / 100}/yr)
           {" · "}
           Pro{" "}
-          <strong className="font-normal text-white">${PRO_PRICE_USD}/mo</strong>
+          <strong className="font-normal text-white">${PRO_PRICE_USD}/mo</strong>{" "}
+          (${PLANS.pro.annualCents / 100}/yr)
           {" · "}
           Founding Pro{" "}
           <strong className="font-normal text-lime">
             ${FOUNDING_PRO_PRICE_USD}/mo locked
           </strong>{" "}
-          (≤50). Stripe Checkout is a placeholder — no charges yet.
+          (≤{PLANS.founding_pro.seatCap}).
         </p>
 
         <div className="mt-12 grid gap-6 lg:grid-cols-3">
@@ -110,6 +117,10 @@ export default function PricingPage() {
                 ${tier.price}
                 <span className="text-sm text-muted">/mo</span>
               </p>
+              <p className="mt-1 text-xs text-muted">
+                ${tier.annual}/yr
+                {tier.id === "founding_pro" ? " locked" : ""}
+              </p>
               <p className="mt-3 text-sm text-muted">{tier.blurb}</p>
               <ul className="mt-6 flex-1 space-y-2 text-sm text-white/85">
                 {tier.features.map((f) => (
@@ -122,7 +133,7 @@ export default function PricingPage() {
               <button
                 type="button"
                 disabled
-                title="Stripe Checkout placeholder — set STRIPE_* later"
+                title="Checkout coming soon"
                 className={`mt-8 w-full cursor-not-allowed rounded-brand px-4 py-2.5 text-sm font-semibold ${
                   tier.featured
                     ? "bg-lime/40 text-slate"
@@ -136,10 +147,7 @@ export default function PricingPage() {
         </div>
 
         <p className="mt-10 text-center text-xs text-muted">
-          14-day Community trial · first-month money-back · per Discord server.{" "}
-          <Link href="/docs" className="pointer-events-none text-coral/50">
-            Details in pricing doc
-          </Link>
+          14-day Community trial · first-month money-back · per Discord server.
         </p>
       </main>
     </div>

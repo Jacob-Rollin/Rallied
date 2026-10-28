@@ -5,6 +5,7 @@ import { discordAppId } from "./lib/env.js";
 import { createServiceClient } from "./lib/supabase.js";
 import { verifyDiscordRequest } from "./lib/verify.js";
 import {
+  ephemeral,
   InteractionResponseType,
   InteractionType,
   type Interaction,
@@ -20,8 +21,13 @@ import {
   putApplicationCommands,
   secretsMatch,
 } from "./lib/register-commands.js";
+import { lfgCreateModalResponse } from "./lib/embeds.js";
 import { handleAutocomplete } from "./handlers/autocomplete.js";
-import { routeCommand, routeComponent } from "./handlers/router.js";
+import {
+  routeCommand,
+  routeComponent,
+  routeModal,
+} from "./handlers/router.js";
 
 export type AppBindings = { Bindings: BotEnv };
 type AppContext = Context<AppBindings>;
@@ -64,6 +70,20 @@ async function handleRegisterCommands(c: AppContext) {
   }
 
   return c.json(result);
+}
+
+/**
+ * Create-party game select must open a modal as the *immediate* response.
+ * Discord forbids deferring then opening a modal.
+ */
+function syncModalFromComponent(interaction: Interaction) {
+  const customId = interaction.data?.custom_id;
+  if (customId !== "lfg:creategame") return null;
+  const selected = interaction.data?.values?.[0];
+  if (!selected) {
+    return ephemeral("Pick a game from the list.");
+  }
+  return lfgCreateModalResponse(selected);
 }
 
 export function createApp() {
@@ -115,9 +135,18 @@ export function createApp() {
         return c.json(handleAutocomplete(interaction));
       }
 
+      // Game select → create modal must be synchronous (type 9).
+      if (interaction.type === InteractionType.MESSAGE_COMPONENT) {
+        const modal = syncModalFromComponent(interaction);
+        if (modal) {
+          return c.json(modal);
+        }
+      }
+
       if (
         interaction.type !== InteractionType.APPLICATION_COMMAND &&
-        interaction.type !== InteractionType.MESSAGE_COMPONENT
+        interaction.type !== InteractionType.MESSAGE_COMPONENT &&
+        interaction.type !== InteractionType.MODAL_SUBMIT
       ) {
         return c.json({
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
@@ -132,10 +161,14 @@ export function createApp() {
       const background = (async () => {
         try {
           const sb = createServiceClient(env);
-          const response =
-            interaction.type === InteractionType.APPLICATION_COMMAND
-              ? await routeCommand(interaction, sb, env)
-              : await routeComponent(interaction, sb, env);
+          let response;
+          if (interaction.type === InteractionType.APPLICATION_COMMAND) {
+            response = await routeCommand(interaction, sb, env);
+          } else if (interaction.type === InteractionType.MODAL_SUBMIT) {
+            response = await routeModal(interaction, sb, env);
+          } else {
+            response = await routeComponent(interaction, sb, env);
+          }
           await deliverDeferredResponse(
             env,
             interaction,

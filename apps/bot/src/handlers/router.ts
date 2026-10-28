@@ -5,7 +5,7 @@ import { formatError } from "../lib/errors.js";
 import { handleButton } from "./buttons.js";
 import { handleDispute } from "./dispute.js";
 import { handleGhostless } from "./ghostless.js";
-import { handleLfg } from "./lfg.js";
+import { handleCreateModalSubmit, handleLfg, handleSetup } from "./lfg.js";
 import { handleStrikes } from "./strikes.js";
 import { handleVibe } from "./vibe.js";
 
@@ -19,6 +19,8 @@ export async function routeCommand(
     switch (name) {
       case "lfg":
         return await handleLfg(interaction, sb);
+      case "setup":
+        return await handleSetup(interaction);
       case "vibe":
         return await handleVibe(interaction, sb, env);
       case "strikes":
@@ -47,6 +49,24 @@ export async function routeComponent(
   } catch (err) {
     const msg = formatError(err);
     console.error("component error", msg, err);
+    return ephemeral(`Something went wrong: ${msg}`);
+  }
+}
+
+export async function routeModal(
+  interaction: Interaction,
+  sb: SupabaseClient | null,
+  _env: BotEnv,
+) {
+  try {
+    const customId = interaction.data?.custom_id ?? "";
+    if (customId.startsWith("lfg:createsubmit:")) {
+      return await handleCreateModalSubmit(interaction, sb);
+    }
+    return ephemeral(`Unhandled modal: ${customId || "?"}`);
+  } catch (err) {
+    const msg = formatError(err);
+    console.error("modal error", msg, err);
     return ephemeral(`Something went wrong: ${msg}`);
   }
 }

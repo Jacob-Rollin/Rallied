@@ -11,6 +11,8 @@ import { vibeCheckMessage, vibePickMemberMessage } from "../lib/embeds.js";
 import { openDisputeFromButton } from "./dispute.js";
 import {
   closePartyById,
+  handleFindGameSelect,
+  handleLfgDeskComponent,
   joinParty,
   leaveParty,
 } from "./lfg.js";
@@ -25,6 +27,9 @@ import { ensureServerAndMember } from "../lib/supabase.js";
  *   dispute:open:<partyId>:<rateeMemberId>
  *   lfg:join|leave|close|vibe:<partyId>
  *   lfg:joinselect                        (+ values[0] = party id)
+ *   lfg:desk:create|find|mine|help
+ *   lfg:creategame                        (+ values[0] = game | __other__) — sync modal elsewhere
+ *   lfg:findgame                          (+ values[0] = game | __all__)
  */
 export async function handleButton(
   interaction: Interaction,
@@ -44,6 +49,15 @@ export async function handleButton(
   const selected = interaction.data?.values?.[0];
 
   if (ns === "lfg") {
+    if (action === "desk") {
+      const desk = await handleLfgDeskComponent(interaction, sb, partyId ?? "");
+      if (desk) return desk;
+    }
+
+    if (action === "findgame" && selected) {
+      return handleFindGameSelect(interaction, sb, selected);
+    }
+
     if (action === "joinselect" && selected) {
       return joinParty({
         sb,

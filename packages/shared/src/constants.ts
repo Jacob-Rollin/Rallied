@@ -94,6 +94,7 @@ export const BOT_INVITE_PERMISSIONS_VALUE = String(
 
 export const SLASH_COMMANDS = {
   lfg: "lfg",
+  setup: "setup",
   vibe: "vibe",
   strikes: "strikes",
   ghostless: "ghostless",
@@ -113,6 +114,13 @@ export const BUTTON_IDS = {
   lfgClose: "lfg:close",
   lfgJoinSelect: "lfg:joinselect",
   lfgVibe: "lfg:vibe",
+  lfgDeskCreate: "lfg:desk:create",
+  lfgDeskFind: "lfg:desk:find",
+  lfgDeskMine: "lfg:desk:mine",
+  lfgDeskHelp: "lfg:desk:help",
+  lfgCreateGame: "lfg:creategame",
+  lfgFindGame: "lfg:findgame",
+  lfgCreateSubmit: "lfg:createsubmit",
 } as const;
 
 export function buildBotInviteUrl(clientId: string, permissions = BOT_INVITE_PERMISSIONS_VALUE) {

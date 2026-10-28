@@ -54,7 +54,17 @@ export const commandDefinitions = [
         name: "close",
         description: "Close your open LFG party",
       },
+      {
+        type: 1,
+        name: "desk",
+        description: "Mod: post the LFG desk panel in this channel",
+      },
     ],
+  },
+  {
+    name: "setup",
+    description: "Mod: post the Rallied LFG desk panel in this channel",
+    default_member_permissions: "32",
   },
   {
     name: "vibe",

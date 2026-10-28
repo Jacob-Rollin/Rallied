@@ -21,7 +21,12 @@ import {
   putApplicationCommands,
   secretsMatch,
 } from "./lib/register-commands.js";
-import { lfgCreateModalResponse } from "./lib/embeds.js";
+import {
+  lfgCreateGameSelectMessage,
+  lfgCreateModalResponse,
+  lfgFindGameSelectMessage,
+  lfgHowItWorksMessage,
+} from "./lib/embeds.js";
 import { handleAutocomplete } from "./handlers/autocomplete.js";
 import {
   routeCommand,
@@ -73,12 +78,33 @@ async function handleRegisterCommands(c: AppContext) {
 }
 
 /**
- * Game select → create modal must be the *immediate* response (type 9).
- * Discord forbids deferring then opening a modal.
- * Desk Create first shows an ephemeral game select; picking a game opens this modal.
+ * Fast-path component replies that must not rely on defer + webhook edit:
+ * - Create/Find/Help desk taps (no DB) → immediate ephemeral UI
+ * - Game select → modal (Discord forbids deferring then opening a modal)
  */
-function syncModalFromComponent(interaction: Interaction) {
+function syncComponentResponse(interaction: Interaction) {
   const customId = interaction.data?.custom_id;
+  if (!customId) return null;
+
+  if (customId === "lfg:desk:create") {
+    return {
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: lfgCreateGameSelectMessage(),
+    };
+  }
+  if (customId === "lfg:desk:find") {
+    return {
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: lfgFindGameSelectMessage(),
+    };
+  }
+  if (customId === "lfg:desk:help") {
+    return {
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: lfgHowItWorksMessage(),
+    };
+  }
+
   if (customId === "lfg:creategame") {
     const selected = interaction.data?.values?.[0];
     if (!selected) {
@@ -86,6 +112,7 @@ function syncModalFromComponent(interaction: Interaction) {
     }
     return lfgCreateModalResponse(selected);
   }
+
   return null;
 }
 
@@ -138,11 +165,11 @@ export function createApp() {
         return c.json(handleAutocomplete(interaction));
       }
 
-      // Game select → create modal must be synchronous (type 9).
+      // Desk Create/Find/Help + create-game → modal: reply sync (no defer).
       if (interaction.type === InteractionType.MESSAGE_COMPONENT) {
-        const modal = syncModalFromComponent(interaction);
-        if (modal) {
-          return c.json(modal);
+        const sync = syncComponentResponse(interaction);
+        if (sync) {
+          return c.json(sync);
         }
       }
 

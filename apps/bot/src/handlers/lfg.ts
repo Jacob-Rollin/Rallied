@@ -28,6 +28,7 @@ import {
   lfgPartyComponents,
   lfgPartyEmbed,
   publicEmbed,
+  resolveCreateGameKey,
 } from "../lib/embeds.js";
 import { formatError } from "../lib/errors.js";
 import {
@@ -436,7 +437,7 @@ export async function handleCreateModalSubmit(
   const gameRaw =
     gameFromId === LFG_OTHER_GAME
       ? getModalField(interaction, "game")
-      : gameFromId;
+      : resolveCreateGameKey(gameFromId);
   const sizeRaw = getModalField(interaction, "size");
   const notes = getModalField(interaction, "notes");
 

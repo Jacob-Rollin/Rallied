@@ -469,10 +469,18 @@ export function lfgDeskMessage() {
 }
 
 function catalogSelectOptions(limit: number) {
+  // Prefer slug values — unique, stable, safe in modal custom_ids.
   return GAME_CATALOG.slice(0, limit).map((g) => ({
     label: g.name.slice(0, 100),
-    value: g.name.slice(0, 100),
+    value: g.slug.slice(0, 100),
   }));
+}
+
+function resolveCatalogGame(key: string): string {
+  const hit = GAME_CATALOG.find(
+    (g) => g.slug === key || g.name.toLowerCase() === key.toLowerCase(),
+  );
+  return hit?.name ?? key;
 }
 
 /** Ephemeral: pick a game before the create modal (modals have no autocomplete). */
@@ -542,12 +550,20 @@ export function lfgFindGameSelectMessage() {
 
 /**
  * Immediate MODAL response (type 9) — must not be deferred.
+ * `gameKey` is a catalog slug, display name, or LFG_OTHER_GAME.
  * Catalog pick → size + notes only. Other… → free-text game + size + notes.
  */
-export function lfgCreateModalResponse(game: string) {
-  const isOther = game === LFG_OTHER_GAME;
-  const title = isOther ? "Create party" : `Create · ${game}`.slice(0, 45);
-  const customId = `lfg:createsubmit:${game}`.slice(0, 100);
+export function lfgCreateModalResponse(gameKey: string) {
+  const isOther = gameKey === LFG_OTHER_GAME;
+  const display = isOther ? "" : resolveCatalogGame(gameKey);
+  const idKey = isOther
+    ? LFG_OTHER_GAME
+    : (GAME_CATALOG.find(
+        (g) =>
+          g.slug === gameKey || g.name.toLowerCase() === gameKey.toLowerCase(),
+      )?.slug ?? gameKey);
+  const title = isOther ? "Create party" : `Create · ${display}`.slice(0, 45);
+  const customId = `lfg:createsubmit:${idKey}`.slice(0, 100);
 
   const rows: unknown[] = [];
 
@@ -575,7 +591,7 @@ export function lfgCreateModalResponse(game: string) {
       {
         type: 4,
         custom_id: "size",
-        label: "Party size (2–20, including you)",
+        label: "Party size (2-20)",
         style: 1,
         required: true,
         min_length: 1,
@@ -609,6 +625,12 @@ export function lfgCreateModalResponse(game: string) {
       components: rows,
     },
   };
+}
+
+/** Resolve modal/select game key (slug, name, or Other) to a party game string. */
+export function resolveCreateGameKey(gameKey: string): string {
+  if (gameKey === LFG_OTHER_GAME) return "";
+  return resolveCatalogGame(gameKey);
 }
 
 export function lfgHowItWorksMessage() {

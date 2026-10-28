@@ -1,12 +1,38 @@
 "use client";
 
 import type { AnalyticsTrendPoint } from "@/lib/dashboard-data";
-import { formatPctDelta } from "@/lib/analytics-stats";
+import { formatPctDelta, pctChange } from "@/lib/analytics-stats";
 
 const BAR_MIN = 6;
 const BAR_MAX = 112;
+/** Tall enough to hold a readable in-bar label on mobile. */
+const LABEL_INSIDE_MIN = 36;
 
 type Metric = "parties" | "vibes" | "ghosts";
+
+function DeltaLine({ prior, current }: { prior: number; current: number }) {
+  const pct = pctChange(current, prior);
+  const up = pct != null && pct > 0;
+  const down = pct != null && pct < 0;
+  const flat = pct === 0;
+
+  return (
+    <p
+      className={`mt-1.5 text-xs tabular-nums ${
+        up ? "text-lime" : down ? "text-coral" : "text-muted"
+      }`}
+    >
+      {pct == null ? (
+        <span>vs prior 7d · n/a</span>
+      ) : (
+        <>
+          <span aria-hidden>{up ? "↑" : down ? "↓" : flat ? "→" : ""} </span>
+          {formatPctDelta(pct)} vs prior 7d
+        </>
+      )}
+    </p>
+  );
+}
 
 export function AnalyticsWeekBarChart({
   title,
@@ -26,7 +52,7 @@ export function AnalyticsWeekBarChart({
     <section className="rounded-brand border border-white/10 bg-slate-elevated/40 p-4 sm:p-5">
       <h2 className="font-display text-lg tracking-wide">{title}</h2>
       <div
-        className="mt-5 flex h-[140px] items-end gap-1.5 sm:gap-2"
+        className="mt-4 flex h-[168px] items-end gap-1.5 sm:gap-2"
         role="img"
         aria-label={`${title} bar chart, Monday through Sunday`}
       >
@@ -36,19 +62,33 @@ export function AnalyticsWeekBarChart({
             value <= 0
               ? BAR_MIN
               : BAR_MIN + (value / max) * (BAR_MAX - BAR_MIN);
+          const labelInside = value > 0 && height >= LABEL_INSIDE_MIN;
+
           return (
             <div
               key={`${metric}-${d.day}-${i}`}
-              className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2"
+              className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5"
               title={`${d.day}: ${value}`}
             >
+              {!labelInside ? (
+                <span className="text-[10px] tabular-nums leading-none text-white/80 sm:text-[11px]">
+                  {value}
+                </span>
+              ) : (
+                <span className="h-[11px]" aria-hidden />
+              )}
               <div
-                className={`w-full max-w-[36px] rounded-sm ${barClassName} ${
+                className={`relative w-full max-w-[36px] rounded-sm ${barClassName} ${
                   value <= 0 ? "opacity-25" : ""
                 }`}
                 style={{ height: `${height}px` }}
-                aria-hidden
-              />
+              >
+                {labelInside ? (
+                  <span className="absolute inset-x-0 top-1 text-center text-[10px] font-semibold tabular-nums leading-none text-slate sm:text-[11px]">
+                    {value}
+                  </span>
+                ) : null}
+              </div>
               <span className="text-[10px] uppercase tracking-wide text-muted sm:text-[11px]">
                 {d.day}
               </span>
@@ -73,20 +113,11 @@ export function AnalyticsKpiCard({
   valueClassName?: string;
 }) {
   const numeric =
-    typeof value === "number" ? value : Number.isFinite(Number(value))
-      ? Number(value)
-      : null;
-  const pct =
-    prior != null && numeric != null
-      ? prior === 0
-        ? numeric === 0
-          ? 0
-          : null
-        : Math.round(((numeric - prior) / prior) * 100)
-      : null;
-  const up = pct != null && pct > 0;
-  const down = pct != null && pct < 0;
-  const flat = pct === 0;
+    typeof value === "number"
+      ? value
+      : Number.isFinite(Number(value))
+        ? Number(value)
+        : null;
 
   return (
     <div className="rounded-brand border border-white/10 bg-slate-elevated/50 p-4">
@@ -98,27 +129,8 @@ export function AnalyticsKpiCard({
       >
         {value}
       </p>
-      {prior != null ? (
-        <p
-          className={`mt-1.5 text-xs tabular-nums ${
-            up
-              ? "text-lime"
-              : down
-                ? "text-coral"
-                : flat
-                  ? "text-muted"
-                  : "text-muted"
-          }`}
-        >
-          {pct == null ? (
-            <span>vs prior 7d · n/a</span>
-          ) : (
-            <>
-              <span aria-hidden>{up ? "↑" : down ? "↓" : "→"} </span>
-              {formatPctDelta(pct)} vs prior 7d
-            </>
-          )}
-        </p>
+      {prior != null && numeric != null ? (
+        <DeltaLine prior={prior} current={numeric} />
       ) : null}
     </div>
   );
@@ -127,10 +139,15 @@ export function AnalyticsKpiCard({
 export function AnalyticsSoftMetric({
   label,
   value,
+  numericValue,
+  prior,
   hint,
 }: {
   label: string;
   value: string;
+  /** Numeric form of `value` for WoW % (e.g. 91.2 for "91.2%"). */
+  numericValue?: number | null;
+  prior?: number | null;
   hint?: string;
 }) {
   return (
@@ -139,7 +156,11 @@ export function AnalyticsSoftMetric({
       <p className="mt-1 font-display text-xl tabular-nums text-white/95">
         {value}
       </p>
-      {hint ? <p className="mt-0.5 text-[11px] text-muted">{hint}</p> : null}
+      {prior != null && numericValue != null ? (
+        <DeltaLine prior={prior} current={numericValue} />
+      ) : hint ? (
+        <p className="mt-0.5 text-[11px] text-muted">{hint}</p>
+      ) : null}
     </div>
   );
 }

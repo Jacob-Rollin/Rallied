@@ -71,6 +71,9 @@ export type AnalyticsExtras = {
   showRatePct: number | null;
   avgVibe: number | null;
   readyCheckCompletionPct: number | null;
+  /** Prior 7d for WoW on soft metrics (mock / when available). */
+  priorShowRatePct?: number | null;
+  priorAvgVibe?: number | null;
 };
 
 export type AnalyticsTopPlayer = {

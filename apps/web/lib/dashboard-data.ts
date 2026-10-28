@@ -215,7 +215,7 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
   if (!sb) {
     return emptyBundle(
       guildId,
-      "Set SUPABASE_SERVICE_ROLE_KEY on the web Worker (server-only) to load live dashboard rows. RLS blocks the anon key.",
+      "Add SUPABASE_SERVICE_ROLE_KEY as a Runtime Secret on the web Worker (not Build-only, not the bot). Name it exactly SUPABASE_SERVICE_ROLE_KEY, then redeploy once — later deploys keep it.",
     );
   }
 

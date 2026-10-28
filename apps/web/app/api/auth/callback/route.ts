@@ -7,6 +7,7 @@ import {
   filterAdminGuilds,
 } from "@/lib/auth/discord";
 import { getSession } from "@/lib/auth/session";
+import { getServiceRoleKey, getSupabaseUrl } from "@/lib/runtime-env";
 
 function appOrigin(req: NextRequest) {
   return process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin;
@@ -69,8 +70,8 @@ async function upsertDashboardUser(
   globalName: string | null,
   avatar: string | null,
 ) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = getSupabaseUrl();
+  const key = getServiceRoleKey();
   if (!url || !key) return;
 
   try {

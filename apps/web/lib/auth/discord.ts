@@ -1,4 +1,9 @@
 import { DISCORD_OAUTH_SCOPES, type AdminGuild } from "@rallied/shared";
+import {
+  getRuntimeEnv,
+  getServiceRoleKey,
+  getSupabaseUrl,
+} from "../runtime-env";
 import { getDiscordClientId, getRedirectUri } from "./config";
 
 const API = "https://discord.com/api/v10";
@@ -110,10 +115,9 @@ async function fetchPlansForGuilds(
 ): Promise<Map<string, AdminGuild["plan"]>> {
   const map = new Map<string, AdminGuild["plan"]>();
   if (guildIds.length === 0) return map;
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const url = getSupabaseUrl();
   const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    getServiceRoleKey() || getRuntimeEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
   if (!url || !key) return map;
   try {
     const q = encodeURIComponent(`in.(${guildIds.join(",")})`);
@@ -152,7 +156,7 @@ export async function getBotPresenceAndPlans(guildIds: string[]): Promise<{
 
 /** Returns null if detection unavailable (stub: treat manageable as present). */
 async function getBotGuildIds(): Promise<Set<string> | null> {
-  const token = process.env.DISCORD_BOT_TOKEN;
+  const token = getRuntimeEnv("DISCORD_BOT_TOKEN");
   if (!token) {
     // Prefer Supabase servers table if available
     const fromDb = await getInstalledGuildIdsFromSupabase();
@@ -181,10 +185,9 @@ async function getBotGuildIds(): Promise<Set<string> | null> {
  * query succeeds with zero rows; null only when env/query unavailable.
  */
 async function getInstalledGuildIdsFromSupabase(): Promise<Set<string> | null> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const url = getSupabaseUrl();
   const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    getServiceRoleKey() || getRuntimeEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
   if (!url || !key) return null;
 
   try {

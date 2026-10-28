@@ -153,7 +153,7 @@ Runtime / build secrets for the **web** Worker (not the bot) — set in CF dashb
 | `DISCORD_REDIRECT_URI` | yes | e.g. `https://your-domain/api/auth/callback` |
 | `SESSION_SECRET` | yes | ≥32 chars |
 | `NEXT_PUBLIC_APP_URL` | yes | Canonical site URL |
-| `NEXT_PUBLIC_SUPABASE_URL` | yes (live) | Project URL |
+| `NEXT_PUBLIC_SUPABASE_URL` | yes (live) | Project base only (`https://<ref>.supabase.co`) — not `…/rest/v1` (PGRST125) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes (live) | Public; RLS still blocks table reads |
 | `SUPABASE_SERVICE_ROLE_KEY` | **yes for live /app** | Secret — server-only dashboard + public `/s/[real]` reads |
 | `DISCORD_BOT_TOKEN` | optional | `bot_present` via Discord API; else uses `servers` rows |

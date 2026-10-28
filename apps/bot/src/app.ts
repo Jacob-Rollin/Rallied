@@ -20,6 +20,7 @@ import {
   putApplicationCommands,
   secretsMatch,
 } from "./lib/register-commands.js";
+import { handleAutocomplete } from "./handlers/autocomplete.js";
 import { routeCommand, routeComponent } from "./handlers/router.js";
 
 export type AppBindings = { Bindings: BotEnv };
@@ -107,6 +108,11 @@ export function createApp() {
       // Keep PING fast and synchronous (Discord URL verification).
       if (interaction.type === InteractionType.PING) {
         return c.json({ type: InteractionResponseType.PONG });
+      }
+
+      // Autocomplete cannot be deferred — reply with choices within 3s.
+      if (interaction.type === InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE) {
+        return c.json(handleAutocomplete(interaction));
       }
 
       if (

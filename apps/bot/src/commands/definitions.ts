@@ -1,5 +1,18 @@
 /** Slash command payloads for Discord REST register (Phase 1 + 1.5). */
 
+/** STRING option with APPLICATION_COMMAND_AUTOCOMPLETE. */
+const gameOption = (opts: {
+  name?: string;
+  description: string;
+  required: boolean;
+}) => ({
+  type: 3,
+  name: opts.name ?? "game",
+  description: opts.description,
+  required: opts.required,
+  autocomplete: true,
+});
+
 export const commandDefinitions = [
   {
     name: "lfg",
@@ -10,7 +23,10 @@ export const commandDefinitions = [
         name: "create",
         description: "Create an LFG party (rich embed)",
         options: [
-          { type: 3, name: "game", description: "Game name", required: true },
+          gameOption({
+            description: "Game — type a few letters and pick from the list",
+            required: true,
+          }),
           { type: 3, name: "rank", description: "Rank / MMR text", required: false },
           {
             type: 4,
@@ -26,6 +42,12 @@ export const commandDefinitions = [
         type: 1,
         name: "find",
         description: "List open LFG parties in this server",
+        options: [
+          gameOption({
+            description: "Filter by game (optional) — type to autocomplete",
+            required: false,
+          }),
+        ],
       },
       {
         type: 1,

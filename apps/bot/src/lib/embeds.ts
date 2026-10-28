@@ -1,4 +1,5 @@
 import { BRAND } from "@rallied/shared";
+import { InteractionResponseType } from "./discord.js";
 
 /** Discord embed / component helpers (Phase 1.5). */
 
@@ -19,6 +20,41 @@ export interface Embed {
 
 export const CORAL = parseInt(BRAND.colors.coral.replace("#", ""), 16);
 export const LIME = parseInt(BRAND.colors.ghostlessLime.replace("#", ""), 16);
+
+/** Join / Leave / Close / Vibe actions on a public party embed. */
+export function lfgPartyComponents(partyId: string) {
+  return [
+    {
+      type: 1,
+      components: [
+        {
+          type: 2,
+          style: 3,
+          label: "Join",
+          custom_id: `lfg:join:${partyId}`,
+        },
+        {
+          type: 2,
+          style: 2,
+          label: "Leave",
+          custom_id: `lfg:leave:${partyId}`,
+        },
+        {
+          type: 2,
+          style: 4,
+          label: "Close",
+          custom_id: `lfg:close:${partyId}`,
+        },
+        {
+          type: 2,
+          style: 1,
+          label: "Vibe Check",
+          custom_id: `lfg:vibe:${partyId}`,
+        },
+      ],
+    },
+  ];
+}
 
 export function lfgPartyEmbed(opts: {
   game: string;
@@ -58,6 +94,52 @@ export function lfgPartyEmbed(opts: {
     ],
     footer: { text: "Rallied · this server only" },
     timestamp: new Date().toISOString(),
+  };
+}
+
+/** Ephemeral find results: pick a party from a select (mobile-friendly). */
+export function lfgFindMessage(opts: {
+  lines: string[];
+  parties: { id: string; game: string; rank_text: string; slots: number; filled: number }[];
+  gameFilter?: string | null;
+}) {
+  const header = opts.gameFilter
+    ? `Open **${opts.gameFilter}** parties (this server):`
+    : "Open parties (this server):";
+
+  const options = opts.parties.slice(0, 25).map((p, i) => {
+    const label = `${p.game} · ${p.filled}/${p.slots}`.slice(0, 100);
+    const desc = (p.rank_text || "Any rank").slice(0, 100);
+    return {
+      label: label.length ? label : `Party ${i + 1}`,
+      description: desc,
+      value: p.id,
+    };
+  });
+
+  const components =
+    options.length > 0
+      ? [
+          {
+            type: 1,
+            components: [
+              {
+                type: 3,
+                custom_id: "lfg:joinselect",
+                placeholder: "Tap to join a party…",
+                min_values: 1,
+                max_values: 1,
+                options,
+              },
+            ],
+          },
+        ]
+      : [];
+
+  return {
+    content: `${header}\n${opts.lines.join("\n")}`,
+    flags: 64,
+    components,
   };
 }
 
@@ -117,7 +199,7 @@ export function vibeCheckMessage(opts: {
     embeds: [
       {
         description:
-          "Showed up · good vibes · or ghosted. Grace window applies before ghost strikes.",
+          "Tap a quick result, or pick a vibe score 1–5. Grace window applies before ghost strikes.",
         color: LIME,
       },
     ],
@@ -133,12 +215,6 @@ export function vibeCheckMessage(opts: {
           },
           {
             type: 2,
-            style: 1,
-            label: "Vibes",
-            custom_id: custom("good"),
-          },
-          {
-            type: 2,
             style: 4,
             label: "Ghosted",
             custom_id: custom("ghosted"),
@@ -151,13 +227,63 @@ export function vibeCheckMessage(opts: {
           },
         ],
       },
+      {
+        type: 1,
+        components: [
+          {
+            type: 3,
+            custom_id: `vibe:score:${opts.partyId}:${opts.rateeMemberId}`,
+            placeholder: "Rate vibe 1–5 (counts as showed up)",
+            min_values: 1,
+            max_values: 1,
+            options: [
+              { label: "1 — Rough", value: "1", description: "Showed up, rough session" },
+              { label: "2 — Meh", value: "2", description: "Showed up" },
+              { label: "3 — Fine", value: "3", description: "Showed up, solid" },
+              { label: "4 — Good", value: "4", description: "Showed up, good vibes" },
+              { label: "5 — Great", value: "5", description: "Showed up, great teammate" },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+}
+
+/** Ephemeral: pick which party member to vibe-check. */
+export function vibePickMemberMessage(opts: {
+  partyId: string;
+  members: { memberId: string; label: string }[];
+}) {
+  const options = opts.members.slice(0, 25).map((m) => ({
+    label: m.label.slice(0, 100),
+    value: m.memberId,
+  }));
+
+  return {
+    content: "Who do you want to Vibe Check? (this party, this server)",
+    flags: 64,
+    components: [
+      {
+        type: 1,
+        components: [
+          {
+            type: 3,
+            custom_id: `vibe:pick:${opts.partyId}`,
+            placeholder: "Pick a teammate…",
+            min_values: 1,
+            max_values: 1,
+            options,
+          },
+        ],
+      },
     ],
   };
 }
 
 export function publicEmbed(embed: Embed, components?: unknown[]) {
   return {
-    type: 4, // CHANNEL_MESSAGE_WITH_SOURCE
+    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
     data: {
       embeds: [embed],
       ...(components ? { components } : {}),
@@ -167,7 +293,7 @@ export function publicEmbed(embed: Embed, components?: unknown[]) {
 
 export function ephemeralEmbed(embed: Embed) {
   return {
-    type: 4,
+    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
     data: {
       embeds: [embed],
       flags: 64,

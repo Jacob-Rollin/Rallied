@@ -4,6 +4,7 @@ export const InteractionType = {
   PING: 1,
   APPLICATION_COMMAND: 2,
   MESSAGE_COMPONENT: 3,
+  APPLICATION_COMMAND_AUTOCOMPLETE: 4,
 } as const;
 
 export const InteractionResponseType = {
@@ -12,10 +13,13 @@ export const InteractionResponseType = {
   DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE: 5,
   /** Deferred ACK for message components (no thinking message). */
   DEFERRED_UPDATE_MESSAGE: 6,
+  APPLICATION_COMMAND_AUTOCOMPLETE_RESULT: 8,
 } as const;
 
 /** Discord MessageFlags.EPHEMERAL */
 export const EPHEMERAL_FLAG = 64;
+
+export type AutocompleteChoice = { name: string; value: string };
 
 export type InteractionMessageData = {
   content?: string;
@@ -23,6 +27,8 @@ export type InteractionMessageData = {
   components?: unknown[];
   flags?: number;
   allowed_mentions?: unknown;
+  /** Autocomplete response only */
+  choices?: AutocompleteChoice[];
   [key: string]: unknown;
 };
 
@@ -61,6 +67,8 @@ export interface ApplicationCommandInteractionData {
   /** Present on MESSAGE_COMPONENT interactions */
   custom_id?: string;
   component_type?: number;
+  /** String/user/role select menu values */
+  values?: string[];
 }
 
 export interface Interaction {

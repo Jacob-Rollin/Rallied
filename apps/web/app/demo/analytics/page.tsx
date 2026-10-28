@@ -24,6 +24,7 @@ export default async function DemoAnalyticsPage() {
         trend={data.analyticsTrend}
         priorTrend={data.analyticsTrendPrior}
         extras={data.analyticsExtras}
+        topPlayers={data.analyticsTopPlayers}
         sourceLabel={data.source}
       />
     </div>

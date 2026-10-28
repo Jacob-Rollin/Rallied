@@ -2,12 +2,10 @@
 
 import type {
   AnalyticsExtras,
+  AnalyticsTopPlayer,
   AnalyticsTrendPoint,
 } from "@/lib/dashboard-data";
-import {
-  buildWeekInsight,
-  sumTrend,
-} from "@/lib/analytics-stats";
+import { buildWeekInsight, sumTrend } from "@/lib/analytics-stats";
 import {
   AnalyticsKpiCard,
   AnalyticsSoftMetric,
@@ -20,6 +18,7 @@ type Props = {
   trend: AnalyticsTrendPoint[];
   priorTrend?: AnalyticsTrendPoint[];
   extras?: AnalyticsExtras | null;
+  topPlayers?: AnalyticsTopPlayer[];
   onExport: () => void;
   exportDisabled?: boolean;
 };
@@ -30,6 +29,7 @@ export function AnalyticsProView({
   trend,
   priorTrend = [],
   extras = null,
+  topPlayers = [],
   onExport,
   exportDisabled = false,
 }: Props) {
@@ -41,10 +41,10 @@ export function AnalyticsProView({
   const priorParties = hasPrior ? sumTrend(priorTrend, "parties") : null;
   const priorVibes = hasPrior ? sumTrend(priorTrend, "vibes") : null;
   const priorGhosts = hasPrior ? sumTrend(priorTrend, "ghosts") : null;
-  const insight = buildWeekInsight(trend, priorTrend);
+  const peakNote = buildWeekInsight(trend, priorTrend);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <section className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-lime">
           {serverName} · Pro trends ({sourceLabel})
@@ -78,8 +78,8 @@ export function AnalyticsProView({
             barClassName="bg-lime"
           />
 
-          {insight ? (
-            <p className="text-sm text-muted">{insight}</p>
+          {peakNote ? (
+            <p className="text-xs text-muted">{peakNote}</p>
           ) : null}
 
           <section className="grid gap-3 sm:grid-cols-3">
@@ -102,15 +102,12 @@ export function AnalyticsProView({
           </section>
 
           {extras &&
-          (extras.showRatePct != null ||
-            extras.avgVibe != null ||
-            extras.readyCheckCompletionPct != null) ? (
-            <section className="grid gap-3 sm:grid-cols-3">
+          (extras.showRatePct != null || extras.avgVibe != null) ? (
+            <section className="grid gap-3 sm:grid-cols-2">
               {extras.showRatePct != null ? (
                 <AnalyticsSoftMetric
-                  label="Show rate (7d)"
+                  label="Ghostless / show rate (7d)"
                   value={`${extras.showRatePct}%`}
-                  hint="Ghostless reliability"
                 />
               ) : null}
               {extras.avgVibe != null ? (
@@ -120,13 +117,40 @@ export function AnalyticsProView({
                   hint="Out of 5"
                 />
               ) : null}
-              {extras.readyCheckCompletionPct != null ? (
-                <AnalyticsSoftMetric
-                  label="Ready-check done"
-                  value={`${extras.readyCheckCompletionPct}%`}
-                  hint="Completed within grace"
-                />
-              ) : null}
+            </section>
+          ) : null}
+
+          {topPlayers.length > 0 ? (
+            <section className="rounded-brand border border-white/10 bg-slate-elevated/40 px-4 py-3">
+              <h2 className="font-display text-lg tracking-wide">
+                Top this week
+              </h2>
+              <ol className="mt-2 space-y-1.5">
+                {topPlayers.map((p, i) => (
+                  <li
+                    key={`${p.name}-${i}`}
+                    className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-sm"
+                  >
+                    <span className="text-white/90">
+                      <span className="tabular-nums text-muted">{i + 1}. </span>
+                      {p.name}
+                    </span>
+                    <span className="tabular-nums text-xs text-muted">
+                      {p.showRatePct != null ? (
+                        <span className="text-lime">{p.showRatePct}% show</span>
+                      ) : (
+                        "—"
+                      )}
+                      {p.vibeAvg != null ? (
+                        <span className="text-white/45">
+                          {" · vibe "}
+                          {p.vibeAvg}
+                        </span>
+                      ) : null}
+                    </span>
+                  </li>
+                ))}
+              </ol>
             </section>
           ) : null}
         </>

@@ -31,6 +31,7 @@ export default async function AnalyticsPage({ searchParams }: Props) {
         trend={data.analyticsTrend}
         priorTrend={data.analyticsTrendPrior}
         extras={data.analyticsExtras}
+        topPlayers={data.analyticsTopPlayers}
         billingHref={withGuildQuery("/app/billing", guildId)}
         sourceLabel={data.source}
       />

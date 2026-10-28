@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { isProPlan, PRO_PRICE_USD, type PlanId } from "@rallied/shared";
 import type {
   AnalyticsExtras,
+  AnalyticsTopPlayer,
   AnalyticsTrendPoint,
 } from "@/lib/dashboard-data";
 import { AnalyticsProView } from "@/components/AnalyticsProView";
@@ -15,6 +16,7 @@ type Props = {
   trend: AnalyticsTrendPoint[];
   priorTrend?: AnalyticsTrendPoint[];
   extras?: AnalyticsExtras | null;
+  topPlayers?: AnalyticsTopPlayer[];
   billingHref: string;
   sourceLabel: string;
 };
@@ -25,6 +27,7 @@ export function AnalyticsClient({
   trend,
   priorTrend = [],
   extras = null,
+  topPlayers = [],
   billingHref,
   sourceLabel,
 }: Props) {
@@ -90,6 +93,7 @@ export function AnalyticsClient({
       trend={trend}
       priorTrend={priorTrend}
       extras={extras}
+      topPlayers={topPlayers}
       onExport={exportCsv}
     />
   );

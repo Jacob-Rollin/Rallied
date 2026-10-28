@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { PRO_PRICE_USD, buildBotInviteUrl } from "@rallied/shared";
 import type {
   AnalyticsExtras,
+  AnalyticsTopPlayer,
   AnalyticsTrendPoint,
 } from "@/lib/dashboard-data";
 import { AnalyticsProView } from "@/components/AnalyticsProView";
@@ -13,6 +14,7 @@ type Props = {
   trend: AnalyticsTrendPoint[];
   priorTrend?: AnalyticsTrendPoint[];
   extras?: AnalyticsExtras | null;
+  topPlayers?: AnalyticsTopPlayer[];
   sourceLabel: string;
 };
 
@@ -21,6 +23,7 @@ export function DemoAnalyticsClient({
   trend,
   priorTrend = [],
   extras = null,
+  topPlayers = [],
   sourceLabel,
 }: Props) {
   const [proPreview, setProPreview] = useState(false);
@@ -122,6 +125,7 @@ export function DemoAnalyticsClient({
         trend={trend}
         priorTrend={priorTrend}
         extras={extras}
+        topPlayers={topPlayers}
         onExport={exportCsv}
       />
 

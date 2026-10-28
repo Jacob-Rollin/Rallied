@@ -73,6 +73,12 @@ export type AnalyticsExtras = {
   readyCheckCompletionPct: number | null;
 };
 
+export type AnalyticsTopPlayer = {
+  name: string;
+  showRatePct: number | null;
+  vibeAvg: number | null;
+};
+
 export type DashboardSource = "live" | "mock" | "empty";
 
 export type DashboardBundle = {
@@ -92,6 +98,8 @@ export type DashboardBundle = {
   /** Prior 7 days when available (mock / later live). */
   analyticsTrendPrior: AnalyticsTrendPoint[];
   analyticsExtras: AnalyticsExtras | null;
+  /** Top members for Pro “Top this week” (by show rate, then vibe). */
+  analyticsTopPlayers: AnalyticsTopPlayer[];
   notice: string | null;
 };
 
@@ -160,6 +168,26 @@ function mockSettingsForServer(server: Server): ServerSettings {
   return { ...MOCK_SETTINGS, server_id: server.id, slug: null };
 }
 
+function topPlayersFromMembers(
+  people: DashboardPerson[],
+  limit = 3,
+): AnalyticsTopPlayer[] {
+  return [...people]
+    .filter((p) => p.ghostless != null)
+    .sort((a, b) => {
+      const rate =
+        (b.ghostless?.show_rate_pct ?? 0) - (a.ghostless?.show_rate_pct ?? 0);
+      if (rate !== 0) return rate;
+      return (b.ghostless?.vibe_avg ?? 0) - (a.ghostless?.vibe_avg ?? 0);
+    })
+    .slice(0, limit)
+    .map((p) => ({
+      name: p.member.display_name,
+      showRatePct: p.ghostless?.show_rate_pct ?? null,
+      vibeAvg: p.ghostless?.vibe_avg ?? null,
+    }));
+}
+
 function buildMockBundle(guildId: string): DashboardBundle {
   const server = mockServerForGuild(guildId);
   const contentId =
@@ -193,6 +221,7 @@ function buildMockBundle(guildId: string): DashboardBundle {
     analyticsTrend: MOCK_ANALYTICS_TREND,
     analyticsTrendPrior: MOCK_ANALYTICS_TREND_PRIOR,
     analyticsExtras: MOCK_ANALYTICS_EXTRAS,
+    analyticsTopPlayers: topPlayersFromMembers(members),
     notice: "Demo / mock data — not a live guild.",
   };
 }
@@ -217,6 +246,7 @@ function emptyBundle(
     analyticsTrend: [],
     analyticsTrendPrior: [],
     analyticsExtras: null,
+    analyticsTopPlayers: [],
     notice,
   };
 }
@@ -519,6 +549,7 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
     analyticsTrend: [...dayBuckets.values()],
     analyticsTrendPrior: [],
     analyticsExtras: null,
+    analyticsTopPlayers: topPlayersFromMembers(members),
     notice: null,
   };
 }

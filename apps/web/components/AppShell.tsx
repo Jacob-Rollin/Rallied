@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import type { AdminGuild } from "@rallied/shared";
 import { buildBotInviteUrl } from "@rallied/shared";
 import { MOCK_SERVERS } from "@/lib/mock-data";
-import { GUILD_COOKIE, GUILD_QUERY } from "@/lib/guild-context";
+import { GUILD_COOKIE, GUILD_QUERY } from "@/lib/guild-params";
 
 const NAV = [
   { href: "/app", label: "Overview" },

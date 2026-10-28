@@ -333,4 +333,7 @@ export const MOCK_ANALYTICS_EXTRAS = {
   showRatePct: 91.2,
   avgVibe: 4.3,
   readyCheckCompletionPct: 86,
+  /** Prior 7d baselines for WoW on soft metrics. */
+  priorShowRatePct: 88.5,
+  priorAvgVibe: 4.1,
 };

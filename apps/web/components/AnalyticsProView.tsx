@@ -108,12 +108,16 @@ export function AnalyticsProView({
                 <AnalyticsSoftMetric
                   label="Ghostless / show rate (7d)"
                   value={`${extras.showRatePct}%`}
+                  numericValue={extras.showRatePct}
+                  prior={extras.priorShowRatePct ?? null}
                 />
               ) : null}
               {extras.avgVibe != null ? (
                 <AnalyticsSoftMetric
                   label="Avg vibe (7d)"
                   value={String(extras.avgVibe)}
+                  numericValue={extras.avgVibe}
+                  prior={extras.priorAvgVibe ?? null}
                   hint="Out of 5"
                 />
               ) : null}

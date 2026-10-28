@@ -17,6 +17,7 @@ import {
   leaveParty,
   promptCloseParty,
 } from "./lfg.js";
+import { markReady, startReadyCheck } from "./ready-check.js";
 import { recordVibe } from "./vibe.js";
 import { ensureServerAndMember } from "../lib/supabase.js";
 
@@ -26,7 +27,7 @@ import { ensureServerAndMember } from "../lib/supabase.js";
  *   vibe:score:<partyId>:<rateeMemberId>  (+ values[0] = 1–5)
  *   vibe:pick:<partyId>                   (+ values[0] = ratee member id)
  *   dispute:open:<partyId>:<rateeMemberId>
- *   lfg:join|leave|close|vibe:<partyId>
+ *   lfg:join|leave|close|vibe|ready|readyup:<partyId>
  *   lfg:closeconfirm|closecancel:<partyId>
  *   lfg:joinselect                        (+ values[0] = party id)
  *   lfg:desk:create|find|mine|help
@@ -141,6 +142,28 @@ export async function handleButton(
 
     if (action === "vibe" && partyId) {
       return startPartyVibePick(sb, interaction, partyId, user.id);
+    }
+
+    if (action === "ready" && partyId) {
+      return startReadyCheck({
+        sb,
+        env,
+        guildId: interaction.guild_id,
+        partyId,
+        discordUserId: user.id,
+        displayName: displayName(interaction),
+      });
+    }
+
+    if (action === "readyup" && partyId) {
+      return markReady({
+        sb,
+        env,
+        guildId: interaction.guild_id,
+        partyId,
+        discordUserId: user.id,
+        displayName: displayName(interaction),
+      });
     }
   }
 

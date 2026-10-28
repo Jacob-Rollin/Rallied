@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { gamesMatch, normalizeGame } from "@rallied/shared";
+import type { BotEnv } from "../lib/env.js";
 import {
   actorUser,
   avatarUrl,
@@ -10,14 +11,16 @@ import {
   getSubcommand,
   InteractionResponseType,
   isMod,
-  publicMessage,
   type Interaction,
   type InteractionResponse,
 } from "../lib/discord.js";
 import {
   LFG_ALL_GAMES,
   LFG_OTHER_GAME,
+  lfgCloseConfirmMessage,
+  lfgCreateGameSelectMessage,
   lfgDeskMessage,
+  lfgFindEmptyMessage,
   lfgFindGameSelectMessage,
   lfgFindMessage,
   lfgHowItWorksMessage,
@@ -27,7 +30,16 @@ import {
   publicEmbed,
 } from "../lib/embeds.js";
 import { formatError } from "../lib/errors.js";
+import {
+  loadPartyMembers,
+  postThreadMessage,
+  refreshPartyCard,
+  type PartyCardState,
+} from "../lib/party-message.js";
 import { ensureServerAndMember } from "../lib/supabase.js";
+
+const PARTY_SELECT =
+  "id, game, rank_text, slots, status, host_member_id, discord_message_id, discord_channel_id, discord_thread_id, server_id";
 
 function ghostlessLabel(shows: number, ghosts: number): string {
   const total = shows + ghosts;
@@ -47,6 +59,28 @@ async function countFilled(
     .select("*", { count: "exact", head: true })
     .eq("party_id", partyId);
   return count ?? 0;
+}
+
+function asCard(party: PartyCardState & { server_id?: string }): PartyCardState {
+  return {
+    id: party.id,
+    game: party.game,
+    rank_text: party.rank_text,
+    slots: party.slots,
+    status: party.status,
+    host_member_id: party.host_member_id,
+    discord_message_id: party.discord_message_id,
+    discord_channel_id: party.discord_channel_id,
+    discord_thread_id: party.discord_thread_id,
+  };
+}
+
+function rosterLine(members: Awaited<ReturnType<typeof loadPartyMembers>>): string {
+  return members
+    .map((m) =>
+      m.role === "host" ? `<@${m.discordUserId}> (host)` : `<@${m.discordUserId}>`,
+    )
+    .join(", ");
 }
 
 export async function createParty(opts: {
@@ -131,9 +165,19 @@ export async function createParty(opts: {
     hostMention: `<@${opts.discordUserId}>`,
     partyId: party.id,
     ghostlessLabel: ghostlessLabel(stats?.shows ?? 0, stats?.ghosts ?? 0),
+    members: [
+      {
+        mention: `<@${opts.discordUserId}>`,
+        role: "host",
+      },
+    ],
+    status: "open",
   });
 
-  return publicEmbed(embed, lfgPartyComponents(party.id));
+  return {
+    ...publicEmbed(embed, lfgPartyComponents(party.id, "open")),
+    meta: { persistPartyMessage: { partyId: party.id } },
+  };
 }
 
 export async function findParties(opts: {
@@ -171,11 +215,10 @@ export async function findParties(opts: {
   );
 
   if (!filtered.length) {
-    return ephemeral(
-      gameFilter
-        ? `No open **${gameFilter}** parties in this server.`
-        : "No open LFG parties in this server.",
-    );
+    return {
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: lfgFindEmptyMessage(gameFilter),
+    };
   }
 
   const withCounts = await Promise.all(
@@ -204,10 +247,10 @@ export async function findParties(opts: {
 
 /** Admin: post the LFG desk panel in the current channel. */
 export function postLfgDesk(): InteractionResponse {
-  const payload = lfgDeskMessage();
   return {
     type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-    data: payload,
+    data: lfgDeskMessage(),
+    meta: { pinHint: true },
   };
 }
 
@@ -278,10 +321,10 @@ export async function handleLfg(interaction: Interaction, sb: SupabaseClient | n
   if (sub === "close") {
     const { data: party } = await sb
       .from("lfg_parties")
-      .select("id")
+      .select("id, game")
       .eq("server_id", server.id)
       .eq("host_member_id", member.id)
-      .eq("status", "open")
+      .in("status", ["open", "filled"])
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(1)
@@ -289,18 +332,11 @@ export async function handleLfg(interaction: Interaction, sb: SupabaseClient | n
 
     if (!party) return ephemeral("You don't have an open party to close.");
 
-  await sb
-    .from("lfg_parties")
-    .update({
-      status: "closed",
-      deleted_at: new Date().toISOString(),
-    })
-    .eq("id", party.id);
-
-  return publicMessage(`Party \`${party.id}\` closed.`, {
-    clearComponents: true,
-  });
-}
+    return {
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: lfgCloseConfirmMessage(party.id, party.game),
+    };
+  }
 
   return ephemeral("Unknown `/lfg` subcommand. Try create, find, desk, or close.");
 }
@@ -325,9 +361,11 @@ export async function handleLfgDeskComponent(
   const user = actorUser(interaction);
   if (!user || !interaction.guild_id) return ephemeral("Could not resolve user.");
 
-  // create is handled synchronously in app.ts (modal) — never defer.
   if (action === "create") {
-    return ephemeral("Tap **Create party** again — the form should open immediately.");
+    return {
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: lfgCreateGameSelectMessage(),
+    };
   }
 
   if (action === "find") {
@@ -393,7 +431,6 @@ export async function handleCreateModalSubmit(
   if (!user) return ephemeral("Could not resolve your Discord user.");
 
   const customId = interaction.data?.custom_id ?? "";
-  // lfg:createsubmit:<game or __other__>
   const gameFromId = customId.split(":").slice(2).join(":") || LFG_OTHER_GAME;
 
   const gameRaw =
@@ -491,15 +528,55 @@ async function listMyParties(opts: {
   };
 }
 
-export async function joinParty(opts: {
+export async function promptCloseParty(opts: {
   sb: SupabaseClient;
   guildId: string;
   partyId: string;
   discordUserId: string;
   displayName: string;
-  avatarUrl: string | null;
-}) {
+}): Promise<InteractionResponse> {
   const { sb } = opts;
+  const { server, member } = await ensureServerAndMember(
+    sb,
+    opts.guildId,
+    undefined,
+    opts.discordUserId,
+    opts.displayName,
+    null,
+  );
+
+  const { data: party } = await sb
+    .from("lfg_parties")
+    .select("id, game, host_member_id, status")
+    .eq("id", opts.partyId)
+    .eq("server_id", server.id)
+    .maybeSingle();
+
+  if (!party) return ephemeral("Party not found in this server.");
+  if (party.host_member_id !== member.id) {
+    return ephemeral("Only the host can close this party.");
+  }
+  if (party.status !== "open" && party.status !== "filled") {
+    return ephemeral("That party is already closed.");
+  }
+
+  return {
+    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+    data: lfgCloseConfirmMessage(party.id, party.game),
+  };
+}
+
+export async function joinParty(opts: {
+  sb: SupabaseClient;
+  env: BotEnv;
+  guildId: string;
+  partyId: string;
+  discordUserId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  messageFallback?: { channelId?: string; messageId?: string };
+}): Promise<InteractionResponse> {
+  const { sb, env } = opts;
   const { server, member } = await ensureServerAndMember(
     sb,
     opts.guildId,
@@ -525,7 +602,7 @@ export async function joinParty(opts: {
 
   const { data: party } = await sb
     .from("lfg_parties")
-    .select("id, game, slots, status, server_id, host_member_id")
+    .select(PARTY_SELECT)
     .eq("id", opts.partyId)
     .eq("server_id", server.id)
     .is("deleted_at", null)
@@ -552,23 +629,74 @@ export async function joinParty(opts: {
   if (error) return ephemeral(`Could not join: ${formatError(error)}`);
 
   const nextFilled = await countFilled(sb, party.id);
-  if (nextFilled >= party.slots) {
+  const becameFull = nextFilled >= party.slots;
+  if (becameFull) {
     await sb.from("lfg_parties").update({ status: "filled" }).eq("id", party.id);
+    party.status = "filled";
   }
 
-  return ephemeral(
-    `Joined **${party.game}** party \`${party.id.slice(0, 8)}\` (${nextFilled}/${party.slots}).`,
-  );
+  // Persist message ids from the button message if DB was empty (older parties).
+  if (
+    (!party.discord_message_id || !party.discord_channel_id) &&
+    opts.messageFallback?.messageId &&
+    opts.messageFallback?.channelId
+  ) {
+    await sb
+      .from("lfg_parties")
+      .update({
+        discord_message_id: opts.messageFallback.messageId,
+        discord_channel_id: opts.messageFallback.channelId,
+      })
+      .eq("id", party.id);
+    party.discord_message_id = opts.messageFallback.messageId;
+    party.discord_channel_id = opts.messageFallback.channelId;
+  }
+
+  await refreshPartyCard(env, sb, asCard(party), opts.messageFallback);
+
+  const members = await loadPartyMembers(sb, party.id);
+  const threadHint = party.discord_thread_id
+    ? ` Coordinate in <#${party.discord_thread_id}>.`
+    : " Open the **squad thread** under the party card to share codes / VC.";
+
+  if (party.discord_thread_id) {
+    await postThreadMessage(
+      env,
+      party.discord_thread_id,
+      `<@${opts.discordUserId}> joined (**${nextFilled}/${party.slots}**).`,
+    );
+  }
+
+  const content = [
+    `Joined **${party.game}** (${nextFilled}/${party.slots}).`,
+    `Squad: ${rosterLine(members)}.`,
+    threadHint.trim(),
+  ].join("\n");
+
+  const response: InteractionResponse = {
+    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+    data: { content, flags: 64 },
+  };
+
+  if (becameFull) {
+    response.meta = {
+      vibeNudge: { partyId: party.id, game: party.game },
+    };
+  }
+
+  return response;
 }
 
 export async function leaveParty(opts: {
   sb: SupabaseClient;
+  env: BotEnv;
   guildId: string;
   partyId: string;
   discordUserId: string;
   displayName: string;
-}) {
-  const { sb } = opts;
+  messageFallback?: { channelId?: string; messageId?: string };
+}): Promise<InteractionResponse> {
+  const { sb, env } = opts;
   const { server, member } = await ensureServerAndMember(
     sb,
     opts.guildId,
@@ -580,7 +708,7 @@ export async function leaveParty(opts: {
 
   const { data: party } = await sb
     .from("lfg_parties")
-    .select("id, game, host_member_id, status, server_id")
+    .select(PARTY_SELECT)
     .eq("id", opts.partyId)
     .eq("server_id", server.id)
     .maybeSingle();
@@ -601,19 +729,32 @@ export async function leaveParty(opts: {
 
   if (party.status === "filled") {
     await sb.from("lfg_parties").update({ status: "open" }).eq("id", party.id);
+    party.status = "open";
   }
 
-  return ephemeral(`Left **${party.game}** party \`${party.id.slice(0, 8)}\`.`);
+  await refreshPartyCard(env, sb, asCard(party), opts.messageFallback);
+
+  if (party.discord_thread_id) {
+    await postThreadMessage(
+      env,
+      party.discord_thread_id,
+      `<@${opts.discordUserId}> left the party.`,
+    );
+  }
+
+  return ephemeral(`Left **${party.game}** party.`);
 }
 
 export async function closePartyById(opts: {
   sb: SupabaseClient;
+  env: BotEnv;
   guildId: string;
   partyId: string;
   discordUserId: string;
   displayName: string;
-}) {
-  const { sb } = opts;
+  messageFallback?: { channelId?: string; messageId?: string };
+}): Promise<InteractionResponse> {
+  const { sb, env } = opts;
   const { server, member } = await ensureServerAndMember(
     sb,
     opts.guildId,
@@ -625,7 +766,7 @@ export async function closePartyById(opts: {
 
   const { data: party } = await sb
     .from("lfg_parties")
-    .select("id, host_member_id, status")
+    .select(PARTY_SELECT)
     .eq("id", opts.partyId)
     .eq("server_id", server.id)
     .maybeSingle();
@@ -646,7 +787,26 @@ export async function closePartyById(opts: {
     })
     .eq("id", party.id);
 
-  return publicMessage(`Party \`${party.id}\` closed.`, {
-    clearComponents: true,
-  });
+  party.status = "closed";
+  await refreshPartyCard(env, sb, asCard(party), opts.messageFallback);
+
+  if (party.discord_thread_id) {
+    await postThreadMessage(
+      env,
+      party.discord_thread_id,
+      "Party closed. Use **Vibe Check** on the card to rate teammates.",
+    );
+  }
+
+  return {
+    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+    data: {
+      content: `**${party.game}** party closed.`,
+      components: [],
+      flags: 64,
+    },
+    meta: {
+      vibeNudge: { partyId: party.id, game: party.game },
+    },
+  };
 }

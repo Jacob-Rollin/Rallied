@@ -80,6 +80,9 @@ export interface LfgParty {
   slots: number;
   status: LfgPartyStatus;
   expires_at: string | null;
+  discord_message_id?: string | null;
+  discord_channel_id?: string | null;
+  discord_thread_id?: string | null;
   created_at: string;
   updated_at: string;
 }

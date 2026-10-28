@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { discordAppId, type BotEnv } from "./env.js";
 import {
   EPHEMERAL_FLAG,
@@ -7,6 +8,14 @@ import {
   type InteractionMessageData,
   type InteractionResponse,
 } from "./discord.js";
+import { lfgDeskPinHintMessage, lfgVibeNudgeMessage } from "./embeds.js";
+import {
+  persistPartyMessageIds,
+  refreshPartyCard,
+  startPartyThread,
+  type PartyCardState,
+} from "./party-message.js";
+import { createServiceClient } from "./supabase.js";
 
 const API = "https://discord.com/api/v10";
 
@@ -26,22 +35,20 @@ export function shouldUpdateComponentMessage(interaction: Interaction): boolean 
   return (
     id === "lfg:findgame" ||
     id === "lfg:joinselect" ||
-    id.startsWith("lfg:close:")
+    id.startsWith("lfg:closeconfirm:") ||
+    id.startsWith("lfg:closecancel:")
   );
 }
 
 /** Whether the deferred ACK should be ephemeral (must match final visibility). */
 export function shouldDeferEphemeral(interaction: Interaction): boolean {
   if (interaction.type === InteractionType.MESSAGE_COMPONENT) {
-    // In-place updates inherit the source message visibility.
     if (shouldUpdateComponentMessage(interaction)) return false;
-    // Desk / party buttons reply ephemeral (public posts go via bot token when needed).
     return true;
   }
 
   if (interaction.type === InteractionType.MODAL_SUBMIT) {
     const customId = interaction.data?.custom_id ?? "";
-    // Create-party modal posts a public party embed.
     if (customId.startsWith("lfg:createsubmit:")) return false;
     return true;
   }
@@ -49,19 +56,17 @@ export function shouldDeferEphemeral(interaction: Interaction): boolean {
   const name = interaction.data?.name;
   if (name === "lfg") {
     const sub = interaction.data?.options?.[0]?.name;
-    // create / close / desk post public channel messages
-    if (sub === "create" || sub === "close" || sub === "desk") return false;
+    // create / desk post public; close now shows ephemeral confirm
+    if (sub === "create" || sub === "desk") return false;
     return true;
   }
 
   if (name === "setup") {
-    // Posts the public LFG desk panel.
     return false;
   }
 
   if (name === "vibe") {
     const showed = interaction.data?.options?.find((o) => o.name === "showed_up");
-    // Without showed_up, handler posts public Vibe Check buttons
     if (showed === undefined) return false;
     return true;
   }
@@ -72,7 +77,6 @@ export function shouldDeferEphemeral(interaction: Interaction): boolean {
 /** Immediate Discord ACK within the 3s window. */
 export function deferredAck(interaction: Interaction): InteractionResponse {
   if (shouldUpdateComponentMessage(interaction)) {
-    // Replace the select / button message in place (no extra chat clutter).
     return { type: InteractionResponseType.DEFERRED_UPDATE_MESSAGE };
   }
 
@@ -89,7 +93,7 @@ export async function editOriginalResponse(
   env: BotEnv,
   interaction: Interaction,
   data: InteractionMessageData,
-): Promise<boolean> {
+): Promise<{ id: string; channel_id?: string } | null> {
   const url = `${webhookBase(env, interaction)}/messages/@original`;
   const res = await fetch(url, {
     method: "PATCH",
@@ -102,9 +106,14 @@ export async function editOriginalResponse(
       res.status,
       await res.text().catch(() => ""),
     );
-    return false;
+    return null;
   }
-  return true;
+  try {
+    const json = (await res.json()) as { id?: string; channel_id?: string };
+    return json.id ? { id: json.id, channel_id: json.channel_id } : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function createFollowupMessage(
@@ -152,10 +161,10 @@ async function postChannelMessage(
   env: BotEnv,
   channelId: string,
   data: InteractionMessageData,
-): Promise<boolean> {
+): Promise<{ id: string } | null> {
   if (!env.DISCORD_BOT_TOKEN) {
     console.error("postChannelMessage: DISCORD_BOT_TOKEN missing");
-    return false;
+    return null;
   }
   const { flags: _f, ...body } = data;
   const res = await fetch(`${API}/channels/${channelId}/messages`, {
@@ -172,9 +181,50 @@ async function postChannelMessage(
       res.status,
       await res.text().catch(() => ""),
     );
-    return false;
+    return null;
   }
-  return true;
+  try {
+    const json = (await res.json()) as { id?: string };
+    return json.id ? { id: json.id } : null;
+  } catch {
+    return null;
+  }
+}
+
+async function afterPartyPosted(
+  env: BotEnv,
+  sb: SupabaseClient,
+  partyId: string,
+  channelId: string,
+  messageId: string,
+): Promise<void> {
+  const { data: party } = await sb
+    .from("lfg_parties")
+    .select(
+      "id, game, rank_text, slots, status, host_member_id, discord_message_id, discord_channel_id, discord_thread_id",
+    )
+    .eq("id", partyId)
+    .maybeSingle();
+
+  if (!party) {
+    await persistPartyMessageIds(sb, partyId, { channelId, messageId });
+    return;
+  }
+
+  const threadId = await startPartyThread(env, channelId, messageId, party.game);
+  await persistPartyMessageIds(sb, partyId, {
+    channelId,
+    messageId,
+    threadId,
+  });
+
+  const card: PartyCardState = {
+    ...party,
+    discord_channel_id: channelId,
+    discord_message_id: messageId,
+    discord_thread_id: threadId,
+  };
+  await refreshPartyCard(env, sb, card);
 }
 
 /**
@@ -187,44 +237,70 @@ export async function deliverDeferredResponse(
   response: InteractionResponse,
   deferredEphemeral: boolean,
 ): Promise<void> {
+  const meta = response.meta;
   const data: InteractionMessageData =
     response.data ?? { content: "Done." };
 
-  // Type-6 component updates: always edit the source message; drop stale selects.
+  let postedMessage: { id: string; channel_id?: string } | null = null;
+
   if (shouldUpdateComponentMessage(interaction)) {
-    await editOriginalResponse(env, interaction, {
+    postedMessage = await editOriginalResponse(env, interaction, {
       content: data.content ?? "Done.",
       embeds: data.embeds ?? [],
       components: data.components ?? [],
     });
-    return;
+  } else {
+    const wantsEphemeral = isEphemeralData(data);
+
+    if (deferredEphemeral === wantsEphemeral) {
+      postedMessage = await editOriginalResponse(env, interaction, data);
+    } else if (!deferredEphemeral && wantsEphemeral) {
+      await deleteOriginalResponse(env, interaction);
+      await createFollowupMessage(env, interaction, data);
+    } else {
+      const channelId = interaction.channel_id;
+      const posted =
+        channelId && (await postChannelMessage(env, channelId, data));
+      await editOriginalResponse(env, interaction, {
+        content: posted
+          ? "Posted to the channel."
+          : "Could not post publicly — check bot permissions / channel.",
+        components: [],
+      });
+      if (posted && channelId) {
+        postedMessage = { id: posted.id, channel_id: channelId };
+      }
+    }
   }
 
-  const wantsEphemeral = isEphemeralData(data);
-
-  if (deferredEphemeral === wantsEphemeral) {
-    await editOriginalResponse(env, interaction, data);
-    return;
+  if (meta?.persistPartyMessage && postedMessage?.id) {
+    const channelId =
+      postedMessage.channel_id || interaction.channel_id || "";
+    if (channelId) {
+      const sb = createServiceClient(env);
+      if (sb) {
+        await afterPartyPosted(
+          env,
+          sb,
+          meta.persistPartyMessage.partyId,
+          channelId,
+          postedMessage.id,
+        );
+      }
+    }
   }
 
-  if (!deferredEphemeral && wantsEphemeral) {
-    // Public "thinking…" — replace with ephemeral follow-up.
-    await deleteOriginalResponse(env, interaction);
-    await createFollowupMessage(env, interaction, data);
-    return;
+  if (meta?.pinHint) {
+    await createFollowupMessage(env, interaction, lfgDeskPinHintMessage());
   }
 
-  // Deferred ephemeral but handler wants public: interaction follow-ups stay
-  // tied to ephemeral; post to the channel with the bot token instead.
-  const posted =
-    interaction.channel_id &&
-    (await postChannelMessage(env, interaction.channel_id, data));
-  await editOriginalResponse(env, interaction, {
-    content: posted
-      ? "Posted to the channel."
-      : "Could not post publicly — check bot permissions / channel.",
-    components: [],
-  });
+  if (meta?.vibeNudge) {
+    await createFollowupMessage(
+      env,
+      interaction,
+      lfgVibeNudgeMessage(meta.vibeNudge.partyId, meta.vibeNudge.game),
+    );
+  }
 }
 
 export async function deliverErrorFollowup(

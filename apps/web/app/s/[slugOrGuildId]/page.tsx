@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { GhostlessLogo } from "@/components/GhostlessMark";
 import { PublicGhostlessCard } from "@/components/PublicGhostlessCard";
 import {
   discordPartyDeepLink,
@@ -145,7 +146,8 @@ export default async function PublicServerPage({ params }: Props) {
         </section>
 
         <section>
-          <h2 className="font-display text-xl tracking-wide">
+          <h2 className="flex items-center gap-2 font-display text-xl tracking-wide">
+            <GhostlessLogo className="h-6 w-6" alt="" />
             Ghostless spotlight
           </h2>
           <p className="mt-1 text-sm text-muted">

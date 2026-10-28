@@ -54,6 +54,7 @@ export default async function PublicPlayerCardPage({ params }: Props) {
               <div className="mt-3 flex flex-wrap gap-2">
                 <GhostlessBadge
                   showRatePct={ghostless?.show_rate_pct ?? null}
+                  showLogo
                 />
                 {inGoodStanding ? (
                   <span className="rounded-brand border border-lime/30 px-2 py-0.5 text-xs text-lime/90">

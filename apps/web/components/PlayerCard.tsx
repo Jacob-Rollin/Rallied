@@ -53,7 +53,10 @@ export function PlayerCard({
         </div>
       </div>
       <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
-        <GhostlessBadge showRatePct={ghostless?.show_rate_pct ?? null} compact />
+        <GhostlessBadge
+          showRatePct={ghostless?.show_rate_pct ?? null}
+          compact
+        />
         <StrikeBadge count={strikes.length} />
         {lockout ? (
           <span className="rounded-brand border border-coral/40 px-2 py-0.5 text-[11px] text-coral">

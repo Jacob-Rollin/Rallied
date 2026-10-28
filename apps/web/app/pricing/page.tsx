@@ -21,6 +21,7 @@ const TIERS = [
       "Weekly digest",
       "This-week summary",
     ],
+    trial: "14-day free trial",
     cta: "Start trial",
     featured: false,
   },
@@ -38,6 +39,7 @@ const TIERS = [
       "Multi-guild 10% note (3+)",
       "Priority dispute queue (when built)",
     ],
+    trial: "14-day free trial",
     cta: "Upgrade to Pro",
     featured: false,
   },
@@ -55,6 +57,7 @@ const TIERS = [
       "Price lock while sub active",
       "Founding badge (opt-in)",
     ],
+    trial: null as string | null,
     cta: "Apply for Founding",
     featured: true,
   },
@@ -85,7 +88,8 @@ export default function PricingPage() {
           Pricing
         </h1>
         <p className="mt-3 max-w-xl text-white/75">
-          No free-forever full LFG. Community{" "}
+          No free-forever full LFG — 14-day Community trial, then locked list
+          pricing. Community{" "}
           <strong className="font-normal text-white">
             ${COMMUNITY_PRICE_USD}/mo
           </strong>{" "}
@@ -136,6 +140,9 @@ export default function PricingPage() {
                 ${tier.annual}/yr
                 {tier.id === "founding_pro" ? " locked" : ""}
               </p>
+              {tier.trial ? (
+                <p className="mt-2 text-xs font-medium text-lime">{tier.trial}</p>
+              ) : null}
               <p className="mt-3 text-sm text-white/75">{tier.blurb}</p>
               <ul className="mt-6 flex-1 space-y-2 text-sm text-white/85">
                 {tier.features.map((f) => (

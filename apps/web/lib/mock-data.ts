@@ -131,6 +131,20 @@ export const MOCK_PARTIES: (LfgParty & { host_name: string; filled: number })[] 
     created_at: new Date(Date.now() - 5 * 3600_000).toISOString(),
     updated_at: new Date().toISOString(),
   },
+  {
+    id: "33333333-3333-3333-3333-333333333304",
+    server_id: MOCK_SERVERS[0].id,
+    host_member_id: MOCK_MEMBERS[3].id,
+    host_name: "Dev",
+    game: "Marvel Rivals",
+    rank_text: "Plat+",
+    slots: 6,
+    filled: 4,
+    status: "open",
+    expires_at: new Date(Date.now() + 90 * 60_000).toISOString(),
+    created_at: new Date(Date.now() - 8 * 60_000).toISOString(),
+    updated_at: new Date().toISOString(),
+  },
 ];
 
 export const MOCK_GHOSTLESS: Record<string, GhostlessStats> = {
@@ -189,6 +203,15 @@ export const MOCK_STRIKES: Strike[] = [
     created_by: MOCK_MEMBERS[0].id,
     active: true,
     created_at: "2026-10-18T00:00:00Z",
+  },
+  {
+    id: "s2",
+    server_id: MOCK_SERVERS[0].id,
+    member_id: MOCK_MEMBERS[3].id,
+    reason: "Left mid-queue after ready",
+    created_by: MOCK_MEMBERS[0].id,
+    active: true,
+    created_at: "2026-10-21T00:00:00Z",
   },
 ];
 

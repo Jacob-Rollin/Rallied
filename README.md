@@ -34,19 +34,22 @@ npm run dev:web
 
 - No Supabase **service role** → `/app` shows empty live states (or mock for demo guilds); public `/s/demo-*` stays mock
 - Real guild (e.g. Official Rallied) + `SUPABASE_SERVICE_ROLE_KEY` → Overview / LFG / People / Disputes / Analytics / Settings / Billing read live rows
-- Demo: `/s/demo-esports`, mock auth guilds, or `/app?mock=1` keep mock UI
-- No Discord OAuth env (or `MOCK_AUTH=1`) → visiting `/app` or **Log in with Discord** seeds a mock admin session
+- **Explore live demo** → [`/demo`](http://localhost:3000/demo) admin board (mock fixtures, no OAuth, does not write a session)
+- Public player demos stay at `/s/demo-esports` (linked from the admin demo banner)
+- Local preview only: mock auth guilds or `/app?mock=1` — never re-enable silent production mock login
+- Explicit `MOCK_AUTH=1` (or local + OAuth missing) → `/app` can seed a mock admin session
 - Real OAuth: set `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_REDIRECT_URI`, `SESSION_SECRET` (≥32 chars)
 
 ### Public player routes (strikes never shown)
 
 | Route | What |
 | --- | --- |
+| `/demo` | Demo **admin** dashboard (Overview / LFG / People / Disputes / Analytics…) |
 | `/s/[slugOrGuildId]` | Public server page — open LFG, weekly soft stats, Ghostless spotlight |
 | `/s/[slugOrGuildId]/u/[discordUserId]` | Shareable Ghostless card (this server only; no strike history) |
 | `/me` | Light list of your card links (session or mock) |
 
-Mock example: [`/s/demo-esports`](http://localhost:3000/s/demo-esports) · card [`/s/demo-esports/u/user-aria`](http://localhost:3000/s/demo-esports/u/user-aria)
+Demo admin: [`/demo`](http://localhost:3000/demo) · public: [`/s/demo-esports`](http://localhost:3000/s/demo-esports) · card [`/s/demo-esports/u/user-aria`](http://localhost:3000/s/demo-esports/u/user-aria)
 
 Settings toggles: `public_page_enabled`, `public_member_list`, vanity `slug` → migration `003_public_pages.sql`.
 

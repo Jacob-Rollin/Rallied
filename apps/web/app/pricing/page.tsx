@@ -60,16 +60,19 @@ const TIERS = [
 export default function PricingPage() {
   return (
     <div className="min-h-screen">
-      <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-5">
+      <header className="mx-auto flex max-w-5xl items-center justify-between bg-transparent px-4 py-5">
         <Link href="/">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/brand/rallied-wm-dark.jpg"
+            src="/brand/rallied-wm-transparent-dark.png"
             alt="Rallied"
-            className="h-9 w-auto"
+            className="h-12 w-auto bg-transparent sm:h-14"
           />
         </Link>
-        <Link href="/app/billing" className="text-sm text-muted hover:text-coral">
+        <Link
+          href="/app/billing"
+          className="rounded-brand border border-white/20 px-4 py-2.5 text-base font-medium text-white/90 transition hover:border-coral/50 hover:text-white"
+        >
           Billing
         </Link>
       </header>

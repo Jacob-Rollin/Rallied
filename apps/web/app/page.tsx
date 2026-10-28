@@ -9,17 +9,17 @@ export default function MarketingPage() {
 
   return (
     <div className="min-h-screen">
-      <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-5">
+      <header className="mx-auto flex max-w-5xl items-center justify-between bg-transparent px-4 py-5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/brand/rallied-wm-dark.jpg"
+          src="/brand/rallied-wm-transparent-dark.png"
           alt="Rallied"
-          className="h-9 w-auto sm:h-11"
+          className="h-12 w-auto bg-transparent sm:h-14"
         />
         <div className="flex items-center gap-2">
           <a
             href="/api/auth/discord"
-            className="rounded-brand border border-white/15 px-3 py-1.5 text-sm text-muted transition hover:border-coral/50 hover:text-white"
+            className="rounded-brand border border-white/20 px-4 py-2.5 text-base font-medium text-white/90 transition hover:border-coral/50 hover:text-white"
           >
             Log in with Discord
           </a>

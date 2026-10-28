@@ -74,9 +74,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/" className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/brand/rallied-wm-dark.jpg"
+              src="/brand/rallied-wm-transparent-dark.png"
               alt="Rallied"
-              className="h-8 w-auto"
+              className="h-10 w-auto bg-transparent sm:h-11"
             />
           </Link>
           <div className="flex items-center gap-3">

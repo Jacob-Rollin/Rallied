@@ -12,9 +12,9 @@ export default async function LoginPage({ searchParams }: Props) {
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/brand/rallied-wm-dark.jpg"
+        src="/brand/rallied-wm-transparent-dark.png"
         alt="Rallied"
-        className="mb-8 h-10 w-auto self-start"
+        className="mb-8 h-12 w-auto bg-transparent self-start sm:h-14"
       />
       <h1 className="font-display text-3xl tracking-wide">Admin login</h1>
       <p className="mt-2 text-sm text-muted">

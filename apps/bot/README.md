@@ -14,11 +14,11 @@ Slash commands + message component buttons. Runs as a **Cloudflare Worker** or *
 | `/strikes` | mod | list / add / remove; lockout from `server_settings` |
 | `/dispute` | anyone / mod | open appeal; resolve upheld/overturned |
 
-**LFG desk (no slash needed):** Create → game select → modal (size + notes; Other asks for game text) → party embed. Find → optional game filter → join select. My parties → ephemeral list + Close for hosts. How it works → short ephemeral help. Slash `/lfg create|find` and `/vibe` stay as backups.
+**LFG desk (no slash needed):** Create → modal (game + size + notes; aliases like `val` normalize) → party embed. Find → game filter → join select (filter/join messages **update in place**, no leftover dropdowns). My parties → ephemeral list + Close for hosts (Close updates that message / clears party-card buttons). How it works → short ephemeral help. Slash `/lfg create|find` and `/vibe` stay as backups.
 
-**Game autocomplete:** `/lfg create` and `/lfg find` `game` options use Discord autocomplete against a curated catalog + aliases (`val`→Valorant). Desk create uses a select (top catalog + Other) then a modal; free text is normalized via the same catalog. Parties store the canonical name so find matches create.
+**Game autocomplete:** `/lfg create` and `/lfg find` `game` options use Discord autocomplete against a curated catalog + aliases (`val`→Valorant). Desk create uses a modal text field + the same normalize. Parties store the canonical name so find matches create.
 
-**Components:** Desk buttons; create game select → modal; find game select; party embed Join · Leave · Close · Vibe Check; find join select; Vibe Showed up · Ghosted · Dispute + score 1–5 select (`lfg:*` / `vibe:*` / `dispute:open:*` custom_ids).
+**Components:** Desk buttons; create modal; find game select (in-place update); party embed Join · Leave · Close · Vibe Check; find join select; Vibe Showed up · Ghosted · Dispute + score 1–5 select (`lfg:*` / `vibe:*` / `dispute:open:*` custom_ids).
 
 **Grace window:** `server_settings.grace_minutes` (default 5) — late arrivals within grace are not treated as ghosts for vibe/strike paths.
 

@@ -17,7 +17,6 @@ import {
 import {
   LFG_ALL_GAMES,
   LFG_OTHER_GAME,
-  lfgCreateGameSelectMessage,
   lfgDeskMessage,
   lfgFindGameSelectMessage,
   lfgFindMessage,
@@ -290,16 +289,18 @@ export async function handleLfg(interaction: Interaction, sb: SupabaseClient | n
 
     if (!party) return ephemeral("You don't have an open party to close.");
 
-    await sb
-      .from("lfg_parties")
-      .update({
-        status: "closed",
-        deleted_at: new Date().toISOString(),
-      })
-      .eq("id", party.id);
+  await sb
+    .from("lfg_parties")
+    .update({
+      status: "closed",
+      deleted_at: new Date().toISOString(),
+    })
+    .eq("id", party.id);
 
-    return publicMessage(`Party \`${party.id}\` closed.`);
-  }
+  return publicMessage(`Party \`${party.id}\` closed.`, {
+    clearComponents: true,
+  });
+}
 
   return ephemeral("Unknown `/lfg` subcommand. Try create, find, desk, or close.");
 }
@@ -324,11 +325,9 @@ export async function handleLfgDeskComponent(
   const user = actorUser(interaction);
   if (!user || !interaction.guild_id) return ephemeral("Could not resolve user.");
 
+  // create is handled synchronously in app.ts (modal) — never defer.
   if (action === "create") {
-    return {
-      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-      data: lfgCreateGameSelectMessage(),
-    };
+    return ephemeral("Tap **Create party** again — the form should open immediately.");
   }
 
   if (action === "find") {
@@ -647,5 +646,7 @@ export async function closePartyById(opts: {
     })
     .eq("id", party.id);
 
-  return publicMessage(`Party \`${party.id}\` closed.`);
+  return publicMessage(`Party \`${party.id}\` closed.`, {
+    clearComponents: true,
+  });
 }

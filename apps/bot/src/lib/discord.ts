@@ -106,10 +106,15 @@ export function ephemeral(content: string) {
   };
 }
 
-export function publicMessage(content: string) {
+export function publicMessage(content: string, opts?: { clearComponents?: boolean }) {
   return {
     type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-    data: { content },
+    data: {
+      content,
+      ...(opts?.clearComponents
+        ? { embeds: [] as unknown[], components: [] as unknown[] }
+        : {}),
+    },
   };
 }
 

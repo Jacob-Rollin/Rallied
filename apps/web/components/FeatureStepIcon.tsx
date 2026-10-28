@@ -3,6 +3,8 @@ type FeatureIconKind = "slash" | "play" | "check";
 type Props = {
   kind: FeatureIconKind;
   className?: string;
+  /** Framed mark for feature rows; bare for quiet inline offer lines. */
+  variant?: "framed" | "bare";
 };
 
 const accents: Record<FeatureIconKind, string> = {
@@ -11,10 +13,22 @@ const accents: Record<FeatureIconKind, string> = {
   check: "border-lime/70 text-lime",
 };
 
-function Glyph({ kind }: { kind: FeatureIconKind }) {
+const bareAccents: Record<FeatureIconKind, string> = {
+  slash: "text-coral",
+  play: "text-coral",
+  check: "text-lime",
+};
+
+function Glyph({
+  kind,
+  sizeClass = "h-3.5 w-3.5",
+}: {
+  kind: FeatureIconKind;
+  sizeClass?: string;
+}) {
   if (kind === "slash") {
     return (
-      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden>
+      <svg viewBox="0 0 16 16" className={sizeClass} aria-hidden>
         <path
           d="M10.2 2.5 5.8 13.5"
           fill="none"
@@ -28,14 +42,14 @@ function Glyph({ kind }: { kind: FeatureIconKind }) {
 
   if (kind === "play") {
     return (
-      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden>
+      <svg viewBox="0 0 16 16" className={sizeClass} aria-hidden>
         <path d="M5.5 3.6v8.8L12.2 8 5.5 3.6Z" fill="currentColor" />
       </svg>
     );
   }
 
   return (
-    <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden>
+    <svg viewBox="0 0 16 16" className={sizeClass} aria-hidden>
       <path
         d="M3.4 8.2 6.6 11.3 12.6 4.6"
         fill="none"
@@ -49,7 +63,22 @@ function Glyph({ kind }: { kind: FeatureIconKind }) {
 }
 
 /** Small terminal-style mark for marketing feature steps (not a card). */
-export function FeatureStepIcon({ kind, className = "" }: Props) {
+export function FeatureStepIcon({
+  kind,
+  className = "",
+  variant = "framed",
+}: Props) {
+  if (variant === "bare") {
+    return (
+      <span
+        className={`inline-flex shrink-0 items-center justify-center ${bareAccents[kind]} ${className}`}
+        aria-hidden
+      >
+        <Glyph kind={kind} sizeClass="h-3 w-3" />
+      </span>
+    );
+  }
+
   return (
     <span
       className={`feature-step-icon inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border bg-black/25 ${accents[kind]} ${className}`}

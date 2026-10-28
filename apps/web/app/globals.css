@@ -99,3 +99,129 @@ body::before {
   animation: feature-icon-in 0.45s ease-out both;
   animation-delay: 0.12s;
 }
+
+/* Marketing hero: full-bleed atmosphere (coral/lime, not purple) */
+.hero-stage {
+  isolation: isolate;
+}
+
+.hero-wash {
+  position: absolute;
+  inset: -12% -8%;
+  pointer-events: none;
+}
+
+.hero-wash--coral {
+  background: radial-gradient(
+    ellipse 55% 48% at 18% 22%,
+    rgba(255, 90, 61, 0.34),
+    transparent 62%
+  );
+  animation: hero-wash-drift 14s ease-in-out infinite alternate;
+}
+
+.hero-wash--lime {
+  background: radial-gradient(
+    ellipse 48% 42% at 88% 18%,
+    rgba(184, 240, 0, 0.16),
+    transparent 58%
+  );
+  animation: hero-wash-drift 18s ease-in-out infinite alternate-reverse;
+}
+
+.hero-wash--slate {
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 110%, rgba(26, 34, 44, 0.9), transparent 55%),
+    linear-gradient(180deg, rgba(18, 24, 32, 0.35) 0%, transparent 42%, rgba(12, 16, 20, 0.55) 100%);
+}
+
+.hero-brand-mark {
+  opacity: 0.34;
+  transform: scale(1.02);
+  filter: saturate(1.05) contrast(1.05);
+  mask-image: radial-gradient(
+    ellipse 62% 58% at 50% 46%,
+    black 18%,
+    rgba(0, 0, 0, 0.55) 48%,
+    transparent 74%
+  );
+  -webkit-mask-image: radial-gradient(
+    ellipse 62% 58% at 50% 46%,
+    black 18%,
+    rgba(0, 0, 0, 0.55) 48%,
+    transparent 74%
+  );
+  animation: hero-mark-breathe 11s ease-in-out infinite alternate;
+}
+
+.hero-lfg-silhouette {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  animation: hero-silhouette-drift 22s ease-in-out infinite alternate;
+}
+
+.hero-vignette {
+  background:
+    linear-gradient(90deg, rgba(15, 20, 25, 0.55) 0%, transparent 28%, transparent 72%, rgba(15, 20, 25, 0.4) 100%),
+    linear-gradient(180deg, rgba(15, 20, 25, 0.2) 0%, transparent 28%, rgba(15, 20, 25, 0.55) 100%);
+}
+
+@keyframes hero-wash-drift {
+  from {
+    transform: translate3d(-1.5%, -1%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(2%, 1.5%, 0) scale(1.04);
+  }
+}
+
+@keyframes hero-mark-breathe {
+  from {
+    opacity: 0.3;
+    transform: scale(1.01) translate3d(0, 0, 0);
+  }
+  to {
+    opacity: 0.4;
+    transform: scale(1.05) translate3d(0, -1.2%, 0);
+  }
+}
+
+@keyframes hero-silhouette-drift {
+  from {
+    opacity: 0.85;
+    transform: translate3d(-1%, 0.5%, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(1.5%, -1%, 0);
+  }
+}
+
+@keyframes hero-pillar-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-hero-pillar {
+  animation: hero-pillar-in 0.5s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-wash--coral,
+  .hero-wash--lime,
+  .hero-brand-mark,
+  .hero-lfg-silhouette,
+  .animate-hero-pillar {
+    animation: none !important;
+  }
+
+  .hero-brand-mark {
+    opacity: 0.34;
+  }
+}

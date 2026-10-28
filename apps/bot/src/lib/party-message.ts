@@ -243,12 +243,85 @@ export async function persistPartyMessageIds(
     threadId?: string | null;
   },
 ): Promise<void> {
-  await sb
+  const { error } = await sb
     .from("lfg_parties")
     .update({
       discord_channel_id: ids.channelId,
       discord_message_id: ids.messageId,
-      ...(ids.threadId ? { discord_thread_id: ids.threadId } : {}),
     })
     .eq("id", partyId);
+  if (error) {
+    console.error("persistPartyMessageIds channel/message failed", error);
+  }
+
+  // Optional column from migration 005 — don't fail Join/Leave if unset.
+  if (ids.threadId) {
+    const { error: threadErr } = await sb
+      .from("lfg_parties")
+      .update({ discord_thread_id: ids.threadId })
+      .eq("id", partyId);
+    if (threadErr) {
+      console.error(
+        "persistPartyMessageIds thread id failed (apply supabase/migrations/005_party_thread.sql?)",
+        threadErr,
+      );
+    }
+  }
+}
+
+const PARTY_SELECT_WITH_THREAD =
+  "id, game, rank_text, slots, status, host_member_id, discord_message_id, discord_channel_id, discord_thread_id, server_id";
+const PARTY_SELECT_BASE =
+  "id, game, rank_text, slots, status, host_member_id, discord_message_id, discord_channel_id, server_id";
+
+/** Load a party for this guild; tolerates missing discord_thread_id column. */
+export async function fetchGuildParty(
+  sb: SupabaseClient,
+  opts: { partyId: string; serverId: string },
+): Promise<{
+  party: (PartyCardState & { server_id: string }) | null;
+  error: string | null;
+}> {
+  let { data, error } = await sb
+    .from("lfg_parties")
+    .select(PARTY_SELECT_WITH_THREAD)
+    .eq("id", opts.partyId)
+    .eq("server_id", opts.serverId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (error && /discord_thread_id/i.test(error.message ?? "")) {
+    ({ data, error } = await sb
+      .from("lfg_parties")
+      .select(PARTY_SELECT_BASE)
+      .eq("id", opts.partyId)
+      .eq("server_id", opts.serverId)
+      .is("deleted_at", null)
+      .maybeSingle());
+  }
+
+  if (error) {
+    return { party: null, error: error.message };
+  }
+  if (!data) {
+    return { party: null, error: null };
+  }
+
+  return {
+    party: {
+      id: data.id,
+      game: data.game,
+      rank_text: data.rank_text,
+      slots: data.slots,
+      status: data.status,
+      host_member_id: data.host_member_id,
+      discord_message_id: data.discord_message_id ?? null,
+      discord_channel_id: data.discord_channel_id ?? null,
+      discord_thread_id:
+        (data as { discord_thread_id?: string | null }).discord_thread_id ??
+        null,
+      server_id: data.server_id,
+    },
+    error: null,
+  };
 }

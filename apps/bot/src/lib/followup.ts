@@ -301,6 +301,15 @@ export async function deliverDeferredResponse(
       lfgVibeNudgeMessage(meta.vibeNudge.partyId, meta.vibeNudge.game),
     );
   }
+
+  if (meta?.dismissAfterMs && meta.dismissAfterMs > 0) {
+    await sleep(meta.dismissAfterMs);
+    await deleteOriginalResponse(env, interaction);
+  }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function deliverErrorFollowup(

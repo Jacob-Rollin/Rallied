@@ -615,10 +615,10 @@ export function lfgHowItWorksMessage() {
   return {
     content: [
       "**How Rallied LFG works** (this server only)",
-      "• **Create party** — pick a game from the list → size/notes form → party card + **squad thread**.",
-      "• **Join** — your name lands on the Squad list; open the thread to coordinate (no manual friend-adds required).",
-      "• **Find party** — filter by game → tap to join.",
-      "• **My parties** — hosts Confirm-close when done; then **Vibe Check** teammates.",
+      "• **Create party** — pick a game → size/notes → party card + **squad thread**.",
+      "• **Join** — tap the **squad thread** under the card to share invite codes / VC (no friend-adds).",
+      "• **Leave** — removes you from the card; private bot notes auto-clear when they can.",
+      "• **Find / My parties / Close** — Confirm-close when done, then **Vibe Check**.",
       "Slash backups: `/lfg create` · `/lfg find` · `/vibe`",
     ].join("\n"),
     flags: 64,

@@ -655,9 +655,6 @@ export async function joinParty(opts: {
   await refreshPartyCard(env, sb, asCard(party), opts.messageFallback);
 
   const members = await loadPartyMembers(sb, party.id);
-  const threadHint = party.discord_thread_id
-    ? ` Coordinate in <#${party.discord_thread_id}>.`
-    : " Open the **squad thread** under the party card to share codes / VC.";
 
   if (party.discord_thread_id) {
     await postThreadMessage(
@@ -667,19 +664,33 @@ export async function joinParty(opts: {
     );
   }
 
+  const connect = party.discord_thread_id
+    ? [
+        "**Connect with your squad:**",
+        `1. Tap <#${party.discord_thread_id}> (thread under the party card)`,
+        "2. Share game invite / ask who’s hopping on VC",
+      ].join("\n")
+    : [
+        "**Connect with your squad:**",
+        "Open the **thread under the party card** (or ask the host) to share invite / VC.",
+      ].join("\n");
+
   const content = [
     `Joined **${party.game}** (${nextFilled}/${party.slots}).`,
     `Squad: ${rosterLine(members)}.`,
-    threadHint.trim(),
+    connect,
   ].join("\n");
 
   const response: InteractionResponse = {
     type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
     data: { content, flags: 64 },
+    // Keep long enough to tap the thread, then clear so Leave doesn’t leave a stale “Joined”.
+    meta: { dismissAfterMs: 20_000 },
   };
 
   if (becameFull) {
     response.meta = {
+      ...response.meta,
       vibeNudge: { partyId: party.id, game: party.game },
     };
   }
@@ -713,10 +724,18 @@ export async function leaveParty(opts: {
     .eq("server_id", server.id)
     .maybeSingle();
 
-  if (!party) return ephemeral("Party not found in this server.");
+  if (!party) {
+    return {
+      ...ephemeral("Party not found in this server."),
+      meta: { dismissAfterMs: 4_000 },
+    };
+  }
 
   if (party.host_member_id === member.id) {
-    return ephemeral("Hosts can't leave — use **Close** instead.");
+    return {
+      ...ephemeral("Hosts can't leave — use **Close** (then Confirm)."),
+      meta: { dismissAfterMs: 5_000 },
+    };
   }
 
   const { error } = await sb
@@ -725,7 +744,12 @@ export async function leaveParty(opts: {
     .eq("party_id", party.id)
     .eq("member_id", member.id);
 
-  if (error) return ephemeral(`Could not leave: ${formatError(error)}`);
+  if (error) {
+    return {
+      ...ephemeral(`Could not leave: ${formatError(error)}`),
+      meta: { dismissAfterMs: 6_000 },
+    };
+  }
 
   if (party.status === "filled") {
     await sb.from("lfg_parties").update({ status: "open" }).eq("id", party.id);
@@ -742,7 +766,16 @@ export async function leaveParty(opts: {
     );
   }
 
-  return ephemeral(`Left **${party.game}** party.`);
+  return {
+    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+    data: {
+      content:
+        `Left **${party.game}**. You’re off the squad list.\n` +
+        `_Older “Only you can see this” notes above can’t be deleted by the bot — tap **Dismiss message** on those._`,
+      flags: 64,
+    },
+    meta: { dismissAfterMs: 6_000 },
+  };
 }
 
 export async function closePartyById(opts: {
@@ -807,6 +840,7 @@ export async function closePartyById(opts: {
     },
     meta: {
       vibeNudge: { partyId: party.id, game: party.game },
+      dismissAfterMs: 4_000,
     },
   };
 }

@@ -25,23 +25,6 @@ const TIERS = [
     featured: false,
   },
   {
-    id: "founding_pro" as const,
-    name: "Founding Pro",
-    price: FOUNDING_PRO_PRICE_USD,
-    annual: PLANS.founding_pro.annualCents / 100,
-    blurb: `Pro features locked at $${FOUNDING_PRO_PRICE_USD}/mo · ≤${PLANS.founding_pro.seatCap} seats.`,
-    features: [
-      "Everything in Community",
-      "Analytics trends + CSV export",
-      "Hide “Powered by” + accent",
-      "Priority support",
-      "Price lock while sub active",
-      "Founding badge (opt-in)",
-    ],
-    cta: "Apply for Founding",
-    featured: true,
-  },
-  {
     id: "pro" as const,
     name: "Pro",
     price: PRO_PRICE_USD,
@@ -57,6 +40,23 @@ const TIERS = [
     ],
     cta: "Upgrade to Pro",
     featured: false,
+  },
+  {
+    id: "founding_pro" as const,
+    name: "Founding Pro",
+    price: FOUNDING_PRO_PRICE_USD,
+    annual: PLANS.founding_pro.annualCents / 100,
+    blurb: `Pro features locked at $${FOUNDING_PRO_PRICE_USD}/mo · ≤${PLANS.founding_pro.seatCap} seats.`,
+    features: [
+      "Everything in Pro",
+      "Analytics trends + CSV export",
+      "Hide “Powered by” + accent",
+      "Priority support",
+      "Price lock while sub active",
+      "Founding badge (opt-in)",
+    ],
+    cta: "Apply for Founding",
+    featured: true,
   },
 ];
 
@@ -84,7 +84,7 @@ export default function PricingPage() {
         <h1 className="font-display text-4xl tracking-wide sm:text-5xl">
           Pricing
         </h1>
-        <p className="mt-3 max-w-xl text-muted">
+        <p className="mt-3 max-w-xl text-white/75">
           No free-forever full LFG. Community{" "}
           <strong className="font-normal text-white">
             ${COMMUNITY_PRICE_USD}/mo
@@ -96,7 +96,7 @@ export default function PricingPage() {
           (${PLANS.pro.annualCents / 100}/yr)
           {" · "}
           Founding Pro{" "}
-          <strong className="font-normal text-lime">
+          <strong className="font-normal text-coral">
             ${FOUNDING_PRO_PRICE_USD}/mo locked
           </strong>{" "}
           (≤{PLANS.founding_pro.seatCap}).
@@ -108,24 +108,55 @@ export default function PricingPage() {
               key={tier.id}
               className={`flex flex-col rounded-brand border p-6 ${
                 tier.featured
-                  ? "border-lime/50 bg-lime/5"
-                  : "border-white/10 bg-slate-elevated/40"
+                  ? "border-coral bg-slate-elevated/50"
+                  : "border-white/12 bg-slate-elevated/40"
               }`}
             >
-              <p className="font-display text-2xl tracking-wide">{tier.name}</p>
-              <p className="mt-2 text-3xl text-white">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-display text-2xl tracking-wide">{tier.name}</p>
+                {tier.featured ? (
+                  <span className="rounded-brand border border-coral/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-coral">
+                    Limited · ≤{PLANS.founding_pro.seatCap} servers
+                  </span>
+                ) : null}
+              </div>
+              <p
+                className={`mt-2 text-white ${
+                  tier.featured
+                    ? "font-display text-4xl tracking-wide"
+                    : "text-3xl"
+                }`}
+              >
                 ${tier.price}
-                <span className="text-sm text-muted">/mo</span>
+                <span className="font-body text-sm font-normal text-white/55">
+                  /mo
+                </span>
               </p>
-              <p className="mt-1 text-xs text-muted">
+              <p className="mt-1 text-xs text-white/55">
                 ${tier.annual}/yr
                 {tier.id === "founding_pro" ? " locked" : ""}
               </p>
-              <p className="mt-3 text-sm text-muted">{tier.blurb}</p>
+              <p className="mt-3 text-sm text-white/75">{tier.blurb}</p>
               <ul className="mt-6 flex-1 space-y-2 text-sm text-white/85">
                 {tier.features.map((f) => (
                   <li key={f} className="flex gap-2">
-                    <span className="text-lime">✓</span>
+                    <span
+                      className={`mt-0.5 inline-flex shrink-0 ${
+                        tier.featured ? "text-coral" : "text-lime"
+                      }`}
+                      aria-hidden
+                    >
+                      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5">
+                        <path
+                          d="M3.4 8.2 6.6 11.3 12.6 4.6"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.85"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
                     {f}
                   </li>
                 ))}
@@ -136,8 +167,8 @@ export default function PricingPage() {
                 title="Checkout coming soon"
                 className={`mt-8 w-full cursor-not-allowed rounded-brand px-4 py-2.5 text-sm font-semibold ${
                   tier.featured
-                    ? "bg-lime/40 text-slate"
-                    : "border border-white/20 text-muted"
+                    ? "bg-coral/50 text-slate"
+                    : "border border-white/20 text-white/55"
                 }`}
               >
                 {tier.cta} (soon)
@@ -146,7 +177,7 @@ export default function PricingPage() {
           ))}
         </div>
 
-        <p className="mt-10 text-center text-xs text-muted">
+        <p className="mt-10 text-center text-xs text-white/55">
           14-day Community trial · first-month money-back · per Discord server.
         </p>
       </main>

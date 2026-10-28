@@ -18,7 +18,6 @@ import {
   LFG_ALL_GAMES,
   LFG_OTHER_GAME,
   lfgCloseConfirmMessage,
-  lfgCreateGameSelectMessage,
   lfgDeskMessage,
   lfgFindEmptyMessage,
   lfgFindMessage,
@@ -31,15 +30,13 @@ import {
 } from "../lib/embeds.js";
 import { formatError } from "../lib/errors.js";
 import {
+  fetchGuildParty,
   loadPartyMembers,
   postThreadMessage,
   refreshPartyCard,
   type PartyCardState,
 } from "../lib/party-message.js";
 import { ensureServerAndMember } from "../lib/supabase.js";
-
-const PARTY_SELECT =
-  "id, game, rank_text, slots, status, host_member_id, discord_message_id, discord_channel_id, discord_thread_id, server_id";
 
 function ghostlessLabel(shows: number, ghosts: number): string {
   const total = shows + ghosts;
@@ -361,11 +358,9 @@ export async function handleLfgDeskComponent(
   const user = actorUser(interaction);
   if (!user || !interaction.guild_id) return ephemeral("Could not resolve user.");
 
+  // create opens a sync modal in app.ts — should not reach here.
   if (action === "create") {
-    return {
-      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-      data: lfgCreateGameSelectMessage(),
-    };
+    return ephemeral("Tap **Create party** again to open the form.");
   }
 
   if (action === "find") {
@@ -605,16 +600,33 @@ export async function joinParty(opts: {
     );
   }
 
-  const { data: party } = await sb
-    .from("lfg_parties")
-    .select(PARTY_SELECT)
-    .eq("id", opts.partyId)
-    .eq("server_id", server.id)
-    .is("deleted_at", null)
-    .maybeSingle();
+  const { party, error: loadErr } = await fetchGuildParty(sb, {
+    partyId: opts.partyId,
+    serverId: server.id,
+  });
 
-  if (!party || party.status !== "open") {
-    return ephemeral("That party is closed or not in this server.");
+  if (loadErr) {
+    return ephemeral(`Couldn't load that party: ${loadErr}`);
+  }
+  if (!party) {
+    return ephemeral("Party not found in this server (it may have been closed).");
+  }
+  if (party.status !== "open") {
+    return ephemeral(
+      party.status === "filled"
+        ? "That party is full."
+        : "That party is closed.",
+    );
+  }
+
+  if (party.host_member_id === member.id) {
+    const members = await loadPartyMembers(sb, party.id);
+    const thread = party.discord_thread_id
+      ? ` Coordinate in <#${party.discord_thread_id}>.`
+      : " Open the squad thread under the card to coordinate.";
+    return ephemeral(
+      `You're already the host of **${party.game}** (${members.length}/${party.slots}).${thread}`,
+    );
   }
 
   const filled = await countFilled(sb, party.id);
@@ -626,7 +638,7 @@ export async function joinParty(opts: {
     {
       party_id: party.id,
       member_id: member.id,
-      role: member.id === party.host_member_id ? "host" : "member",
+      role: "member",
     },
     { onConflict: "party_id,member_id" },
   );
@@ -722,13 +734,17 @@ export async function leaveParty(opts: {
     null,
   );
 
-  const { data: party } = await sb
-    .from("lfg_parties")
-    .select(PARTY_SELECT)
-    .eq("id", opts.partyId)
-    .eq("server_id", server.id)
-    .maybeSingle();
+  const { party, error: loadErr } = await fetchGuildParty(sb, {
+    partyId: opts.partyId,
+    serverId: server.id,
+  });
 
+  if (loadErr) {
+    return {
+      ...ephemeral(`Couldn't load that party: ${loadErr}`),
+      meta: { dismissAfterMs: 6_000 },
+    };
+  }
   if (!party) {
     return {
       ...ephemeral("Party not found in this server."),
@@ -802,13 +818,14 @@ export async function closePartyById(opts: {
     null,
   );
 
-  const { data: party } = await sb
-    .from("lfg_parties")
-    .select(PARTY_SELECT)
-    .eq("id", opts.partyId)
-    .eq("server_id", server.id)
-    .maybeSingle();
+  const { party, error: loadErr } = await fetchGuildParty(sb, {
+    partyId: opts.partyId,
+    serverId: server.id,
+  });
 
+  if (loadErr) {
+    return ephemeral(`Couldn't load that party: ${loadErr}`);
+  }
   if (!party) return ephemeral("Party not found in this server.");
   if (party.host_member_id !== member.id) {
     return ephemeral("Only the host can close this party.");

@@ -549,8 +549,9 @@ export function lfgFindGameSelectMessage() {
 
 /**
  * Immediate MODAL response (type 9) — must not be deferred.
- * `gameKey` is a catalog slug, display name, or LFG_OTHER_GAME.
- * Catalog pick → size + notes only. Other… → free-text game + size + notes.
+ * Discord modals cannot include select menus — game is a text field (aliases
+ * like val/lol normalize via the catalog). Legacy select passes a slug/name
+ * and skips the game field.
  */
 export function lfgCreateModalResponse(gameKey: string) {
   const isOther = gameKey === LFG_OTHER_GAME;
@@ -578,7 +579,7 @@ export function lfgCreateModalResponse(gameKey: string) {
           required: true,
           min_length: 1,
           max_length: 80,
-          placeholder: "Lethal Company, custom title…",
+          placeholder: "Valorant, val, lol, COD…",
         },
       ],
     });
@@ -636,10 +637,10 @@ export function lfgHowItWorksMessage() {
   return {
     content: [
       "**How Rallied LFG works** (this server only)",
-      "• **Create party** — pick a game → size/notes → party card + **squad thread**.",
+      "• **Create party** — one form: game (try `val` / `lol`), size, notes → party card + **squad thread**.",
       "• **Join** — tap the **squad thread** under the card to share invite codes / VC (no friend-adds).",
-      "• **Leave** — removes you from the card; private bot notes auto-clear when they can.",
-      "• **Find / My parties / Close** — Confirm-close when done, then **Vibe Check**.",
+      "• **Leave / Close** — Leave if you're a member; hosts Confirm-close, then **Vibe Check**.",
+      "• **Find / My parties** — browse open parties in this server.",
       "Slash backups: `/lfg create` · `/lfg find` · `/vibe`",
     ].join("\n"),
     flags: 64,

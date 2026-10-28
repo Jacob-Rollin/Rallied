@@ -22,7 +22,7 @@ import {
   secretsMatch,
 } from "./lib/register-commands.js";
 import {
-  lfgCreateGameSelectMessage,
+  LFG_OTHER_GAME,
   lfgCreateModalResponse,
   lfgHowItWorksMessage,
 } from "./lib/embeds.js";
@@ -77,21 +77,20 @@ async function handleRegisterCommands(c: AppContext) {
 }
 
 /**
- * Fast-path component replies that must not rely on defer + webhook edit:
- * - Create/Find/Help desk taps (no DB) → immediate ephemeral UI
- * - Game select → modal (Discord forbids deferring then opening a modal)
+ * Fast-path component replies (no defer):
+ * - Create → modal with game + size + notes (Discord modals cannot embed dropdowns)
+ * - Help → ephemeral text
+ * - Legacy game-select messages still open the modal
  */
 function syncComponentResponse(interaction: Interaction) {
   const customId = interaction.data?.custom_id;
   if (!customId) return null;
 
   if (customId === "lfg:desk:create") {
-    return {
-      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-      data: lfgCreateGameSelectMessage(),
-    };
+    // One popup: game (text + aliases) / size / notes — no leftover select message.
+    return lfgCreateModalResponse(LFG_OTHER_GAME);
   }
-  // desk:find needs Supabase — handled via defer (lists all open parties).
+
   if (customId === "lfg:desk:help") {
     return {
       type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
@@ -99,6 +98,7 @@ function syncComponentResponse(interaction: Interaction) {
     };
   }
 
+  // Older desk flows that still show a game select.
   if (customId === "lfg:creategame") {
     const selected = interaction.data?.values?.[0];
     if (!selected) {

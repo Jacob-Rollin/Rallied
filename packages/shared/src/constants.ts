@@ -140,3 +140,14 @@ export function buildBotInviteUrl(clientId: string, permissions = BOT_INVITE_PER
   });
   return `https://discord.com/api/oauth2/authorize?${params.toString()}`;
 }
+
+/** Discord CDN guild icon from OAuth/bot icon hash. */
+export function discordGuildIconUrl(
+  guildId: string,
+  iconHash: string | null | undefined,
+  size = 128,
+): string | null {
+  if (!guildId || !iconHash) return null;
+  const ext = iconHash.startsWith("a_") ? "gif" : "png";
+  return `https://cdn.discordapp.com/icons/${guildId}/${iconHash}.${ext}?size=${size}`;
+}

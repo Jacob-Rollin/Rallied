@@ -12,10 +12,10 @@ export function DemoPublicServerPage({
 }) {
   return (
     <DemoPublicVanityUnlock serverName={bundle.server.name}>
-      {({ showPoweredBy, accent }) => (
+      {({ showPoweredBy, accent, useGuildIcon }) => (
         <PublicServerView
           bundle={bundle}
-          vanity={{ showPoweredBy, accent }}
+          vanity={{ showPoweredBy, accent, useGuildIcon }}
         />
       )}
     </DemoPublicVanityUnlock>

@@ -10,6 +10,9 @@ import type {
 } from "@rallied/shared";
 import { PLANS } from "@rallied/shared";
 
+/** Placeholder guild mark for demo Pro vanity (not the Rallied square). */
+export const DEMO_GUILD_ICON_URL = "/brand/demo-guild-icon.svg";
+
 export const MOCK_SERVERS: Server[] = [
   {
     id: "11111111-1111-1111-1111-111111111111",
@@ -20,6 +23,7 @@ export const MOCK_SERVERS: Server[] = [
     trial_ends_at: null,
     priority_support: false,
     stripe_customer_id: null,
+    icon_url: DEMO_GUILD_ICON_URL,
     created_at: "2026-10-01T00:00:00Z",
     updated_at: "2026-10-01T00:00:00Z",
   },
@@ -32,6 +36,7 @@ export const MOCK_SERVERS: Server[] = [
     trial_ends_at: new Date(Date.now() + 10 * 86400_000).toISOString(),
     priority_support: false,
     stripe_customer_id: null,
+    icon_url: DEMO_GUILD_ICON_URL,
     created_at: "2026-10-10T00:00:00Z",
     updated_at: "2026-10-10T00:00:00Z",
   },
@@ -44,6 +49,7 @@ export const MOCK_SERVERS: Server[] = [
     trial_ends_at: null,
     priority_support: true,
     stripe_customer_id: null,
+    icon_url: DEMO_GUILD_ICON_URL,
     created_at: "2026-10-05T00:00:00Z",
     updated_at: "2026-10-05T00:00:00Z",
   },

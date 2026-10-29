@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isProPlan } from "@rallied/shared";
 import { GhostlessMark } from "@/components/GhostlessMark";
 import { PublicGhostlessCard } from "@/components/PublicGhostlessCard";
 import {
@@ -7,12 +8,16 @@ import {
   type PublicServerBundle,
 } from "@/lib/public-data";
 
+const RALLIED_SQUARE = "/brand/rallied-square-dark.jpg";
+
 type Props = {
   bundle: PublicServerBundle;
   /** Overrides for demo Pro vanity unlock (mock only). */
   vanity?: {
     showPoweredBy: boolean;
     accent: string | null;
+    /** When set, force guild vs Rallied mark (demo Pro preview). */
+    useGuildIcon?: boolean;
   };
 };
 
@@ -27,6 +32,14 @@ export function PublicServerView({ bundle, vanity }: Props) {
   } = bundle;
   const showPoweredBy = vanity?.showPoweredBy ?? bundle.showPoweredBy;
   const accent = vanity?.accent !== undefined ? vanity.accent : bundle.accent;
+  const proVanity =
+    vanity?.useGuildIcon !== undefined
+      ? vanity.useGuildIcon
+      : isProPlan(server.plan);
+  const headerIcon =
+    proVanity && server.icon_url ? server.icon_url : RALLIED_SQUARE;
+  const headerIconAlt =
+    proVanity && server.icon_url ? `${server.name} icon` : "";
 
   const accentStyle = accent
     ? ({ ["--public-accent" as string]: accent } as React.CSSProperties)
@@ -60,8 +73,8 @@ export function PublicServerView({ bundle, vanity }: Props) {
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/brand/rallied-square-dark.jpg"
-            alt=""
+            src={headerIcon}
+            alt={headerIconAlt}
             className="h-10 w-10 rounded-brand object-cover opacity-90"
             style={accent ? { boxShadow: `0 0 0 2px ${accent}` } : undefined}
           />

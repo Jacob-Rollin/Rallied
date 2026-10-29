@@ -132,6 +132,7 @@ function mapServerRow(row: Record<string, unknown>): Server {
     trial_ends_at: (row.trial_ends_at as string | null) ?? null,
     priority_support: Boolean(row.priority_support),
     stripe_customer_id: (row.stripe_customer_id as string | null) ?? null,
+    icon_url: (row.icon_url as string | null) ?? null,
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
   };

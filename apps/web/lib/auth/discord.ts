@@ -1,4 +1,8 @@
-import { DISCORD_OAUTH_SCOPES, type AdminGuild } from "@rallied/shared";
+import {
+  DISCORD_OAUTH_SCOPES,
+  discordGuildIconUrl,
+  type AdminGuild,
+} from "@rallied/shared";
 import {
   getRuntimeEnv,
   getServiceRoleKey,
@@ -101,13 +105,58 @@ export async function filterAdminGuilds(
   const botGuildIds = await getBotGuildIds();
   const plans = await fetchPlansForGuilds(manageable.map((g) => g.id));
 
-  return manageable.map((g) => ({
+  const adminGuilds = manageable.map((g) => ({
     id: g.id,
     name: g.name,
     icon: g.icon,
     bot_present: botGuildIds === null ? true : botGuildIds.has(g.id),
     plan: plans.get(g.id),
   }));
+
+  // Best-effort: persist Discord guild icons for Pro public vanity.
+  void syncServerIconUrls(adminGuilds);
+
+  return adminGuilds;
+}
+
+/** Upsert icon_url on existing servers rows from OAuth guild icon hashes. */
+export async function syncServerIconUrls(
+  guilds: Pick<AdminGuild, "id" | "icon">[],
+): Promise<void> {
+  const url = getSupabaseUrl();
+  const key = getServiceRoleKey();
+  if (!url || !key) return;
+
+  const updates = guilds
+    .map((g) => ({
+      discord_guild_id: g.id,
+      icon_url: discordGuildIconUrl(g.id, g.icon),
+    }))
+    .filter((u): u is { discord_guild_id: string; icon_url: string } =>
+      Boolean(u.icon_url),
+    );
+
+  await Promise.all(
+    updates.map(async (u) => {
+      try {
+        await fetch(
+          `${url}/rest/v1/servers?discord_guild_id=eq.${encodeURIComponent(u.discord_guild_id)}`,
+          {
+            method: "PATCH",
+            headers: {
+              apikey: key,
+              Authorization: `Bearer ${key}`,
+              "Content-Type": "application/json",
+              Prefer: "return=minimal",
+            },
+            body: JSON.stringify({ icon_url: u.icon_url }),
+          },
+        );
+      } catch {
+        /* non-fatal */
+      }
+    }),
+  );
 }
 
 async function fetchPlansForGuilds(

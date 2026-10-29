@@ -25,13 +25,18 @@ export async function ensureServerAndMember(
   userId: string,
   displayName: string,
   avatarUrl: string | null,
+  /** Optional Discord guild icon CDN URL (Pro public vanity). */
+  iconUrl: string | null = null,
 ) {
+  const upsertRow: Record<string, unknown> = {
+    discord_guild_id: guildId,
+    name: guildName ?? guildId,
+  };
+  if (iconUrl) upsertRow.icon_url = iconUrl;
+
   const { data: server, error: sErr } = await sb
     .from("servers")
-    .upsert(
-      { discord_guild_id: guildId, name: guildName ?? guildId },
-      { onConflict: "discord_guild_id" },
-    )
+    .upsert(upsertRow, { onConflict: "discord_guild_id" })
     .select("*")
     .single();
 
@@ -39,6 +44,22 @@ export async function ensureServerAndMember(
   // used to collapse non-Error throws into Discord "unknown error").
   if (sErr || !server) {
     throw errorFromUnknown("server upsert failed", sErr ?? "no row returned");
+  }
+
+  // Upsert won't clear a prior icon; refresh when we learned a new URL.
+  if (
+    iconUrl &&
+    (server as { icon_url?: string | null }).icon_url !== iconUrl
+  ) {
+    const { data: patched, error: iconErr } = await sb
+      .from("servers")
+      .update({ icon_url: iconUrl })
+      .eq("id", server.id)
+      .select("*")
+      .single();
+    if (!iconErr && patched) {
+      Object.assign(server, patched);
+    }
   }
 
   const { data: existing, error: findErr } = await sb

@@ -22,6 +22,8 @@ export interface Server {
   trial_ends_at: string | null;
   priority_support: boolean;
   stripe_customer_id: string | null;
+  /** Discord guild icon CDN URL (Pro public page vanity) */
+  icon_url: string | null;
   created_at: string;
   updated_at: string;
 }

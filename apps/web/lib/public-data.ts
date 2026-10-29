@@ -233,6 +233,7 @@ async function resolveLivePublicServer(
     priority_support: Boolean(serverRow.priority_support),
     stripe_customer_id:
       (serverRow.stripe_customer_id as string | null) ?? null,
+    icon_url: (serverRow.icon_url as string | null) ?? null,
     created_at: String(serverRow.created_at),
     updated_at: String(serverRow.updated_at),
   };

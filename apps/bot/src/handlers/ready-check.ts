@@ -12,6 +12,11 @@ import {
   fetchGuildParty,
   loadPartyMembers,
 } from "../lib/party-message.js";
+import {
+  freeReadyCheckNote,
+  reliabilityEnabled,
+  resolveEffectivePlan,
+} from "../lib/entitlements.js";
 import { getServerSettings } from "../lib/settings.js";
 import { ensureServerAndMember } from "../lib/supabase.js";
 
@@ -379,31 +384,51 @@ export async function finalizeReadyCheck(
 
   const roster = await loadReadyRoster(sb, partyId);
   const settings = await getServerSettings(sb, party.server_id);
+
+  const { data: serverRow } = await sb
+    .from("servers")
+    .select("plan, trial_ends_at, discord_guild_id")
+    .eq("id", party.server_id)
+    .maybeSingle();
+  const plan = resolveEffectivePlan(
+    {
+      plan: serverRow?.plan as string | undefined,
+      trial_ends_at: (serverRow?.trial_ends_at as string | null) ?? null,
+      discord_guild_id: (serverRow?.discord_guild_id as string | null) ?? null,
+    },
+    env,
+  );
+  const reliabilityOn = reliabilityEnabled(plan);
+
   let noShows = 0;
 
   for (const m of roster) {
     if (m.ready) {
-      const { data: stats } = await sb
-        .from("ghostless_stats")
-        .select("shows, ghosts, vibe_sum, vibe_count")
-        .eq("server_id", party.server_id)
-        .eq("member_id", m.memberId)
-        .maybeSingle();
-      await sb.from("ghostless_stats").upsert(
-        {
-          server_id: party.server_id,
-          member_id: m.memberId,
-          shows: (stats?.shows ?? 0) + 1,
-          ghosts: stats?.ghosts ?? 0,
-          vibe_sum: stats?.vibe_sum ?? 0,
-          vibe_count: stats?.vibe_count ?? 0,
-        },
-        { onConflict: "server_id,member_id" },
-      );
+      if (reliabilityOn) {
+        const { data: stats } = await sb
+          .from("ghostless_stats")
+          .select("shows, ghosts, vibe_sum, vibe_count")
+          .eq("server_id", party.server_id)
+          .eq("member_id", m.memberId)
+          .maybeSingle();
+        await sb.from("ghostless_stats").upsert(
+          {
+            server_id: party.server_id,
+            member_id: m.memberId,
+            shows: (stats?.shows ?? 0) + 1,
+            ghosts: stats?.ghosts ?? 0,
+            vibe_sum: stats?.vibe_sum ?? 0,
+            vibe_count: stats?.vibe_count ?? 0,
+          },
+          { onConflict: "server_id,member_id" },
+        );
+      }
       continue;
     }
 
     noShows += 1;
+    if (!reliabilityOn) continue;
+
     const { data: stats } = await sb
       .from("ghostless_stats")
       .select("shows, ghosts, vibe_sum, vibe_count")
@@ -462,15 +487,24 @@ export async function finalizeReadyCheck(
   );
 
   if (party.ready_check_channel_id && party.ready_check_message_id) {
+    let content: string;
+    if (!reliabilityOn) {
+      content =
+        noShows > 0
+          ? `Ready check ended — **${noShows}** missed Ready. ${freeReadyCheckNote()}`
+          : "Ready check ended — everyone was ready.";
+    } else {
+      content =
+        noShows > 0
+          ? `Ready check ended — **${noShows}** no-show${noShows === 1 ? "" : "s"} struck (this server).`
+          : "Ready check ended — everyone was ready.";
+    }
     await editChannelMessage(
       env,
       party.ready_check_channel_id,
       party.ready_check_message_id,
       {
-        content:
-          noShows > 0
-            ? `Ready check ended — **${noShows}** no-show${noShows === 1 ? "" : "s"} struck (this server).`
-            : "Ready check ended — everyone was ready.",
+        content,
         ...payload,
       },
     );

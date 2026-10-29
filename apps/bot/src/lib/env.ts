@@ -13,6 +13,13 @@ export interface BotEnv {
   DISCORD_DEV_GUILD_ID?: string;
   /** One-shot secret for GET/POST /register-commands (phone-friendly). Rotate after use. */
   REGISTER_COMMANDS_SECRET?: string;
+  /** Public web origin for /pricing upgrade links (e.g. https://rallied.gg). */
+  PUBLIC_WEB_URL?: string;
+  /**
+   * Comma/space-separated Discord guild ids treated as founding_pro (skip Starter caps).
+   * Include Official Rallied: 1564716956198899824
+   */
+  DOGFOOD_GUILD_IDS?: string;
 }
 
 export function readNodeEnv(): BotEnv {
@@ -26,6 +33,8 @@ export function readNodeEnv(): BotEnv {
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
     DISCORD_DEV_GUILD_ID: process.env.DISCORD_DEV_GUILD_ID,
     REGISTER_COMMANDS_SECRET: process.env.REGISTER_COMMANDS_SECRET,
+    PUBLIC_WEB_URL: process.env.PUBLIC_WEB_URL,
+    DOGFOOD_GUILD_IDS: process.env.DOGFOOD_GUILD_IDS,
   };
 }
 

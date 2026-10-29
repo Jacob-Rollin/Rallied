@@ -29,8 +29,9 @@ export const GHOSTLESS = {
 } as const;
 
 /**
- * List + Founding prices (cents helpers for Stripe later).
- * Founding = Pro features at $8.99 locked (≤50), NOT Community $3.99.
+ * Path B list + Founding prices (cents helpers for Stripe later).
+ * Community $4.99 · Pro $9.99 · Founding = Pro at $8.99 locked (≤50).
+ * Starter (free/lapsed) is $0 with caps — see entitlements.ts.
  */
 export const PLANS = {
   trial: {
@@ -40,12 +41,19 @@ export const PLANS = {
     priceCents: 0,
     annualCents: 0,
   },
+  free: {
+    id: "free" as const,
+    label: "Starter",
+    priceMonthly: 0,
+    priceCents: 0,
+    annualCents: 0,
+  },
   community: {
     id: "community" as const,
     label: "Community",
-    priceMonthly: 5.99,
-    priceCents: 599,
-    annualCents: 5900,
+    priceMonthly: 4.99,
+    priceCents: 499,
+    annualCents: 4900,
   },
   pro: {
     id: "pro" as const,

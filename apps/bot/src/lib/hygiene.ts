@@ -1,4 +1,5 @@
 import type { BotEnv } from "./env.js";
+import { lapseAllExpiredTrials } from "./entitlements.js";
 import { createServiceClient } from "./supabase.js";
 import { formatError } from "./errors.js";
 import { refreshPartyCard, type PartyCardState } from "./party-message.js";
@@ -6,15 +7,23 @@ import { resolveDueReadyChecks } from "../handlers/ready-check.js";
 
 /**
  * Close open/filled parties past expires_at and refresh Discord cards to Closed.
- * Also finalize ready checks whose grace window ended.
+ * Also finalize ready checks whose grace window ended, and lapse expired trials.
  */
 export async function runBotHygiene(env: BotEnv): Promise<{
   expired: number;
   readyResolved: number;
+  trialsLapsed: number;
 }> {
   const sb = createServiceClient(env);
   if (!sb) {
-    return { expired: 0, readyResolved: 0 };
+    return { expired: 0, readyResolved: 0, trialsLapsed: 0 };
+  }
+
+  let trialsLapsed = 0;
+  try {
+    trialsLapsed = await lapseAllExpiredTrials(sb);
+  } catch (err) {
+    console.error("hygiene trial lapse", err);
   }
 
   let expired = 0;
@@ -73,5 +82,5 @@ export async function runBotHygiene(env: BotEnv): Promise<{
     console.error("hygiene ready checks", err);
   }
 
-  return { expired, readyResolved };
+  return { expired, readyResolved, trialsLapsed };
 }

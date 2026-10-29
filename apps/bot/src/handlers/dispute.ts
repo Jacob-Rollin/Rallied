@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { BotEnv } from "../lib/env.js";
 import {
   actorUser,
   avatarUrl,
@@ -9,11 +10,17 @@ import {
   isMod,
   type Interaction,
 } from "../lib/discord.js";
+import {
+  reliabilityEnabled,
+  resolveEffectivePlan,
+  upgradeEphemeral,
+} from "../lib/entitlements.js";
 import { ensureServerAndMember } from "../lib/supabase.js";
 
 export async function handleDispute(
   interaction: Interaction,
   sb: SupabaseClient | null,
+  env: BotEnv,
 ) {
   if (!interaction.guild_id) {
     return ephemeral("Disputes are per-server only.");
@@ -31,7 +38,14 @@ export async function handleDispute(
     user.id,
     displayName(interaction),
     avatarUrl(user),
+    null,
+    env,
   );
+
+  const plan = resolveEffectivePlan(server, env, interaction.guild_id);
+  if (!reliabilityEnabled(plan)) {
+    return upgradeEphemeral({ env, reason: "reliability" });
+  }
 
   if (sub === "open" || !sub) {
     const strikeId = getOption(options.length ? options : interaction.data?.options, "strike_id")
@@ -142,6 +156,7 @@ export async function handleDispute(
 /** Create dispute from a button — opener must be the ratee (flagged player). */
 export async function openDisputeFromButton(
   sb: SupabaseClient,
+  env: BotEnv,
   opts: {
     guildId: string;
     openerDiscordId: string;
@@ -157,7 +172,14 @@ export async function openDisputeFromButton(
     opts.openerDiscordId,
     opts.openerName,
     null,
+    null,
+    env,
   );
+
+  const plan = resolveEffectivePlan(server, env, opts.guildId);
+  if (!reliabilityEnabled(plan)) {
+    return upgradeEphemeral({ env, reason: "reliability" });
+  }
 
   if (member.id !== opts.rateeMemberId) {
     return ephemeral(

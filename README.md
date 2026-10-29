@@ -2,7 +2,7 @@
 
 **Rallied** (rallied.gg) — Discord LFG + per-server **Vibe Check** / **Ghostless** + admin web (Discord OAuth).
 
-Strikes, lockouts, and Ghostless stay **this server only**. Plans: **Community $5.99** · **Pro $9.99** · **Founding Pro $8.99** locked (≤50, Pro features — not Community $3.99). No cross-server grade DB.
+Strikes, lockouts, and Ghostless stay **this server only**. Path B plans: **Starter** (free under caps) · **Community $4.99** · **Pro $9.99** · **Founding Pro $8.99** locked (≤50). No cross-server grade DB.
 
 Copy this folder into a new GitHub repo when ready. Wire Cloudflare + Supabase + Discord via env — `npm run dev:web` works with **mock data / mock auth** when secrets are missing.
 
@@ -53,15 +53,17 @@ Demo admin: [`/demo`](http://localhost:3000/demo) · public: [`/s/demo-esports`]
 
 Settings toggles: `public_page_enabled`, `public_member_list`, vanity `slug` → migration `003_public_pages.sql`.
 
-### Plans & Pro (mock)
+### Plans & Pro (Path B)
 
 | Plan | Price | Notes |
 | --- | --- | --- |
-| Community | $5.99/mo | Full LFG + Ghostless + strikes |
+| Starter (`free` / `lapsed`) | $0 | Max 2 open parties · 5 creates/24h · no Ghostless |
+| Trial | 14 days | Full Community features |
+| Community | $4.99/mo ($49/yr) | Unlimited LFG + Ghostless + strikes |
 | Pro | $9.99/mo | Analytics export, vanity, priority |
 | Founding Pro | $8.99/mo locked | Pro SKU · ≤50 seats · `004_pro_plan.sql` |
 
-Routes: `/pricing` · `/app/billing` · `/app/analytics` · Pro vanity on Settings + `/s/founding-beta`. Stripe = placeholders only (`STRIPE_*` in `.env.example`).
+Routes: `/pricing` · `/app/billing` · `/app/analytics` · Pro vanity on Settings + `/s/founding-beta`. Stripe = placeholders only (`STRIPE_*` in `.env.example`). Dogfood: `DOGFOOD_GUILD_IDS` (bot) skips Starter caps.
 
 ---
 
@@ -196,5 +198,6 @@ npm run preview:web
 ## Product rules
 
 - Per-server strikes / Ghostless / disputes only  
-- Community price placeholder **$5.99/mo**  
+- Community **$4.99/mo** · Pro **$9.99** · Founding **$8.99** locked  
+
 - Brand: coral `#FF5A3D`, Ghostless lime `#B8F000`, slate `#0F1419` — not purple  

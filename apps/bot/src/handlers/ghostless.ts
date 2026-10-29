@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { BotEnv } from "../lib/env.js";
 import {
   actorUser,
   avatarUrl,
@@ -8,6 +9,11 @@ import {
   type Interaction,
 } from "../lib/discord.js";
 import { ephemeralEmbed, ghostlessPlayerEmbed } from "../lib/embeds.js";
+import {
+  reliabilityEnabled,
+  resolveEffectivePlan,
+  upgradeEphemeral,
+} from "../lib/entitlements.js";
 import {
   ghostlessBadge,
   ghostlessSubtitle,
@@ -19,6 +25,7 @@ import { ensureServerAndMember } from "../lib/supabase.js";
 export async function handleGhostless(
   interaction: Interaction,
   sb: SupabaseClient | null,
+  env: BotEnv,
 ) {
   if (!interaction.guild_id) {
     return ephemeral("Ghostless stats are per-server only — run this in a guild.");
@@ -38,6 +45,8 @@ export async function handleGhostless(
     user.id,
     displayName(interaction),
     avatarUrl(user),
+    null,
+    env,
   );
 
   const { server, member: target } = await ensureServerAndMember(
@@ -47,7 +56,14 @@ export async function handleGhostless(
     targetId,
     "member",
     null,
+    null,
+    env,
   );
+
+  const plan = resolveEffectivePlan(server, env, interaction.guild_id);
+  if (!reliabilityEnabled(plan)) {
+    return upgradeEphemeral({ env, reason: "reliability" });
+  }
 
   const settings = await getServerSettings(sb, server.id);
 

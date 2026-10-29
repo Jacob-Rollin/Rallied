@@ -5,7 +5,9 @@
  *   DISCORD_BOT_TOKEN=… SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=…
  *   npx tsx apps/bot/scripts/weekly-digest.ts
  */
+import { digestEnabled } from "@rallied/shared";
 import { runWeeklyDigest } from "../src/lib/digest.js";
+import { resolveEffectivePlan } from "../src/lib/entitlements.js";
 import { readNodeEnv } from "../src/lib/env.js";
 import { createServiceClient } from "../src/lib/supabase.js";
 
@@ -18,7 +20,7 @@ if (!sb) {
 
 const { data: servers, error } = await sb
   .from("servers")
-  .select("id, discord_guild_id, name");
+  .select("id, discord_guild_id, name, plan, trial_ends_at");
 
 if (error) {
   console.error(error);
@@ -26,6 +28,11 @@ if (error) {
 }
 
 for (const server of servers ?? []) {
+  const plan = resolveEffectivePlan(server, env, server.discord_guild_id);
+  if (!digestEnabled(plan)) {
+    console.log(server.name, "skipped (Starter / unpaid)");
+    continue;
+  }
   const result = await runWeeklyDigest(
     env,
     sb,

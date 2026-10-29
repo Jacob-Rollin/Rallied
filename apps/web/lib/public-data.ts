@@ -9,7 +9,7 @@ import type {
   Server,
   ServerSettings,
 } from "@rallied/shared";
-import { isProPlan } from "@rallied/shared";
+import { isProPlan, publicPagesEnabled } from "@rallied/shared";
 import {
   MOCK_FOUNDING_SETTINGS,
   MOCK_GHOSTLESS,
@@ -281,6 +281,8 @@ async function resolveLivePublicServer(
       };
 
   if (!settings.public_page_enabled) return null;
+  // Path B: Starter / lapsed cannot publish public pages.
+  if (!publicPagesEnabled(server.plan)) return null;
 
   const pathKey = settings.slug || server.discord_guild_id;
   const pro = isProPlan(server.plan);

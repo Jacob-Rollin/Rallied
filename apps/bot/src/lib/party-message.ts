@@ -110,10 +110,15 @@ export async function postThreadMessage(
   env: BotEnv,
   threadId: string,
   content: string,
+  extras?: { components?: unknown[]; embeds?: unknown[] },
 ): Promise<boolean> {
   const res = await botFetch(env, `/channels/${threadId}/messages`, {
     method: "POST",
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({
+      content,
+      ...(extras?.components ? { components: extras.components } : {}),
+      ...(extras?.embeds ? { embeds: extras.embeds } : {}),
+    }),
   });
   if (!res) return false;
   if (!res.ok) {

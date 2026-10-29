@@ -24,10 +24,16 @@ export default async function DisputesPage({ searchParams }: Props) {
       <div>
         <h1 className="font-display text-3xl tracking-wide">Disputes</h1>
         <p className="mt-1 text-sm text-muted">
-          Appeals for strikes / ghost flags in this server. Players open via{" "}
-          <code className="text-coral">/dispute</code> or a Discord button; mods
-          resolve here or with <code className="text-coral">/strikes</code>.
+          Appeals for strikes / ghost flags in this server. The flagged player
+          opens via <code className="text-coral">/dispute open</code> or the
+          ratee Dispute button in Discord.
         </p>
+      </div>
+
+      <div className="rounded-brand border border-coral/30 bg-coral/5 px-4 py-3 text-sm text-white/85">
+        Resolve in Discord with{" "}
+        <code className="text-coral">/dispute resolve</code> (Overturn / Uphold
+        on the web are not wired yet).
       </div>
 
       <DataSourceBanner source={data.source} notice={data.notice} />

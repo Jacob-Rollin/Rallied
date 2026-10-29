@@ -58,6 +58,23 @@ export async function handleDispute(
       return ephemeral("No active strike to dispute. Pass `strike_id` if you have it.");
     }
 
+    // Opener must be the ratee / strikee (their own strike).
+    const { data: strikeRow } = await sb
+      .from("strikes")
+      .select("id, member_id")
+      .eq("id", resolvedStrikeId)
+      .eq("server_id", server.id)
+      .maybeSingle();
+
+    if (!strikeRow) {
+      return ephemeral("Strike not found in this server.");
+    }
+    if (strikeRow.member_id !== member.id) {
+      return ephemeral(
+        "Only the player who received the strike can open this dispute.",
+      );
+    }
+
     const { data, error } = await sb
       .from("disputes")
       .insert({
@@ -72,7 +89,7 @@ export async function handleDispute(
 
     if (error) return ephemeral(`Could not open dispute: ${error.message}`);
     return ephemeral(
-      `Dispute \`${data.id}\` opened (this server). Mods review in the dashboard or \`/dispute resolve\`.`,
+      `Dispute \`${data.id}\` opened (this server). Mods review with \`/dispute resolve\` (dashboard Overturn/Uphold resolve in Discord).`,
     );
   }
 
@@ -122,7 +139,7 @@ export async function handleDispute(
   return ephemeral("Use `/dispute open` or `/dispute resolve`.");
 }
 
-/** Create dispute from a button (ratee disputing a ghost flag). */
+/** Create dispute from a button — opener must be the ratee (flagged player). */
 export async function openDisputeFromButton(
   sb: SupabaseClient,
   opts: {
@@ -141,6 +158,12 @@ export async function openDisputeFromButton(
     opts.openerName,
     null,
   );
+
+  if (member.id !== opts.rateeMemberId) {
+    return ephemeral(
+      "Only the flagged player can open this dispute. If that’s you, use `/dispute open`.",
+    );
+  }
 
   // Prefer linking latest vibe_check for this party/ratee
   const { data: vibe } = await sb

@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth/session";
 import {
   GUILD_COOKIE,
   GUILD_QUERY,
+  isDemoGuildId,
   shouldUseMockDashboard,
 } from "@/lib/guild-params";
 
@@ -23,7 +24,8 @@ export type GuildResolveResult = {
 
 /**
  * Resolve selected guild for server components.
- * Priority: `?guild=` → cookie → first bot_present session guild → first guild → demo-guild-1.
+ * Priority: `?guild=` → cookie → first bot_present session guild → first guild.
+ * Ignores stale demo-guild-* cookies unless mock session / `?mock=1`.
  */
 export async function resolveSelectedGuild(opts?: {
   searchParams?: Record<string, string | string[] | undefined>;
@@ -39,13 +41,24 @@ export async function resolveSelectedGuild(opts?: {
     (Array.isArray(rawMock) ? rawMock[0] : rawMock) === "1" ||
     jar.get("rallied_mock")?.value === "1";
 
-  const fromCookie = jar.get(GUILD_COOKIE)?.value;
+  const isMockSession = Boolean(session.isMock);
+  const allowDemo = forceMock || isMockSession;
+
+  let fromCookie = jar.get(GUILD_COOKIE)?.value;
+  if (fromCookie && isDemoGuildId(fromCookie) && !allowDemo) {
+    fromCookie = undefined;
+  }
+
+  let queryGuild = typeof fromQuery === "string" ? fromQuery.trim() : "";
+  if (queryGuild && isDemoGuildId(queryGuild) && !allowDemo) {
+    queryGuild = "";
+  }
+
   const guilds = session.guilds ?? [];
   const preferred =
-    guilds.find((g) => g.bot_present)?.id || guilds[0]?.id || "demo-guild-1";
+    guilds.find((g) => g.bot_present)?.id || guilds[0]?.id || "";
 
-  const guildId = (fromQuery || fromCookie || preferred).trim();
-  const isMockSession = Boolean(session.isMock);
+  const guildId = (queryGuild || fromCookie || preferred).trim();
   const useMock = shouldUseMockDashboard(guildId, {
     isMockSession,
     forceMock,

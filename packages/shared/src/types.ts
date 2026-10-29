@@ -82,7 +82,14 @@ export interface LfgParty {
   expires_at: string | null;
   discord_message_id?: string | null;
   discord_channel_id?: string | null;
+  /** Squad discussion thread under the party card (005). */
   discord_thread_id?: string | null;
+  /** Ready check + grace (006). */
+  ready_check_started_at?: string | null;
+  ready_check_message_id?: string | null;
+  ready_check_channel_id?: string | null;
+  grace_ends_at?: string | null;
+  ready_check_resolved_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -93,6 +100,8 @@ export interface LfgPartyMember {
   member_id: string;
   role: "host" | "member";
   joined_at: string;
+  /** Set when the member taps Ready during a ready check (006). */
+  ready_at?: string | null;
 }
 
 export interface VibeCheck {

@@ -134,7 +134,7 @@ export function GhostlessBadgeMock() {
 /** @deprecated Prefer GhostlessBadgeMock — kept as alias for older imports. */
 export const VibeCheckCardMock = GhostlessBadgeMock;
 
-/** Compact post-session Vibe Check (Showed up / Ghosted / Dispute) — matches bot. */
+/** Compact post-session Vibe Check (Showed up / Ghosted) — matches bot. */
 export function VibeCheckActionsMock() {
   return (
     <div className="mt-5" aria-hidden>
@@ -145,17 +145,16 @@ export function VibeCheckActionsMock() {
         </p>
         <EmbedShell accent="lime">
           <EmbedDesc>
-            Tap a quick result, or pick a vibe score 1–5. Grace window applies
-            before ghost strikes.
+            Tap a quick result, or pick a vibe score 1–5. After grace, Ghosted
+            issues a strike. Dispute is for the flagged player.
           </EmbedDesc>
         </EmbedShell>
         <ButtonRow>
           <DiscBtn label="Showed up" tone="green" />
           <DiscBtn label="Ghosted" tone="red" />
-          <DiscBtn label="Dispute" tone="gray" />
         </ButtonRow>
         <div className="mt-1.5 rounded border border-[#1e1f22] bg-[#1e1f22] px-2.5 py-2 text-[12px] text-[#949ba4]">
-          Rate vibe 1–5 (counts as showed up)
+          Rate vibe 1–5 (optional score)
         </div>
       </BotChrome>
     </div>

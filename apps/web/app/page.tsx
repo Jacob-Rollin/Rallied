@@ -42,7 +42,7 @@ const HOW_IT_WORKS: {
   },
   {
     title: "Vibe Check",
-    body: "Post-session showed-up + vibe tags. Ghostless reliability stays on this server — no cross-server grades.",
+    body: "Post-session Showed up / Ghosted + vibe scores. Ready Check owns show counts when it ran; Ghostless stays per-server.",
     icon: "check",
     preview: "vibe",
   },

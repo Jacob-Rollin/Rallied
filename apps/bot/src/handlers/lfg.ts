@@ -117,6 +117,23 @@ export async function createParty(opts: {
     );
   }
 
+  const { data: existingHost } = await sb
+    .from("lfg_parties")
+    .select("id, game")
+    .eq("server_id", server.id)
+    .eq("host_member_id", member.id)
+    .in("status", ["open", "filled"])
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingHost) {
+    return ephemeral(
+      `You already host **${existingHost.game}** (\`${existingHost.id.slice(0, 8)}\`). Close it before creating another.`,
+    );
+  }
+
   const { data: party, error } = await sb
     .from("lfg_parties")
     .insert({
@@ -135,11 +152,24 @@ export async function createParty(opts: {
     return ephemeral(`Failed to create party: ${formatError(error ?? "unknown")}`);
   }
 
-  await sb.from("lfg_party_members").insert({
+  const { error: hostMemErr } = await sb.from("lfg_party_members").insert({
     party_id: party.id,
     member_id: member.id,
     role: "host",
   });
+
+  if (hostMemErr) {
+    await sb
+      .from("lfg_parties")
+      .update({
+        status: "closed",
+        deleted_at: new Date().toISOString(),
+      })
+      .eq("id", party.id);
+    return ephemeral(
+      `Failed to seat you as host: ${formatError(hostMemErr)}. Party rolled back.`,
+    );
+  }
 
   const settings = await getServerSettings(sb, server.id);
   const { data: stats } = await sb
@@ -633,26 +663,51 @@ export async function joinParty(opts: {
     );
   }
 
-  const filled = await countFilled(sb, party.id);
-  if (filled >= party.slots) {
-    return ephemeral("That party is full.");
-  }
+  const { data: alreadyIn } = await sb
+    .from("lfg_party_members")
+    .select("id")
+    .eq("party_id", party.id)
+    .eq("member_id", member.id)
+    .maybeSingle();
 
-  const { error } = await sb.from("lfg_party_members").upsert(
-    {
+  if (!alreadyIn) {
+    const filled = await countFilled(sb, party.id);
+    if (filled >= party.slots) {
+      return ephemeral("That party is full.");
+    }
+
+    const { error } = await sb.from("lfg_party_members").insert({
       party_id: party.id,
       member_id: member.id,
       role: "member",
-    },
-    { onConflict: "party_id,member_id" },
-  );
+    });
 
-  if (error) return ephemeral(`Could not join: ${formatError(error)}`);
+    if (error) return ephemeral(`Could not join: ${formatError(error)}`);
+
+    // Capacity claim: if concurrent joins overfilled, roll this seat back.
+    const afterInsert = await countFilled(sb, party.id);
+    if (afterInsert > party.slots) {
+      await sb
+        .from("lfg_party_members")
+        .delete()
+        .eq("party_id", party.id)
+        .eq("member_id", member.id);
+      return ephemeral("That party just filled — try another.");
+    }
+  }
 
   const nextFilled = await countFilled(sb, party.id);
   const becameFull = nextFilled >= party.slots;
   if (becameFull) {
-    await sb.from("lfg_parties").update({ status: "filled" }).eq("id", party.id);
+    // Extend TTL on fill so filled parties aren't abandoned forever mid-session.
+    await sb
+      .from("lfg_parties")
+      .update({
+        status: "filled",
+        expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+      })
+      .eq("id", party.id)
+      .in("status", ["open", "filled"]);
     party.status = "filled";
   }
 
@@ -705,8 +760,9 @@ export async function joinParty(opts: {
   const response: InteractionResponse = {
     type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
     data: { content, flags: 64 },
-    // Keep long enough to tap the thread, then clear so Leave doesn’t leave a stale “Joined”.
-    meta: { dismissAfterMs: 20_000 },
+    // Keep long enough to tap the thread; shorten when auto ready-check runs
+    // so waitUntil dismiss doesn't starve Worker wall clock.
+    meta: { dismissAfterMs: becameFull ? 6_000 : 20_000 },
   };
 
   if (becameFull) {

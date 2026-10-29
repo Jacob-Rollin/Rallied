@@ -7,10 +7,20 @@ import {
   filterAdminGuilds,
 } from "@/lib/auth/discord";
 import { getSession } from "@/lib/auth/session";
+import { GUILD_COOKIE } from "@/lib/guild-params";
 import { getServiceRoleKey, getSupabaseUrl } from "@/lib/runtime-env";
 
 function appOrigin(req: NextRequest) {
   return process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin;
+}
+
+function clearDemoGuildCookie(res: NextResponse) {
+  res.cookies.set(GUILD_COOKIE, "", {
+    path: "/",
+    maxAge: 0,
+    sameSite: "lax",
+  });
+  return res;
 }
 
 export async function GET(req: NextRequest) {
@@ -54,9 +64,11 @@ export async function GET(req: NextRequest) {
 
     const withBot = adminGuilds.filter((g) => g.bot_present);
     if (withBot.length === 0) {
-      return NextResponse.redirect(`${origin}/app?empty=1`);
+      return clearDemoGuildCookie(
+        NextResponse.redirect(`${origin}/app?empty=1`),
+      );
     }
-    return NextResponse.redirect(`${origin}/app`);
+    return clearDemoGuildCookie(NextResponse.redirect(`${origin}/app`));
   } catch (e) {
     const msg = e instanceof Error ? e.message : "oauth_failed";
     console.error("oauth callback", msg);

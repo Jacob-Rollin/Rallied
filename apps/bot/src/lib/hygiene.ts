@@ -5,7 +5,7 @@ import { refreshPartyCard, type PartyCardState } from "./party-message.js";
 import { resolveDueReadyChecks } from "../handlers/ready-check.js";
 
 /**
- * Close open parties past expires_at and refresh Discord cards to Closed.
+ * Close open/filled parties past expires_at and refresh Discord cards to Closed.
  * Also finalize ready checks whose grace window ended.
  */
 export async function runBotHygiene(env: BotEnv): Promise<{
@@ -24,7 +24,7 @@ export async function runBotHygiene(env: BotEnv): Promise<{
     .select(
       "id, game, rank_text, slots, status, host_member_id, discord_message_id, discord_channel_id, discord_thread_id",
     )
-    .eq("status", "open")
+    .in("status", ["open", "filled"])
     .is("deleted_at", null)
     .lt("expires_at", now)
     .limit(40);
@@ -40,7 +40,7 @@ export async function runBotHygiene(env: BotEnv): Promise<{
           deleted_at: now,
         })
         .eq("id", row.id)
-        .eq("status", "open");
+        .in("status", ["open", "filled"]);
       if (updErr) {
         console.error("hygiene close", row.id, formatError(updErr));
         continue;

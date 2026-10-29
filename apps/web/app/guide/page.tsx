@@ -242,9 +242,10 @@ export default function GuidePage() {
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">
             When the last seat fills (or the host taps Ready Check), a grace
-            countdown starts. Roster shows Ready / Waiting. After grace,
-            no-shows get a strike on this server. Filled cards drop Join; Closed
-            strips Join / Leave / Close but keeps Vibe Check.
+            countdown starts — host (and the filler on auto) start Ready.
+            Roster shows Ready / Waiting. After grace, no-shows get a strike on
+            this server. Filled cards drop Join; Closed strips Join / Leave /
+            Close but keeps Vibe Check.
           </p>
           <div className="mt-6 grid gap-4 lg:grid-cols-2">
             <ReadyCheckGuideMock />
@@ -268,8 +269,9 @@ export default function GuidePage() {
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">
             After fill or close, Rallied nudges you to rate teammates. Showed up
-            / Ghosted / Dispute, plus optional vibe 1–5 (counts as showed up).
-            Grace applies before ghost strikes stick.
+            / Ghosted plus optional vibe 1–5. Ready Check owns show/ghost counts
+            when it already ran; Ghosted after grace issues a strike (no double
+            strike with Ready Check). Only the flagged player can Dispute.
           </p>
           <div className="mt-6">
             <VibeCheckGuideMock />

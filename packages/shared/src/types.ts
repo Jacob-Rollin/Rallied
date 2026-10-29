@@ -47,6 +47,13 @@ export interface ServerSettings {
    * Default false = Ghostless-only top reliable (still no strike data).
    */
   public_member_list: boolean;
+  /**
+   * Opt into the public /servers directory (default false).
+   * Still requires public_page_enabled + Community+/trial to appear.
+   */
+  list_in_directory: boolean;
+  /** Discord invite URL for Join on /servers (admin-set). */
+  discord_invite_url: string | null;
   /** Pro vanity: hide “Powered by Rallied” on public page */
   hide_powered_by: boolean;
   /** Pro vanity: optional accent hex for public page chrome */

@@ -261,6 +261,8 @@ export const MOCK_SETTINGS: ServerSettings = {
   slug: "demo-esports",
   public_page_enabled: true,
   public_member_list: false,
+  list_in_directory: true,
+  discord_invite_url: "https://discord.gg/rallied-demo",
   hide_powered_by: false,
   public_accent: null,
   created_at: "2026-10-01T00:00:00Z",
@@ -274,6 +276,8 @@ export const MOCK_FOUNDING_SETTINGS: ServerSettings = {
   slug: "founding-beta",
   public_page_enabled: true,
   public_member_list: true,
+  list_in_directory: true,
+  discord_invite_url: "https://discord.gg/rallied-founding",
   hide_powered_by: true,
   public_accent: "#B8F000",
 };

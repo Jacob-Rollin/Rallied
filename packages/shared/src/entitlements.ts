@@ -115,6 +115,13 @@ export function publicPagesEnabled(plan: string | null | undefined): boolean {
   return hasCommunityAccess(plan);
 }
 
+/** Opt-in /servers directory listing (Community+/trial — not Starter). */
+export function directoryListingEnabled(
+  plan: string | null | undefined,
+): boolean {
+  return hasCommunityAccess(plan);
+}
+
 export function digestEnabled(plan: string | null | undefined): boolean {
   return hasCommunityAccess(plan);
 }

@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isProPlan, reliabilityEnabled } from "@rallied/shared";
+import {
+  directoryListingEnabled,
+  isProPlan,
+  reliabilityEnabled,
+} from "@rallied/shared";
 import { getSession } from "@/lib/auth/session";
 import { getServiceSupabase } from "@/lib/supabase";
 
@@ -8,6 +12,8 @@ type Body = {
   slug?: string | null;
   public_page_enabled?: boolean;
   public_member_list?: boolean;
+  list_in_directory?: boolean;
+  discord_invite_url?: string | null;
   hide_powered_by?: boolean;
   public_accent?: string | null;
   grace_minutes?: number;
@@ -36,6 +42,29 @@ function cleanAccent(raw: string | null | undefined): string | null {
   }
   // Allow empty clear; reject garbage
   return null;
+}
+
+/** Allow discord.gg / discord.com/invite (and clear). */
+function cleanInviteUrl(raw: string | null | undefined): string | null {
+  if (raw == null || String(raw).trim() === "") return null;
+  const v = String(raw).trim();
+  try {
+    const url = new URL(v.startsWith("http") ? v : `https://${v}`);
+    const host = url.hostname.toLowerCase();
+    const okHost =
+      host === "discord.gg" ||
+      host === "discord.com" ||
+      host === "www.discord.com" ||
+      host === "discordapp.com" ||
+      host === "www.discordapp.com";
+    if (!okHost) return null;
+    if (host.includes("discord.com") || host.includes("discordapp.com")) {
+      if (!url.pathname.toLowerCase().includes("/invite")) return null;
+    }
+    return url.toString();
+  } catch {
+    return null;
+  }
 }
 
 function clampInt(
@@ -125,6 +154,35 @@ export async function POST(req: NextRequest) {
   }
   if (typeof body.public_member_list === "boolean") {
     patch.public_member_list = body.public_member_list;
+  }
+  if (typeof body.list_in_directory === "boolean") {
+    if (body.list_in_directory && !directoryListingEnabled(server.plan as string)) {
+      return NextResponse.json(
+        {
+          error: "community_required",
+          hint: "Directory listing requires Community (or trial / Pro).",
+        },
+        { status: 403 },
+      );
+    }
+    patch.list_in_directory = body.list_in_directory;
+  }
+  if (body.discord_invite_url !== undefined) {
+    const cleaned = cleanInviteUrl(body.discord_invite_url);
+    if (
+      body.discord_invite_url != null &&
+      String(body.discord_invite_url).trim() !== "" &&
+      cleaned == null
+    ) {
+      return NextResponse.json(
+        {
+          error: "invalid_invite_url",
+          hint: "Use a discord.gg or discord.com/invite link.",
+        },
+        { status: 400 },
+      );
+    }
+    patch.discord_invite_url = cleaned;
   }
   if (body.slug !== undefined) {
     patch.slug = cleanSlug(body.slug);

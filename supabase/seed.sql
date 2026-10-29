@@ -77,17 +77,21 @@ values
 -- Phase 1.5 / public pages settings + sample dispute (run after 002 + 003)
 insert into public.server_settings (
   server_id, grace_minutes, strike_threshold, lockout_days,
-  slug, public_page_enabled, public_member_list
+  slug, public_page_enabled, public_member_list,
+  list_in_directory, discord_invite_url
 )
 values (
   '11111111-1111-1111-1111-111111111111', 5, 3, 7,
-  'demo-esports', true, false
+  'demo-esports', true, false,
+  true, 'https://discord.gg/rallied-demo'
 )
 on conflict (server_id) do update
   set grace_minutes = excluded.grace_minutes,
       slug = excluded.slug,
       public_page_enabled = excluded.public_page_enabled,
-      public_member_list = excluded.public_member_list;
+      public_member_list = excluded.public_member_list,
+      list_in_directory = excluded.list_in_directory,
+      discord_invite_url = excluded.discord_invite_url;
 
 insert into public.disputes (server_id, strike_id, opener_member_id, status, notes)
 select

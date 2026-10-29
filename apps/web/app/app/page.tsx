@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { DataSourceBanner } from "@/components/DataSourceBanner";
+import { PlanBanner } from "@/components/PlanBanner";
 import { loadDashboard } from "@/lib/dashboard-data";
 import { resolveSelectedGuild, withGuildQuery } from "@/lib/guild-context";
 
@@ -23,6 +24,12 @@ export default async function OverviewPage({ searchParams }: Props) {
       </div>
 
       <DataSourceBanner source={data.source} notice={data.notice} />
+
+      <PlanBanner
+        plan={data.server?.plan}
+        trialEndsAt={data.server?.trial_ends_at}
+        billingHref={withGuildQuery("/app/billing", guildId)}
+      />
 
       <div className="grid gap-4 sm:grid-cols-3">
         {[

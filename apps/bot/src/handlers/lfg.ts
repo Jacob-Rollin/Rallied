@@ -37,6 +37,10 @@ import {
   refreshPartyCard,
   type PartyCardState,
 } from "../lib/party-message.js";
+import {
+  checkCreateCaps,
+  resolveEffectivePlan,
+} from "../lib/entitlements.js";
 import { ghostlessCardLabel } from "../lib/ghostless.js";
 import { getServerSettings } from "../lib/settings.js";
 import { ensureServerAndMember } from "../lib/supabase.js";
@@ -77,6 +81,7 @@ function rosterLine(members: Awaited<ReturnType<typeof loadPartyMembers>>): stri
 
 export async function createParty(opts: {
   sb: SupabaseClient;
+  env: BotEnv;
   guildId: string;
   discordUserId: string;
   displayName: string;
@@ -85,7 +90,7 @@ export async function createParty(opts: {
   slots: number;
   notes?: string;
 }): Promise<InteractionResponse> {
-  const { sb } = opts;
+  const { sb, env } = opts;
   const game = normalizeGame(opts.game);
   if (!game) {
     return ephemeral("Pick a game (catalog title or free text).");
@@ -101,7 +106,18 @@ export async function createParty(opts: {
     opts.discordUserId,
     opts.displayName,
     opts.avatarUrl,
+    null,
+    env,
   );
+
+  const plan = resolveEffectivePlan(server, env, opts.guildId);
+  const capBlock = await checkCreateCaps({
+    sb,
+    env,
+    serverId: server.id,
+    plan,
+  });
+  if (capBlock) return capBlock;
 
   const { data: lockouts } = await sb
     .from("lockouts")
@@ -282,7 +298,11 @@ export function postLfgDesk(): InteractionResponse {
   };
 }
 
-export async function handleLfg(interaction: Interaction, sb: SupabaseClient | null) {
+export async function handleLfg(
+  interaction: Interaction,
+  sb: SupabaseClient | null,
+  env: BotEnv,
+) {
   if (!interaction.guild_id) {
     return ephemeral("LFG only works inside a Discord server.");
   }
@@ -299,6 +319,16 @@ export async function handleLfg(interaction: Interaction, sb: SupabaseClient | n
     if (!isMod(interaction)) {
       return ephemeral("Only mods can post the LFG desk (`Manage Server` / Admin).");
     }
+    await ensureServerAndMember(
+      sb,
+      interaction.guild_id,
+      undefined,
+      user.id,
+      displayName(interaction),
+      avatarUrl(user),
+      null,
+      env,
+    );
     return postLfgDesk();
   }
 
@@ -309,6 +339,8 @@ export async function handleLfg(interaction: Interaction, sb: SupabaseClient | n
     user.id,
     displayName(interaction),
     avatarUrl(user),
+    null,
+    env,
   );
 
   if (sub === "create") {
@@ -321,6 +353,7 @@ export async function handleLfg(interaction: Interaction, sb: SupabaseClient | n
 
     return createParty({
       sb,
+      env,
       guildId: interaction.guild_id,
       discordUserId: user.id,
       displayName: displayName(interaction),
@@ -369,13 +402,30 @@ export async function handleLfg(interaction: Interaction, sb: SupabaseClient | n
   return ephemeral("Unknown `/lfg` subcommand. Try create, find, desk, or close.");
 }
 
-/** `/setup` — admin posts LFG desk in the current channel. */
-export async function handleSetup(interaction: Interaction) {
+/** `/setup` — admin posts LFG desk; first ensure starts 14-day trial. */
+export async function handleSetup(
+  interaction: Interaction,
+  sb: SupabaseClient | null,
+  env: BotEnv,
+) {
   if (!interaction.guild_id) {
     return ephemeral("Setup only works inside a Discord server.");
   }
   if (!isMod(interaction)) {
     return ephemeral("Only mods can run `/setup` (`Manage Server` / Admin).");
+  }
+  const user = actorUser(interaction);
+  if (sb && user) {
+    await ensureServerAndMember(
+      sb,
+      interaction.guild_id,
+      undefined,
+      user.id,
+      displayName(interaction),
+      avatarUrl(user),
+      null,
+      env,
+    );
   }
   return postLfgDesk();
 }
@@ -450,6 +500,7 @@ export async function handleFindGameSelect(
 export async function handleCreateModalSubmit(
   interaction: Interaction,
   sb: SupabaseClient | null,
+  env: BotEnv,
 ): Promise<InteractionResponse> {
   if (!interaction.guild_id) {
     return ephemeral("LFG only works inside a Discord server.");
@@ -481,6 +532,7 @@ export async function handleCreateModalSubmit(
 
   return createParty({
     sb,
+    env,
     guildId: interaction.guild_id,
     discordUserId: user.id,
     displayName: displayName(interaction),

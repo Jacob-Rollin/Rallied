@@ -15,6 +15,12 @@ import {
 } from "../lib/embeds.js";
 import { formatError } from "../lib/errors.js";
 import { postThreadMessage } from "../lib/party-message.js";
+import {
+  freeReadyCheckNote,
+  reliabilityEnabled,
+  resolveEffectivePlan,
+  upgradeEphemeral,
+} from "../lib/entitlements.js";
 import { maybeAssignGhostlessRole } from "../lib/roles.js";
 import { getServerSettings, withinGraceWindow } from "../lib/settings.js";
 import { ensureServerAndMember } from "../lib/supabase.js";
@@ -50,6 +56,8 @@ export async function handleVibe(
     user.id,
     displayName(interaction),
     avatarUrl(user),
+    null,
+    env,
   );
 
   const { member: ratee } = await ensureServerAndMember(
@@ -59,6 +67,8 @@ export async function handleVibe(
     targetId,
     "member",
     null,
+    null,
+    env,
   );
 
   let partyId = partyIdOpt;
@@ -202,6 +212,27 @@ export async function recordVibe(opts: {
 
   if (error) return ephemeral(`Could not save vibe: ${error.message}`);
 
+  const { data: serverRow } = await sb
+    .from("servers")
+    .select("plan, trial_ends_at, discord_guild_id")
+    .eq("id", opts.serverId)
+    .maybeSingle();
+
+  const plan = env
+    ? resolveEffectivePlan(
+        {
+          plan: serverRow?.plan as string | undefined,
+          trial_ends_at: (serverRow?.trial_ends_at as string | null) ?? null,
+          discord_guild_id:
+            (serverRow?.discord_guild_id as string | null) ?? opts.guildId,
+        },
+        env,
+        opts.guildId,
+      )
+    : ((serverRow?.plan as string | undefined) ?? "trial");
+
+  const reliabilityOn = reliabilityEnabled(plan);
+
   const { data: stats } = await sb
     .from("ghostless_stats")
     .select("*")
@@ -219,7 +250,7 @@ export async function recordVibe(opts: {
   const readyResolved = Boolean(party.ready_check_resolved_at);
   let struck = false;
 
-  if (isNew) {
+  if (isNew && reliabilityOn) {
     if (showedUp && !readyResolved) {
       shows += 1;
     }
@@ -283,7 +314,7 @@ export async function recordVibe(opts: {
     }
   }
 
-  if (env) {
+  if (env && reliabilityOn) {
     await maybeAssignGhostlessRole(env, sb, {
       serverId: opts.serverId,
       guildId: opts.guildId,
@@ -294,7 +325,7 @@ export async function recordVibe(opts: {
   }
 
   // Ratee-facing Dispute CTA (squad thread) when a Ghosted strike was issued.
-  if (struck && env) {
+  if (struck && env && reliabilityOn) {
     const channelId = party.discord_thread_id || party.discord_channel_id;
     if (channelId) {
       const payload = vibeGhostDisputeMessage({
@@ -316,6 +347,17 @@ export async function recordVibe(opts: {
     return ephemeral(
       `Updated Vibe Check for <@${opts.rateeDiscordId}> (stats unchanged — already counted).`,
     );
+  }
+
+  if (!reliabilityOn && env) {
+    const upgrade = upgradeEphemeral({ env, reason: "reliability" });
+    return {
+      ...upgrade,
+      data: {
+        ...upgrade.data,
+        content: `Vibe Check noted for <@${opts.rateeDiscordId}> — Ghostless stats & strikes stay off on Free. ${freeReadyCheckNote()}`,
+      },
+    };
   }
 
   const showNote = readyResolved

@@ -6,6 +6,8 @@ import {
   FOUNDING_PRO_PRICE_USD,
   PLANS,
   PRO_PRICE_USD,
+  STARTER_MAX_CREATES_PER_24H,
+  STARTER_MAX_OPEN_PARTIES,
   buildBotInviteUrl,
 } from "@rallied/shared";
 import { AddToDiscordButton } from "../../components/AddToDiscordButton";
@@ -16,18 +18,29 @@ import { SiteHeader } from "../../components/SiteHeader";
 export const metadata: Metadata = {
   title: `Pricing — ${BRAND.name}`,
   description:
-    "Community $5.99/mo, Pro $9.99/mo, Founding Pro $8.99 locked. Compare LFG, Ghostless, admin, and Pro extras.",
+    "Starter free under caps, Community $4.99/mo, Pro $9.99/mo, Founding Pro $8.99 locked. Path B: free matching + paid reliability.",
 };
 
 const TIERS = [
+  {
+    id: "free" as const,
+    name: "Starter",
+    price: 0,
+    annual: null as number | null,
+    blurb: `LFG under caps (${STARTER_MAX_OPEN_PARTIES} open · ${STARTER_MAX_CREATES_PER_24H}/day). No Ghostless.`,
+    trial: false,
+    accent: false,
+    badge: "Free forever" as string | null,
+  },
   {
     id: "community" as const,
     name: "Community",
     price: COMMUNITY_PRICE_USD,
     annual: PLANS.community.annualCents / 100,
-    blurb: "Full LFG + Ghostless + strikes. The reliability core.",
+    blurb: "Unlimited LFG + Ghostless + strikes. The reliability core.",
     trial: true,
     accent: false,
+    badge: null,
   },
   {
     id: "pro" as const,
@@ -37,15 +50,17 @@ const TIERS = [
     blurb: "Export, vanity branding, priority support.",
     trial: true,
     accent: false,
+    badge: null,
   },
   {
     id: "founding_pro" as const,
-    name: "Founding Pro",
+    name: "Founding",
     price: FOUNDING_PRO_PRICE_USD,
     annual: PLANS.founding_pro.annualCents / 100,
     blurb: `Pro locked at $${FOUNDING_PRO_PRICE_USD}/mo · ≤${PLANS.founding_pro.seatCap} seats.`,
     trial: false,
     accent: true,
+    badge: `≤${PLANS.founding_pro.seatCap} seats`,
   },
 ] as const;
 
@@ -53,64 +68,81 @@ type Cell = "yes" | "no" | "partial" | string;
 
 const MATRIX: {
   label: string;
-  unpaid: Cell;
+  starter: Cell;
   community: Cell;
   pro: Cell;
 }[] = [
-  { label: "LFG create / join", unpaid: "no", community: "yes", pro: "yes" },
   {
-    label: "Ghostless / Vibe Check",
-    unpaid: "no",
+    label: "Desk create / join / leave",
+    starter: "Under caps",
+    community: "Unlimited",
+    pro: "Unlimited",
+  },
+  {
+    label: "Open parties",
+    starter: String(STARTER_MAX_OPEN_PARTIES),
+    community: "Unlimited",
+    pro: "Unlimited",
+  },
+  {
+    label: "Creates / rolling 24h",
+    starter: String(STARTER_MAX_CREATES_PER_24H),
+    community: "Unlimited",
+    pro: "Unlimited",
+  },
+  {
+    label: "Ghostless / Vibe progress",
+    starter: "no",
     community: "yes",
     pro: "yes",
   },
   {
     label: "Strikes + LFG lockout",
-    unpaid: "no",
+    starter: "no",
     community: "yes",
     pro: "yes",
+  },
+  {
+    label: "Ready-check strikes",
+    starter: "Soft only",
+    community: "Full",
+    pro: "Full",
   },
   {
     label: "Disputes queue",
-    unpaid: "no",
+    starter: "no",
     community: "yes",
     pro: "yes",
   },
   {
-    label: "Admin web (People, Rules)",
-    unpaid: "Read-only",
+    label: "Public /s page",
+    starter: "no",
     community: "yes",
-    pro: "yes",
+    pro: "yes + vanity",
   },
   {
-    label: "Public server page",
-    unpaid: "View",
-    community: "yes",
-    pro: "yes",
+    label: "Admin reliability settings",
+    starter: "Read-only + CTA",
+    community: "Full",
+    pro: "Full",
   },
   {
     label: "Weekly digest",
-    unpaid: "no",
-    community: "yes",
-    pro: "yes",
+    starter: "no",
+    community: "Lite",
+    pro: "Full",
   },
   {
     label: "Analytics / CSV export",
-    unpaid: "no",
+    starter: "no",
     community: "This week",
     pro: "Export + trends",
   },
   {
-    label: "Vanity (hide Powered by)",
-    unpaid: "no",
+    label: "Vanity (icon, accent, hide Po)",
+    starter: "no",
     community: "no",
     pro: "yes",
-  },
-  {
-    label: "Support",
-    unpaid: "Docs",
-    community: "Email 48–72h",
-    pro: "Priority 24–48h",
   },
 ];
 
@@ -138,26 +170,26 @@ export default function PricingPage() {
 
       <main className="mx-auto max-w-5xl px-4 pb-20 pt-10 sm:pt-12">
         <p className="font-display text-xs tracking-[0.16em] text-coral">
-          PRICING
+          PRICING · PATH B
         </p>
         <h1 className="mt-2 font-display text-4xl tracking-wide sm:text-5xl">
-          Compare plans
+          Free matching. Paid reliability.
         </h1>
         <p className="mt-3 max-w-xl text-white/75">
-          Per Discord server. Community{" "}
+          Per Discord server. Starter free under caps · Community{" "}
           <span className="text-white">${COMMUNITY_PRICE_USD}/mo</span> ($
           {PLANS.community.annualCents / 100}/yr) · Pro{" "}
-          <span className="text-white">${PRO_PRICE_USD}/mo</span> ($
-          {PLANS.pro.annualCents / 100}/yr) · Founding = Pro at{" "}
+          <span className="text-white">${PRO_PRICE_USD}/mo</span> · Founding = Pro
+          at{" "}
           <span className="text-coral">${FOUNDING_PRO_PRICE_USD}/mo locked</span>{" "}
           (≤{PLANS.founding_pro.seatCap}).
         </p>
         <p className="mt-2 max-w-xl text-sm text-white/55">
-          14-day Community trial · first-month money-back if you pay early.
-          After trial unpaid → LFG create off (read-only).
+          14-day full trial (Community features) · then Starter caps if unpaid ·
+          first-month money-back if you pay early.
         </p>
 
-        <div className="mt-10 grid gap-4 sm:grid-cols-3">
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {TIERS.map((tier) => (
             <div
               key={tier.id}
@@ -171,9 +203,15 @@ export default function PricingPage() {
                 <p className="font-display text-xl tracking-wide text-white">
                   {tier.name}
                 </p>
-                {tier.accent ? (
-                  <span className="rounded-brand border border-coral/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-coral">
-                    ≤{PLANS.founding_pro.seatCap} seats
+                {tier.badge ? (
+                  <span
+                    className={`rounded-brand border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                      tier.accent
+                        ? "border-coral/60 text-coral"
+                        : "border-white/25 text-white/70"
+                    }`}
+                  >
+                    {tier.badge}
                   </span>
                 ) : null}
               </div>
@@ -184,17 +222,23 @@ export default function PricingPage() {
                     : "text-2xl text-white"
                 }`}
               >
-                ${tier.price}
+                {tier.price === 0 ? "$0" : `$${tier.price}`}
                 <span className="font-body text-sm font-normal text-white/55">
                   /mo
                 </span>
               </p>
               <p className="mt-1 text-xs text-white/55">
-                ${tier.annual}/yr{tier.accent ? " locked" : ""}
+                {tier.annual != null
+                  ? `$${tier.annual}/yr${tier.accent ? " locked" : ""}`
+                  : "No annual plan"}
               </p>
               {tier.trial ? (
                 <p className="mt-2 text-xs font-medium text-lime">
-                  14-day free trial
+                  Included in 14-day trial
+                </p>
+              ) : tier.id === "free" ? (
+                <p className="mt-2 text-xs font-medium text-white/55">
+                  After trial if unpaid
                 </p>
               ) : (
                 <p className="mt-2 text-xs font-medium text-coral">
@@ -213,7 +257,8 @@ export default function PricingPage() {
             Feature comparison
           </h2>
           <p className="mt-1 text-sm text-white/55">
-            Founding Pro = full Pro column at the locked price.
+            Founding = full Pro column at the locked price. Trial = Community
+            column for 14 days.
           </p>
 
           {/* Mobile: stacked cards */}
@@ -226,9 +271,9 @@ export default function PricingPage() {
                 <p className="text-sm font-medium text-white">{row.label}</p>
                 <dl className="mt-2 grid grid-cols-3 gap-2 text-center text-[11px]">
                   <div>
-                    <dt className="text-white/45">After trial</dt>
+                    <dt className="text-white/45">Starter</dt>
                     <dd className="mt-1 flex justify-center">
-                      <CellValue value={row.unpaid} />
+                      <CellValue value={row.starter} />
                     </dd>
                   </div>
                   <div>
@@ -254,7 +299,7 @@ export default function PricingPage() {
               <thead>
                 <tr className="border-b border-white/15 text-xs uppercase tracking-wider text-white/45">
                   <th className="py-3 pr-4 font-medium">Capability</th>
-                  <th className="px-3 py-3 font-medium">After trial</th>
+                  <th className="px-3 py-3 font-medium">Starter</th>
                   <th className="px-3 py-3 font-medium">Community</th>
                   <th className="px-3 py-3 font-medium">Pro / Founding</th>
                 </tr>
@@ -269,7 +314,7 @@ export default function PricingPage() {
                       {row.label}
                     </td>
                     <td className="px-3 py-3.5">
-                      <CellValue value={row.unpaid} />
+                      <CellValue value={row.starter} />
                     </td>
                     <td className="px-3 py-3.5">
                       <CellValue value={row.community} />
@@ -289,8 +334,8 @@ export default function PricingPage() {
             Ready to install
           </h2>
           <p className="max-w-lg text-sm text-white/70">
-            Add the bot, walk the demo, or read the setup guide. Checkout
-            wires later — trial messaging is live.
+            Add the bot, walk the demo, or read the setup guide. Checkout wires
+            later — trial + Starter caps are live.
           </p>
           <div className="flex flex-wrap gap-3">
             <AddToDiscordButton href={inviteHref} />

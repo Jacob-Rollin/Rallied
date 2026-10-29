@@ -56,12 +56,21 @@ const HERO_PILLARS = [
 
 const LANDING_TIERS = [
   {
+    id: "free" as const,
+    name: "Starter",
+    price: 0,
+    annual: null as number | null,
+    blurb: "LFG under caps. No Ghostless.",
+    features: ["2 open parties", "5 creates / day", "Soft ready-check"],
+    founding: false as const,
+  },
+  {
     id: "community" as const,
     name: "Community",
     price: COMMUNITY_PRICE_USD,
     annual: PLANS.community.annualCents / 100,
-    blurb: "Core LFG, strikes, Ghostless, and admin web.",
-    features: ["LFG + Vibe Check", "Strikes & lockouts", "Public page"],
+    blurb: "Unlimited LFG + Ghostless + strikes.",
+    features: ["Unlimited parties", "Ghostless + strikes", "Public page"],
     founding: false as const,
   },
   {
@@ -75,7 +84,7 @@ const LANDING_TIERS = [
   },
   {
     id: "founding_pro" as const,
-    name: "Founding Pro",
+    name: "Founding",
     price: FOUNDING_PRO_PRICE_USD,
     annual: PLANS.founding_pro.annualCents / 100,
     blurb: `Pro at $${FOUNDING_PRO_PRICE_USD}/mo locked.`,
@@ -221,8 +230,8 @@ export default function MarketingPage() {
             className="animate-rise mt-3 max-w-lg text-sm text-white/55"
             style={{ animationDelay: "260ms" }}
           >
-            14-day Community trial — no free-forever tier. Invite needs Manage
-            Server (or Admin).
+            14-day full trial, then Starter caps — Community ${COMMUNITY_PRICE_USD}
+            unlocks Ghostless. Invite needs Manage Server (or Admin).
           </p>
         </div>
       </section>
@@ -292,12 +301,12 @@ export default function MarketingPage() {
       <section id="pricing" className="scroll-mt-16 mx-auto max-w-5xl px-4 py-16">
         <h2 className="font-display text-3xl tracking-wide">Pricing</h2>
         <p className="mt-2 max-w-lg text-white/75">
-          Community ${COMMUNITY_PRICE_USD}/mo · Pro ${PRO_PRICE_USD}/mo · Founding
-          Pro ${FOUNDING_PRO_PRICE_USD}/mo locked (≤{PLANS.founding_pro.seatCap}).
-          14-day trial · first-month money-back.
+          Starter free under caps · Community ${COMMUNITY_PRICE_USD}/mo · Pro $
+          {PRO_PRICE_USD}/mo · Founding ${FOUNDING_PRO_PRICE_USD}/mo locked (≤
+          {PLANS.founding_pro.seatCap}). 14-day trial · first-month money-back.
         </p>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-3 sm:gap-5">
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-5">
           {LANDING_TIERS.map((tier) => (
             <div
               key={tier.id}
@@ -324,12 +333,14 @@ export default function MarketingPage() {
                     : "text-2xl text-white"
                 }`}
               >
-                ${tier.price}
+                {tier.price === 0 ? "$0" : `$${tier.price}`}
                 <span className="font-body text-sm font-normal text-white/55">
                   /mo
                 </span>
               </p>
-              <p className="mt-1 text-xs text-white/55">${tier.annual}/yr</p>
+              <p className="mt-1 text-xs text-white/55">
+                {tier.annual != null ? `$${tier.annual}/yr` : "Caps only"}
+              </p>
               <p className="mt-3 text-sm leading-relaxed text-white/75">
                 {tier.blurb}
               </p>
@@ -368,7 +379,7 @@ export default function MarketingPage() {
             </Link>
           </div>
           <p className="text-sm text-white/55">
-            No free-forever LFG. Needs Manage Server to install.
+            Serious communities need Community. Install needs Manage Server.
           </p>
         </div>
       </section>

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { BotEnv } from "../lib/env.js";
 import {
   actorUser,
   avatarUrl,
@@ -9,6 +10,11 @@ import {
   isMod,
   type Interaction,
 } from "../lib/discord.js";
+import {
+  reliabilityEnabled,
+  resolveEffectivePlan,
+  upgradeEphemeral,
+} from "../lib/entitlements.js";
 import { getServerSettings } from "../lib/settings.js";
 import { ensureServerAndMember } from "../lib/supabase.js";
 
@@ -17,7 +23,11 @@ import { ensureServerAndMember } from "../lib/supabase.js";
  * Grace window (grace_minutes) is applied when recording ghosts in vibe handlers —
  * strikes themselves are issued by mods or after confirmed ghosts outside grace.
  */
-export async function handleStrikes(interaction: Interaction, sb: SupabaseClient | null) {
+export async function handleStrikes(
+  interaction: Interaction,
+  sb: SupabaseClient | null,
+  env: BotEnv,
+) {
   if (!interaction.guild_id) {
     return ephemeral("Strikes are per-server only.");
   }
@@ -40,7 +50,14 @@ export async function handleStrikes(interaction: Interaction, sb: SupabaseClient
     user.id,
     displayName(interaction),
     avatarUrl(user),
+    null,
+    env,
   );
+
+  const plan = resolveEffectivePlan(server, env, interaction.guild_id);
+  if (!reliabilityEnabled(plan)) {
+    return upgradeEphemeral({ env, reason: "reliability" });
+  }
 
   const settings = await getServerSettings(sb, server.id);
 
@@ -51,6 +68,8 @@ export async function handleStrikes(interaction: Interaction, sb: SupabaseClient
     targetId,
     "member",
     null,
+    null,
+    env,
   );
 
   if (sub === "list") {

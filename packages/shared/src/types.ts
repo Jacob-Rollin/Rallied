@@ -2,6 +2,7 @@ import type { DISPUTE_STATUSES, LFG_PARTY_STATUSES } from "./constants";
 
 export type PlanId =
   | "trial"
+  | "free"
   | "community"
   | "pro"
   | "founding_pro"
@@ -17,7 +18,7 @@ export interface Server {
   discord_guild_id: string;
   name: string;
   plan: PlanId;
-  /** Effective monthly price lock in cents (599 / 899 / 999 …) */
+  /** Effective monthly price lock in cents (499 / 899 / 999 …) */
   price_lock_cents: number | null;
   trial_ends_at: string | null;
   priority_support: boolean;

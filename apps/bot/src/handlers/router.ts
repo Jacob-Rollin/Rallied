@@ -18,17 +18,17 @@ export async function routeCommand(
   try {
     switch (name) {
       case "lfg":
-        return await handleLfg(interaction, sb);
+        return await handleLfg(interaction, sb, env);
       case "setup":
-        return await handleSetup(interaction);
+        return await handleSetup(interaction, sb, env);
       case "vibe":
         return await handleVibe(interaction, sb, env);
       case "strikes":
-        return await handleStrikes(interaction, sb);
+        return await handleStrikes(interaction, sb, env);
       case "ghostless":
-        return await handleGhostless(interaction, sb);
+        return await handleGhostless(interaction, sb, env);
       case "dispute":
-        return await handleDispute(interaction, sb);
+        return await handleDispute(interaction, sb, env);
       default:
         return ephemeral(`Unknown command: ${name ?? "?"}`);
     }
@@ -56,12 +56,12 @@ export async function routeComponent(
 export async function routeModal(
   interaction: Interaction,
   sb: SupabaseClient | null,
-  _env: BotEnv,
+  env: BotEnv,
 ) {
   try {
     const customId = interaction.data?.custom_id ?? "";
     if (customId.startsWith("lfg:createsubmit:")) {
-      return await handleCreateModalSubmit(interaction, sb);
+      return await handleCreateModalSubmit(interaction, sb, env);
     }
     return ephemeral(`Unhandled modal: ${customId || "?"}`);
   } catch (err) {

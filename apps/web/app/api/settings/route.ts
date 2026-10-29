@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isProPlan } from "@rallied/shared";
+import { isProPlan, reliabilityEnabled } from "@rallied/shared";
 import { getSession } from "@/lib/auth/session";
 import { getServiceSupabase } from "@/lib/supabase";
 
@@ -106,11 +106,21 @@ export async function POST(req: NextRequest) {
   }
 
   const pro = isProPlan(server.plan as string);
+  const reliabilityOn = reliabilityEnabled(server.plan as string);
   const patch: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
 
   if (typeof body.public_page_enabled === "boolean") {
+    if (!reliabilityOn && body.public_page_enabled) {
+      return NextResponse.json(
+        {
+          error: "community_required",
+          hint: "Public pages require Community (or trial / Pro).",
+        },
+        { status: 403 },
+      );
+    }
     patch.public_page_enabled = body.public_page_enabled;
   }
   if (typeof body.public_member_list === "boolean") {
@@ -119,6 +129,26 @@ export async function POST(req: NextRequest) {
   if (body.slug !== undefined) {
     patch.slug = cleanSlug(body.slug);
   }
+
+  const reliabilityTouched =
+    body.grace_minutes !== undefined ||
+    body.strike_threshold !== undefined ||
+    body.lockout_days !== undefined ||
+    body.ghostless_role_threshold_pct !== undefined ||
+    body.ghostless_role_min_sessions !== undefined ||
+    body.ghostless_role_id !== undefined ||
+    body.digest_channel_id !== undefined;
+
+  if (reliabilityTouched && !reliabilityOn) {
+    return NextResponse.json(
+      {
+        error: "community_required",
+        hint: "Reliability settings require Community (or active trial / Pro).",
+      },
+      { status: 403 },
+    );
+  }
+
   if (body.grace_minutes !== undefined) {
     patch.grace_minutes = clampInt(body.grace_minutes, 0, 60, 5);
   }

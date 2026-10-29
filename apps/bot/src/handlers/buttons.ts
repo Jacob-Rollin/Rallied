@@ -168,7 +168,7 @@ export async function handleButton(
   }
 
   if (ns === "dispute" && action === "open") {
-    return openDisputeFromButton(sb, {
+    return openDisputeFromButton(sb, env, {
       guildId: interaction.guild_id,
       openerDiscordId: user.id,
       openerName: displayName(interaction),

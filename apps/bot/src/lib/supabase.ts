@@ -1,5 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { trialEndsAtFromNow } from "@rallied/shared";
 import { normalizeSupabaseUrl, type BotEnv } from "./env.js";
+import { bootstrapNewServerPlan } from "./entitlements.js";
 import { errorFromUnknown } from "./errors.js";
 
 /** Placeholder used when looking up another member without a real display name. */
@@ -17,6 +19,9 @@ export function createServiceClient(env: BotEnv): SupabaseClient | null {
  * Upsert server + member for this guild interaction.
  * Does not clobber an existing display_name/avatar when `displayName` is the
  * `"member"` placeholder (lookups of other users).
+ *
+ * New servers start on `plan=trial` with `trial_ends_at = now+14d`.
+ * Paid plans are never reset. Pass `env` to apply dogfood / trial bootstrap.
  */
 export async function ensureServerAndMember(
   sb: SupabaseClient,
@@ -27,39 +32,89 @@ export async function ensureServerAndMember(
   avatarUrl: string | null,
   /** Optional Discord guild icon CDN URL (Pro public vanity). */
   iconUrl: string | null = null,
+  env?: BotEnv,
 ) {
-  const upsertRow: Record<string, unknown> = {
-    discord_guild_id: guildId,
-    name: guildName ?? guildId,
-  };
-  if (iconUrl) upsertRow.icon_url = iconUrl;
-
-  const { data: server, error: sErr } = await sb
+  const { data: existingServer } = await sb
     .from("servers")
-    .upsert(upsertRow, { onConflict: "discord_guild_id" })
     .select("*")
-    .single();
+    .eq("discord_guild_id", guildId)
+    .maybeSingle();
 
-  // PostgREST errors are plain objects — never throw them raw (catch sites
-  // used to collapse non-Error throws into Discord "unknown error").
-  if (sErr || !server) {
-    throw errorFromUnknown("server upsert failed", sErr ?? "no row returned");
-  }
+  let server = existingServer;
 
-  // Upsert won't clear a prior icon; refresh when we learned a new URL.
-  if (
-    iconUrl &&
-    (server as { icon_url?: string | null }).icon_url !== iconUrl
-  ) {
-    const { data: patched, error: iconErr } = await sb
+  if (!server) {
+    const insertRow: Record<string, unknown> = {
+      discord_guild_id: guildId,
+      name: guildName ?? guildId,
+      plan: "trial",
+      trial_ends_at: trialEndsAtFromNow(),
+    };
+    if (iconUrl) insertRow.icon_url = iconUrl;
+
+    const { data: created, error: sErr } = await sb
       .from("servers")
-      .update({ icon_url: iconUrl })
-      .eq("id", server.id)
+      .insert(insertRow)
       .select("*")
       .single();
-    if (!iconErr && patched) {
-      Object.assign(server, patched);
+
+    if (sErr || !created) {
+      // Race: another interaction inserted first — fall back to upsert name only.
+      const { data: raced, error: uErr } = await sb
+        .from("servers")
+        .upsert(
+          {
+            discord_guild_id: guildId,
+            name: guildName ?? guildId,
+            ...(iconUrl ? { icon_url: iconUrl } : {}),
+          },
+          { onConflict: "discord_guild_id" },
+        )
+        .select("*")
+        .single();
+      if (uErr || !raced) {
+        throw errorFromUnknown(
+          "server upsert failed",
+          uErr ?? sErr ?? "no row returned",
+        );
+      }
+      server = raced;
+    } else {
+      server = created;
     }
+  } else {
+    const patch: Record<string, unknown> = {};
+    if (guildName && guildName !== server.name) {
+      patch.name = guildName;
+    }
+    if (iconUrl && server.icon_url !== iconUrl) {
+      patch.icon_url = iconUrl;
+    }
+    if (Object.keys(patch).length > 0) {
+      patch.updated_at = new Date().toISOString();
+      const { data: patched, error: iconErr } = await sb
+        .from("servers")
+        .update(patch)
+        .eq("id", server.id)
+        .select("*")
+        .single();
+      if (!iconErr && patched) {
+        server = patched;
+      }
+    }
+  }
+
+  if (!server) {
+    throw errorFromUnknown("server upsert failed", "no row returned");
+  }
+
+  if (env) {
+    const planFields = await bootstrapNewServerPlan(sb, env, guildId, {
+      id: server.id,
+      plan: String(server.plan ?? "trial"),
+      trial_ends_at: (server.trial_ends_at as string | null) ?? null,
+      created_at: server.created_at as string | undefined,
+    });
+    Object.assign(server, planFields);
   }
 
   const { data: existing, error: findErr } = await sb

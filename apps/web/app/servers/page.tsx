@@ -8,7 +8,7 @@ import { listDirectoryServers } from "../../lib/public-data";
 export const metadata: Metadata = {
   title: `Servers — ${BRAND.name}`,
   description:
-    "Opt-in directory of Rallied communities. View a public server page or join Discord — no cross-server player grades.",
+    "Opt-in directory of Rallied communities. Listing is per-server — view a public page or join Discord. No cross-server player grades or LFG Network.",
 };
 
 export default async function ServersDirectoryPage() {
@@ -26,8 +26,10 @@ export default async function ServersDirectoryPage() {
           Servers
         </h1>
         <p className="mt-3 max-w-xl text-white/75">
-          Communities that opted in. View their public Rallied page or join
-          Discord. Reliability stays per-server — no passport Ghostless scores.
+          Opt-in only — admins choose to list. View a public Rallied page or
+          join Discord. Ghostless and vibes stay{" "}
+          <strong className="font-semibold text-white/90">per server</strong>{" "}
+          (not cross-server grades or a player passport).
         </p>
 
         {servers.length === 0 ? (
@@ -36,7 +38,8 @@ export default async function ServersDirectoryPage() {
             <strong className="font-semibold text-white/80">
               List in directory
             </strong>{" "}
-            under Settings (Community / trial / Pro) and add a Discord invite.
+            under Settings (Community / trial / Pro), keep the public page on,
+            and add a Discord invite URL — then Save.
           </p>
         ) : (
           <ul className="mt-10 grid gap-4 sm:grid-cols-2">

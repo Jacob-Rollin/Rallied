@@ -1,3 +1,4 @@
+import { DiscordBotAvatar } from "./DiscordBotAvatar";
 import { GhostlessMark } from "./GhostlessMark";
 
 /** Static CSS/React mocks for landing feature previews — not interactive. */
@@ -9,9 +10,7 @@ export function LfgPartyEmbedMock() {
       aria-hidden
     >
       <div className="flex items-center gap-2 border-b border-white/8 px-3 py-2">
-        <span className="flex h-5 w-5 items-center justify-center rounded bg-coral/90 font-display text-[9px] leading-none text-slate">
-          R
-        </span>
+        <DiscordBotAvatar className="h-8 w-8" />
         <span className="text-xs font-semibold text-white/90">Rallied</span>
         <span className="rounded bg-white/10 px-1 py-px text-[9px] uppercase tracking-wide text-white/50">
           Bot
@@ -118,7 +117,8 @@ export function ReadyCheckMock() {
   );
 }
 
-export function VibeCheckCardMock() {
+/** Ghostless badge card — used in Ghostless explainer only (not Vibe Check). */
+export function GhostlessBadgeMock() {
   return (
     <div
       className="feature-mock mt-5 overflow-hidden rounded-brand border border-white/12 bg-slate-elevated/80"
@@ -144,6 +144,44 @@ export function VibeCheckCardMock() {
       <div className="flex items-center justify-between border-t border-white/10 px-3 py-2 text-[11px]">
         <span className="text-white/55">Show rate</span>
         <span className="font-semibold tabular-nums text-lime">96%</span>
+      </div>
+    </div>
+  );
+}
+
+/** @deprecated Prefer GhostlessBadgeMock — kept as alias for older imports. */
+export const VibeCheckCardMock = GhostlessBadgeMock;
+
+/** Compact post-session Vibe Check (Showed up / Ghosted / Dispute) — matches bot. */
+export function VibeCheckActionsMock() {
+  return (
+    <div
+      className="feature-mock mt-5 overflow-hidden rounded-brand border border-white/12 bg-[#2b2d31]"
+      aria-hidden
+    >
+      <p className="px-3 py-2.5 text-[12px] leading-snug text-white/85">
+        <strong className="text-white">Vibe Check</strong> for @Kai — how did
+        they do? (this server)
+      </p>
+      <div className="border-t border-white/8 px-3 py-2">
+        <p className="text-[11px] text-white/55">
+          Tap a quick result, or pick a vibe score 1–5. Grace window applies
+          before ghost strikes.
+        </p>
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          <span className="rounded bg-[#248046] px-2.5 py-1 text-[11px] font-medium text-white">
+            Showed up
+          </span>
+          <span className="rounded bg-[#da373c] px-2.5 py-1 text-[11px] font-medium text-white">
+            Ghosted
+          </span>
+          <span className="rounded bg-[#4e5058] px-2.5 py-1 text-[11px] font-medium text-white/90">
+            Dispute
+          </span>
+        </div>
+        <div className="mt-2 rounded border border-white/15 bg-[#1e1f22] px-2.5 py-2 text-[11px] text-white/45">
+          Rate vibe 1–5 (counts as showed up)
+        </div>
       </div>
     </div>
   );

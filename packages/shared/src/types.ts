@@ -87,6 +87,10 @@ export interface LfgParty {
   host_member_id: string;
   game: string;
   rank_text: string;
+  /** Mic preference: Required | Optional | Any | empty (008). */
+  mic?: string;
+  /** Free-text region filter (008). */
+  region?: string;
   slots: number;
   status: LfgPartyStatus;
   expires_at: string | null;
@@ -94,6 +98,11 @@ export interface LfgParty {
   discord_channel_id?: string | null;
   /** Squad discussion thread under the party card (005). */
   discord_thread_id?: string | null;
+  /** Temp voice channel for this party (008). */
+  discord_voice_channel_id?: string | null;
+  /** Optional one-shot start; Worker reminds ~T-10m (008). */
+  scheduled_start_at?: string | null;
+  schedule_reminder_sent_at?: string | null;
   /** Ready check + grace (006). */
   ready_check_started_at?: string | null;
   ready_check_message_id?: string | null;
@@ -108,7 +117,7 @@ export interface LfgPartyMember {
   id: string;
   party_id: string;
   member_id: string;
-  role: "host" | "member";
+  role: "host" | "member" | "waitlist";
   joined_at: string;
   /** Set when the member taps Ready during a ready check (006). */
   ready_at?: string | null;

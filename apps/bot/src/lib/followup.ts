@@ -199,14 +199,30 @@ async function afterPartyPosted(
   partyId: string,
   channelId: string,
   messageId: string,
+  guildId?: string | null,
 ): Promise<void> {
-  const { data: party } = await sb
+  let { data: party, error: partyErr } = await sb
     .from("lfg_parties")
     .select(
-      "id, game, rank_text, slots, status, host_member_id, discord_message_id, discord_channel_id, discord_thread_id",
+      "id, game, rank_text, mic, region, slots, status, host_member_id, discord_message_id, discord_channel_id, discord_thread_id, discord_voice_channel_id, scheduled_start_at",
     )
     .eq("id", partyId)
     .maybeSingle();
+
+  if (
+    partyErr &&
+    /mic|region|discord_voice_channel_id|scheduled_start_at/i.test(
+      partyErr.message ?? "",
+    )
+  ) {
+    ({ data: party } = await sb
+      .from("lfg_parties")
+      .select(
+        "id, game, rank_text, slots, status, host_member_id, discord_message_id, discord_channel_id, discord_thread_id",
+      )
+      .eq("id", partyId)
+      .maybeSingle());
+  }
 
   if (!party) {
     await persistPartyMessageIds(sb, partyId, { channelId, messageId });
@@ -214,19 +230,39 @@ async function afterPartyPosted(
   }
 
   const threadId = await startPartyThread(env, channelId, messageId, party.game);
+
+  let voiceChannelId: string | null = party.discord_voice_channel_id ?? null;
+  if (!voiceChannelId && guildId) {
+    const { createPartyVoiceChannel } = await import("./voice.js");
+    voiceChannelId = await createPartyVoiceChannel(env, {
+      guildId,
+      textChannelId: channelId,
+      game: party.game,
+      partyId,
+    });
+  }
+
   await persistPartyMessageIds(sb, partyId, {
     channelId,
     messageId,
     threadId,
+    voiceChannelId,
   });
 
   const card: PartyCardState = {
     ...party,
+    mic: (party as { mic?: string }).mic ?? "",
+    region: (party as { region?: string }).region ?? "",
+    scheduled_start_at:
+      (party as { scheduled_start_at?: string | null }).scheduled_start_at ??
+      null,
     discord_channel_id: channelId,
     discord_message_id: messageId,
     discord_thread_id: threadId,
+    discord_voice_channel_id: voiceChannelId,
+    discord_guild_id: guildId ?? null,
   };
-  await refreshPartyCard(env, sb, card);
+  await refreshPartyCard(env, sb, card, { guildId: guildId ?? undefined });
 }
 
 /**
@@ -298,6 +334,7 @@ export async function deliverDeferredResponse(
           meta.persistPartyMessage.partyId,
           channelId,
           postedMessage.id,
+          interaction.guild_id,
         );
       }
     }

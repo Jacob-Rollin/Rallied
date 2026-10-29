@@ -29,7 +29,7 @@ const HOW_IT_WORKS: {
 }[] = [
   {
     title: "LFG",
-    body: "Create a party inside Discord. Join, fill, and close lobbies without messy text channels or free LFG clone wars.",
+    body: "Create parties with mic, rank, and region filters. Temp voice, waitlist when full, optional scheduled start + T-10m reminder — all in Discord.",
     note: "Pinned LFG desk · or `/lfg create` / `/lfg find`",
     icon: "slash",
     preview: "lfg",

@@ -6,6 +6,7 @@ import { GhostlessMark } from "../../components/GhostlessMark";
 import {
   CreatePartyFlowMock,
   FilledClosedPairMock,
+  FindPartyGuideMock,
   GhostlessGuideMock,
   LfgDeskMock,
   PartySeatsTransitionMock,
@@ -18,7 +19,7 @@ import { SiteHeader } from "../../components/SiteHeader";
 export const metadata: Metadata = {
   title: `How it works — ${BRAND.name}`,
   description:
-    "Visual guide to Rallied LFG desk, party cards, Ready Check, Vibe Check, Ghostless, and the admin web dashboard — matching real Discord bot behavior.",
+    "Visual guide to Rallied LFG desk, temp voice, waitlist, filters, schedule, Ready Check, Vibe Check, Ghostless, and the admin web dashboard — matching live Discord bot behavior.",
 };
 
 const SECTIONS = [
@@ -26,6 +27,7 @@ const SECTIONS = [
   { id: "desk", label: "LFG desk" },
   { id: "create", label: "Create" },
   { id: "party", label: "Party card" },
+  { id: "find", label: "Find" },
   { id: "ready", label: "Ready Check" },
   { id: "vibe", label: "Vibe Check" },
   { id: "ghostless", label: "Ghostless" },
@@ -155,10 +157,14 @@ export default function GuidePage() {
               <span>
                 <strong className="font-semibold text-white">
                   Grant the bot permissions
+                </strong>
+                :{" "}
+                <strong className="font-semibold text-white">
+                  Manage Channels
                 </strong>{" "}
-                in that channel: Manage Channels, View Channel, Send Messages,
-                Embed Links, Create Public Threads, Send Messages in Threads,
-                Manage Roles, Connect, Move Members, Use Application Commands.
+                (temp voice create/delete), View Channel, Send Messages, Embed
+                Links, Create Public Threads, Send Messages in Threads, Manage
+                Roles, Connect, Move Members, Use Application Commands.
               </span>
             </li>
             <li className="flex gap-3">
@@ -212,10 +218,12 @@ export default function GuidePage() {
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">
             Create party opens a game select first (catalog + Other), then a
-            modal with text fields for party size, mic, and notes. Discord
-            modals can&apos;t nest dropdowns — that&apos;s why game is a prior
-            select, and mic is free text normalized to Required / Optional /
-            Any.
+            modal with up to five text fields: party size, mic, rank, region,
+            and optional start time (
+            <code className="text-white/65">in 30m</code> / UTC). Discord
+            modals can&apos;t nest dropdowns — game stays a prior select; mic
+            normalizes to Required / Optional / Any. A scheduled start gets a
+            ~T-10m reminder.
           </p>
           <div className="mt-6">
             <CreatePartyFlowMock />
@@ -223,7 +231,7 @@ export default function GuidePage() {
           <p className="mt-4 text-xs text-white/45">
             Slash backup:{" "}
             <code className="text-white/65">/lfg create</code> (game
-            autocomplete).
+            autocomplete + the same filters).
           </p>
         </section>
 
@@ -235,12 +243,37 @@ export default function GuidePage() {
             Live party card
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">
-            Public embed posts with Join / Leave / Close, Ready Check, and Vibe
-            Check. Slots update live (e.g. 3/5 → 4/5). A squad thread opens under
-            the card for codes and VC — no manual friend-adds.
+            Public embed posts Rank / Mic / Region / Slots, plus Join / Leave /
+            Close, Ready Check, Vibe Check, and{" "}
+            <strong className="font-semibold text-white">Join VC</strong> when
+            temp voice is up (bot needs Manage Channels). Slots update live
+            (e.g. 3/5 → 4/5). When full,{" "}
+            <strong className="font-semibold text-white">Waitlist</strong>{" "}
+            queues the next seat. A squad thread opens under the card for codes.
           </p>
           <div className="mt-6">
             <PartySeatsTransitionMock />
+          </div>
+        </section>
+
+        <section id="find" className="scroll-mt-32">
+          <p className="font-display text-xs tracking-[0.14em] text-coral">
+            03b
+          </p>
+          <h2 className="mt-1 font-display text-3xl tracking-wide text-white">
+            Find with filters
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">
+            Desk <strong className="font-semibold text-white">Find</strong>{" "}
+            browses open parties by game. Slash{" "}
+            <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
+              /lfg find
+            </code>{" "}
+            also filters by mic and region — same fields hosts set on create.
+            Results stay in this server only.
+          </p>
+          <div className="mt-6 max-w-md">
+            <FindPartyGuideMock />
           </div>
         </section>
 
@@ -255,8 +288,11 @@ export default function GuidePage() {
             When the last seat fills (or the host taps Ready Check), a grace
             countdown starts — host (and the filler on auto) start Ready.
             Roster shows Ready / Waiting. After grace, no-shows get a strike on
-            this server. Filled cards drop Join; Closed strips Join / Leave /
-            Close but keeps Vibe Check.
+            this server on{" "}
+            <strong className="font-semibold text-white">Community+</strong>{" "}
+            (Starter free has soft ready-check only — no strikes). Filled cards
+            swap Join for Waitlist; Closed strips Join / Leave / Close / voice
+            but keeps Vibe Check.
           </p>
           <div className="mt-6 grid gap-4 lg:grid-cols-2">
             <ReadyCheckGuideMock />
@@ -267,7 +303,7 @@ export default function GuidePage() {
           </div>
           <p className="mt-4 text-xs text-white/45">
             Default grace: 5 minutes (server setting). Close asks Confirm close /
-            Cancel first.
+            Cancel first (temp voice deleted on close).
           </p>
         </section>
 
@@ -281,8 +317,9 @@ export default function GuidePage() {
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">
             After fill or close, Rallied nudges you to rate teammates. Showed up
             / Ghosted plus optional vibe 1–5. Ready Check owns show/ghost counts
-            when it already ran; Ghosted after grace issues a strike (no double
-            strike with Ready Check). Only the flagged player can Dispute.
+            when it already ran; Ghosted after grace issues a strike on
+            Community+ (no double strike with Ready Check). Starter free does
+            not progress Ghostless. Only the flagged player can Dispute.
           </p>
           <div className="mt-6">
             <VibeCheckGuideMock />
@@ -310,9 +347,11 @@ export default function GuidePage() {
             <strong className="font-semibold text-white">
               per-server show-rate badge
             </strong>
-            , not global karma. One ghost doesn&apos;t auto-kill it — you earn
-            it locally after enough sessions at your server&apos;s threshold
-            (defaults: ≥90% show rate and ≥10 sessions).{" "}
+            , not global karma and not an LFG Network passport. One ghost
+            doesn&apos;t auto-kill it — you earn it locally after enough
+            sessions at your server&apos;s threshold (defaults: ≥90% show rate
+            and ≥10 sessions). Included on Community+ / trial — not on Starter
+            free.{" "}
             <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
               /ghostless @user
             </code>{" "}
@@ -380,14 +419,22 @@ export default function GuidePage() {
               </span>
               <span>
                 <strong className="font-semibold text-white">Settings</strong>:
-                turn the public page on/off, set a vanity slug so the share URL
-                is{" "}
+                turn the public page on/off, set a vanity slug (
                 <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
                   /s/your-slug
                 </code>
-                , then{" "}
+                ), opt into{" "}
+                <strong className="font-semibold text-white">
+                  List in directory
+                </strong>{" "}
+                (
+                <Link href="/servers" className="text-coral hover:underline">
+                  /servers
+                </Link>
+                ) with a Discord invite URL, then{" "}
                 <strong className="font-semibold text-white">Save</strong>{" "}
-                (writes live to your server).
+                (writes live). Pro / Founding unlock vanity (hide Powered by,
+                accent, Discord guild icon on the public page).
               </span>
             </li>
           </ol>
@@ -401,7 +448,8 @@ export default function GuidePage() {
               <code className="text-white/85">/s/…</code> is what members and
               visitors see.{" "}
               <code className="text-white/85">/app</code> is the signed-in
-              admin board (Log in).
+              admin board (Log in). Directory listing is opt-in and still
+              per-server — no cross-server player DB.
             </p>
             <p>
               <strong className="font-semibold text-white">
@@ -411,12 +459,21 @@ export default function GuidePage() {
               <Link href="/demo" className="text-lime hover:underline">
                 /demo
               </Link>{" "}
-              is an optional sandbox with fixture data. Your real dashboard is
-              always{" "}
+              is an optional sandbox (including a Demo Pro vanity preview). Your
+              real dashboard is always{" "}
               <Link href="/app" className="text-coral hover:underline">
                 /app
               </Link>{" "}
               after Log in.
+            </p>
+            <p>
+              <strong className="font-semibold text-white">Plans</strong> — 14-day
+              trial, then Starter free (2 open / 5 creates/day, no Ghostless).
+              Community $4.99 · Pro $9.99 · Founding $8.99. See{" "}
+              <Link href="/pricing" className="text-coral hover:underline">
+                Pricing
+              </Link>
+              .
             </p>
           </div>
 

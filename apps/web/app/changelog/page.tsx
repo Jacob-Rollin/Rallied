@@ -6,7 +6,7 @@ import { SiteHeader } from "../../components/SiteHeader";
 
 export const metadata: Metadata = {
   title: `Changelog — ${BRAND.name}`,
-  description: `Recent shipping for ${BRAND.name}: Path B pricing, Ghostless, LFG desk, and public pages.`,
+  description: `Recent shipping for ${BRAND.name}: Path B pricing, LFG parity, directory, Ghostless, and public pages.`,
 };
 
 const ENTRIES: {
@@ -16,13 +16,18 @@ const ENTRIES: {
 }[] = [
   {
     date: "2026-10-29",
+    title: "LFG parity — voice, waitlist, filters, schedule",
+    body: "Temp voice (Join VC; bot needs Manage Channels), waitlist when full, mic / rank / region on create + Find filters, optional scheduled start with ~T-10m reminder. Still this server only — no LFG Network.",
+  },
+  {
+    date: "2026-10-29",
     title: "Opt-in server directory + changelog",
-    body: "Public /servers lists communities that opt in (public page + invite). No cross-server player grades. This page tracks shipping for Founding trust.",
+    body: "Public /servers lists communities that opt in (public page + invite). Listing is per-server reliability, not cross-server player grades. This page tracks shipping for Founding trust.",
   },
   {
     date: "2026-10-29",
     title: "Path B monetization",
-    body: `Starter free under caps (2 open parties, 5 creates/day; no Ghostless). Community $${COMMUNITY_PRICE_USD}/mo · Pro $${PRO_PRICE_USD}/mo · Founding Pro $8.99 locked. 14-day full trial first.`,
+    body: `Starter free under caps (2 open parties, 5 creates/day after trial; no Ghostless / strikes). Community $${COMMUNITY_PRICE_USD}/mo · Pro $${PRO_PRICE_USD}/mo · Founding Pro $8.99 locked. 14-day full trial first.`,
   },
   {
     date: "2026-10-28",
@@ -31,13 +36,18 @@ const ENTRIES: {
   },
   {
     date: "2026-10-28",
+    title: "Demo Pro vanity + Settings Save",
+    body: "Demo Settings can preview Pro vanity (hide Powered by / accent / Discord guild icon on /s). Live Settings Save writes slug, public toggles, directory list + invite URL.",
+  },
+  {
+    date: "2026-10-28",
     title: "LFG desk in Discord",
-    body: "Pinned desk panel: Create / Find / Mine. Party cards with Join, Leave, Close, Ready Check, and post-session Vibe Check nudge.",
+    body: "Pinned desk panel: Create / Find / Mine / How it works. Party cards with Join, Leave, Close, Ready Check, and post-session Vibe Check nudge.",
   },
   {
     date: "2026-10-27",
     title: "Admin web + guide",
-    body: "Dashboard for People, Settings, disputes, analytics (Pro). Marketing /guide walks setup → desk → Ghostless → /app.",
+    body: "Dashboard for People, Settings, disputes, analytics (Pro). Marketing /guide walks setup → desk → Ghostless → /app admin.",
   },
 ];
 

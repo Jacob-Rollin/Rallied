@@ -9,13 +9,13 @@ const SIZE_CLASS: Record<Size, string> = {
 const GHOST_PATH =
   "M32 6c-11.2 0-20 8.6-20 20.2v22.1c0 2.4 2.7 3.7 4.6 2.2l4.1-3.2c1.7-1.3 4.1-1.3 5.8 0l3.5 2.7c1.7 1.3 4.1 1.3 5.8 0l3.5-2.7c1.7-1.3 4.1-1.3 5.8 0l4.1 3.2c1.9 1.5 4.6.2 4.6-2.2V26.2C52 14.6 43.2 6 32 6z";
 
-/** Dark knockout under the lime check (slightly wider). */
+/** Dark knockout / outline under the lime check (wider; tip on dome). */
 const CHECK_DARK_PATH =
-  "M11.06 42.65L29.49 54.33L51.98 25.21L51.87 23.91L51.68 22.62L51.40 21.35L51.05 20.09L50.61 18.87L50.09 17.67L49.50 16.51L48.83 15.39L48.09 14.32L47.28 13.29L26.91 39.67L16.94 33.35Z";
+  "M10.68 43.24L29.65 55.26L52.00 26.32L51.97 25.09L51.86 23.85L51.68 22.63L51.42 21.42L51.09 20.22L50.68 19.05L50.20 17.91L49.65 16.80L49.04 15.73L48.36 14.69L47.61 13.70L46.81 12.76L26.75 38.74L17.32 32.76Z";
 
-/** Bold lime check — top-right tip follows the ghost dome arc. */
+/** Bold lime check — tip inset from dome so black rim wraps all edges. */
 const CHECK_LIME_PATH =
-  "M11.86 41.38L29.14 52.33L51.75 23.05L51.58 22.13L51.37 21.22L51.12 20.33L50.82 19.44L50.49 18.58L50.11 17.72L49.70 16.89L49.25 16.08L48.76 15.28L48.23 14.52L27.26 41.67L16.14 34.62Z";
+  "M11.94 41.25L29.10 52.13L49.64 25.54L49.59 24.75L49.51 23.96L49.39 23.18L49.24 22.41L49.05 21.64L48.83 20.88L48.57 20.13L48.28 19.39L47.96 18.67L47.61 17.96L47.23 17.27L46.81 16.60L27.30 41.87L16.06 34.75Z";
 
 type MarkProps = {
   className?: string;
@@ -25,7 +25,7 @@ type MarkProps = {
 
 /**
  * Locked Ghostless mark #4: solid white ghost (no eyes) + bold lime check.
- * Top-right check tip is arc-clipped to the ghost dome (no flat square-cap cut).
+ * Tip follows the ghost dome; thin black outline on all visible check edges.
  */
 export function GhostlessMark({
   className,

@@ -402,9 +402,8 @@ export function SettingsClient({
             <FieldInfo label="Ghostless Discord role ID">
               Optional. Paste a Discord{" "}
               <strong className="font-semibold text-white/90">role</strong> ID to
-              auto-assign Ghostless. Enable Developer Mode (User Settings →
-              Advanced), then Server Settings → Roles → Copy Role ID. Leave blank
-              to skip.
+              auto-assign Ghostless. Developer Mode → Roles → Copy Role ID. Leave
+              blank to skip.
             </FieldInfo>
           </div>
           <input
@@ -423,8 +422,8 @@ export function SettingsClient({
             <FieldInfo label="Weekly digest channel ID">
               Optional. Paste a Discord{" "}
               <strong className="font-semibold text-white/90">channel</strong> ID
-              for the weekly digest. Right-click the channel → Copy Channel ID.
-              Leave blank for no channel post.
+              for the weekly digest. Right-click channel → Copy Channel ID. Leave
+              blank to skip.
             </FieldInfo>
           </div>
           <input

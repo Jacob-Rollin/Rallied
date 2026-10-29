@@ -93,6 +93,7 @@ export function AnalyticsProView({
               value={ghosts}
               prior={priorGhosts}
               valueClassName="text-coral"
+              lowerIsBetter
             />
             <AnalyticsKpiCard
               label="Parties (7d)"

@@ -11,10 +11,11 @@ import { AddToDiscordButton } from "../components/AddToDiscordButton";
 import { FeatureStepIcon } from "../components/FeatureStepIcon";
 import { GhostlessMark } from "../components/GhostlessMark";
 import {
+  GhostlessBadgeMock,
   LfgPartyEmbedMock,
   ReadyCheckMock,
   TierCheck,
-  VibeCheckCardMock,
+  VibeCheckActionsMock,
 } from "../components/LandingFeatureMocks";
 import { SiteFooter } from "../components/SiteFooter";
 import { SiteHeader } from "../components/SiteHeader";
@@ -59,16 +60,8 @@ const LANDING_TIERS = [
     name: "Community",
     price: COMMUNITY_PRICE_USD,
     annual: PLANS.community.annualCents / 100,
-    blurb: "Core LFG, strikes, Ghostless, and admin web per server.",
-    features: [
-      "LFG parties + Vibe Check",
-      "Per-server strikes & lockouts",
-      "Disputes queue",
-      "Public server page",
-      "Weekly digest",
-    ],
-    trial: "14-day free trial" as const,
-    accent: false as const,
+    blurb: "Core LFG, strikes, Ghostless, and admin web.",
+    features: ["LFG + Vibe Check", "Strikes & lockouts", "Public page"],
     founding: false as const,
   },
   {
@@ -76,16 +69,8 @@ const LANDING_TIERS = [
     name: "Pro",
     price: PRO_PRICE_USD,
     annual: PLANS.pro.annualCents / 100,
-    blurb: "Export, trends, vanity branding, and priority support.",
-    features: [
-      "Everything in Community",
-      "Analytics trends + CSV export",
-      "Hide “Powered by” + accent",
-      "Priority support",
-      "Multi-guild discount note",
-    ],
-    trial: "14-day free trial" as const,
-    accent: false as const,
+    blurb: "Export, vanity, priority support.",
+    features: ["Everything in Community", "CSV export + trends", "Vanity"],
     founding: false as const,
   },
   {
@@ -93,16 +78,12 @@ const LANDING_TIERS = [
     name: "Founding Pro",
     price: FOUNDING_PRO_PRICE_USD,
     annual: PLANS.founding_pro.annualCents / 100,
-    blurb: `Pro locked at $${FOUNDING_PRO_PRICE_USD}/mo for early servers.`,
+    blurb: `Pro at $${FOUNDING_PRO_PRICE_USD}/mo locked.`,
     features: [
-      "Everything in Pro",
-      "Price lock while sub active",
-      "Founding badge (opt-in)",
-      "Priority support",
-      `Limited to ≤${PLANS.founding_pro.seatCap} servers`,
+      "Full Pro",
+      "Price lock while active",
+      `≤${PLANS.founding_pro.seatCap} seats`,
     ],
-    trial: null,
-    accent: true as const,
     founding: true as const,
   },
 ];
@@ -144,7 +125,7 @@ function HeroLfgSilhouette() {
 function FeaturePreview({ kind }: { kind: "lfg" | "play" | "vibe" }) {
   if (kind === "lfg") return <LfgPartyEmbedMock />;
   if (kind === "play") return <ReadyCheckMock />;
-  return <VibeCheckCardMock />;
+  return <VibeCheckActionsMock />;
 }
 
 export default function MarketingPage() {
@@ -153,7 +134,10 @@ export default function MarketingPage() {
 
   return (
     <div className="min-h-screen">
-      <section className="hero-stage relative flex min-h-[100svh] flex-col overflow-hidden">
+      <SiteHeader variant="hero" />
+
+      {/* Negative margin pulls hero atmosphere under the sticky translucent header */}
+      <section className="hero-stage relative -mt-[3.25rem] flex min-h-[100svh] flex-col overflow-hidden pt-[3.25rem] sm:-mt-14 sm:pt-14">
         <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
           <div className="hero-wash hero-wash--coral" />
           <div className="hero-wash hero-wash--lime" />
@@ -175,9 +159,7 @@ export default function MarketingPage() {
           <div className="hero-vignette absolute inset-0" />
         </div>
 
-        <SiteHeader variant="hero" />
-
-        <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-4 pb-14 pt-2 sm:pb-16">
+        <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-4 pb-14 pt-4 sm:pb-16 sm:pt-6">
           <p className="animate-rise font-display text-5xl leading-none tracking-wide text-white sm:text-7xl md:text-8xl">
             {BRAND.name}
           </p>
@@ -245,7 +227,7 @@ export default function MarketingPage() {
         </div>
       </section>
 
-      <section id="how-it-works" className="scroll-mt-4 border-t border-white/10 bg-black/20 py-14">
+      <section id="how-it-works" className="scroll-mt-16 border-t border-white/10 bg-black/20 py-14">
         <div className="mx-auto grid max-w-5xl gap-10 px-4 sm:grid-cols-3 sm:gap-8">
           {HOW_IT_WORKS.map((step, i) => (
             <div
@@ -279,7 +261,7 @@ export default function MarketingPage() {
 
       <section
         id="ghostless"
-        className="scroll-mt-4 border-t border-white/10 py-14"
+        className="scroll-mt-16 border-t border-white/10 py-14"
       >
         <div className="mx-auto flex max-w-5xl flex-col gap-8 px-4 sm:flex-row sm:items-center sm:justify-between sm:gap-12">
           <div className="max-w-xl">
@@ -302,16 +284,17 @@ export default function MarketingPage() {
             </a>
           </div>
           <div className="w-full max-w-sm shrink-0 sm:ml-auto">
-            <VibeCheckCardMock />
+            <GhostlessBadgeMock />
           </div>
         </div>
       </section>
 
-      <section id="pricing" className="scroll-mt-4 mx-auto max-w-5xl px-4 py-16">
+      <section id="pricing" className="scroll-mt-16 mx-auto max-w-5xl px-4 py-16">
         <h2 className="font-display text-3xl tracking-wide">Pricing</h2>
         <p className="mt-2 max-w-lg text-white/75">
-          Per Discord server. Reliability core on Community; Pro adds export and
-          vanity. Founding Pro locks Pro at ${FOUNDING_PRO_PRICE_USD}/mo.
+          Community ${COMMUNITY_PRICE_USD}/mo · Pro ${PRO_PRICE_USD}/mo · Founding
+          Pro ${FOUNDING_PRO_PRICE_USD}/mo locked (≤{PLANS.founding_pro.seatCap}).
+          14-day trial · first-month money-back.
         </p>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-3 sm:gap-5">
@@ -330,7 +313,7 @@ export default function MarketingPage() {
                 </p>
                 {tier.founding ? (
                   <span className="rounded-brand border border-coral/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-coral">
-                    Limited · ≤{PLANS.founding_pro.seatCap} servers
+                    Limited
                   </span>
                 ) : null}
               </div>
@@ -342,25 +325,15 @@ export default function MarketingPage() {
                 }`}
               >
                 ${tier.price}
-                <span
-                  className={`font-body text-sm font-normal ${
-                    tier.founding ? "text-white/65" : "text-white/55"
-                  }`}
-                >
+                <span className="font-body text-sm font-normal text-white/55">
                   /mo
                 </span>
               </p>
-              <p className="mt-1 text-xs text-white/55">
-                ${tier.annual}/yr
-                {tier.founding ? " locked" : ""}
-              </p>
-              {tier.trial ? (
-                <p className="mt-2 text-xs font-medium text-lime">{tier.trial}</p>
-              ) : null}
+              <p className="mt-1 text-xs text-white/55">${tier.annual}/yr</p>
               <p className="mt-3 text-sm leading-relaxed text-white/75">
                 {tier.blurb}
               </p>
-              <ul className="mt-5 flex-1 space-y-2 text-sm text-white/85">
+              <ul className="mt-4 flex-1 space-y-1.5 text-sm text-white/85">
                 {tier.features.map((f) => (
                   <li key={f} className="flex gap-2">
                     <TierCheck accent={tier.founding ? "coral" : "lime"} />
@@ -368,11 +341,6 @@ export default function MarketingPage() {
                   </li>
                 ))}
               </ul>
-              <AddToDiscordButton
-                href={inviteHref}
-                variant={tier.founding ? "coral" : "outline"}
-                className="mt-6 w-full"
-              />
             </div>
           ))}
         </div>
@@ -380,6 +348,12 @@ export default function MarketingPage() {
         <div className="mt-8 flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
             <AddToDiscordButton href={inviteHref} />
+            <Link
+              href="/pricing"
+              className="rounded-brand border border-coral/70 px-5 py-2.5 font-semibold text-coral transition hover:bg-coral/10"
+            >
+              Compare plans
+            </Link>
             <Link
               href="/demo"
               className="rounded-brand border border-white/25 px-5 py-2.5 font-semibold text-white/90 transition hover:border-lime/50 hover:text-lime"
@@ -392,16 +366,9 @@ export default function MarketingPage() {
             >
               How it works
             </Link>
-            <Link
-              href="/pricing"
-              className="text-sm text-white/80 underline-offset-4 transition hover:text-lime hover:underline"
-            >
-              See full pricing
-            </Link>
           </div>
           <p className="text-sm text-white/55">
-            14-day trial on Community — locked pricing, no free forever. Needs
-            Manage Server to install.
+            No free-forever LFG. Needs Manage Server to install.
           </p>
         </div>
       </section>

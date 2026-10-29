@@ -1,3 +1,4 @@
+import { DiscordBotAvatar } from "./DiscordBotAvatar";
 import { GhostlessMark } from "./GhostlessMark";
 
 /** Reusable Discord-style chrome for the /guide page — labels match apps/bot embeds. */
@@ -11,10 +12,8 @@ function BotChrome({
 }) {
   return (
     <div className="feature-mock overflow-hidden rounded-brand border border-white/12 bg-[#1e1f22]">
-      <div className="flex items-center gap-2 border-b border-white/8 px-3 py-2">
-        <span className="flex h-5 w-5 items-center justify-center rounded bg-coral/90 font-display text-[9px] leading-none text-slate">
-          R
-        </span>
+      <div className="flex items-center gap-2.5 border-b border-white/8 px-3 py-2">
+        <DiscordBotAvatar className="h-8 w-8 sm:h-9 sm:w-9" />
         <span className="text-xs font-semibold text-white/90">Rallied</span>
         <span className="rounded bg-white/10 px-1 py-px text-[9px] uppercase tracking-wide text-white/50">
           Bot

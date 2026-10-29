@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buildBotInviteUrl } from "@rallied/shared";
 import {
   discordOAuthConfigured,
   mockAuthEnabled,
@@ -27,11 +28,25 @@ function formatLoginError(error: string, liveProblems: string[]): string {
   return `Login error: ${error}`;
 }
 
+function safeAppNext(raw: string | undefined): string | undefined {
+  if (!raw) return undefined;
+  const path = raw.trim();
+  if (!path.startsWith("/app")) return undefined;
+  if (path.startsWith("//") || path.includes("://")) return undefined;
+  return path;
+}
+
 export default async function LoginPage({ searchParams }: Props) {
   const sp = await searchParams;
   const oauth = discordOAuthConfigured();
   const mock = mockAuthEnabled();
   const problems = !oauth ? oauthConfigProblems() : [];
+  const nextPath = safeAppNext(sp.next);
+  const discordHref = nextPath
+    ? `/api/auth/discord?next=${encodeURIComponent(nextPath)}`
+    : "/api/auth/discord";
+  const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
+  const inviteHref = clientId ? buildBotInviteUrl(clientId) : "#add-bot";
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
@@ -44,7 +59,9 @@ export default async function LoginPage({ searchParams }: Props) {
       <h1 className="font-display text-3xl tracking-wide">Admin login</h1>
       <p className="mt-2 text-sm text-muted">
         Discord only — no email/password. You need Manage Server (or Admin) on a
-        guild where Rallied is installed.
+        guild where Rallied is installed. After authorize you land on{" "}
+        <code className="text-coral">/app</code> and pick your server from the
+        switcher.
       </p>
 
       {sp.error ? (
@@ -55,13 +72,17 @@ export default async function LoginPage({ searchParams }: Props) {
 
       {!oauth && problems.length > 0 && !sp.error ? (
         <p className="mt-4 rounded-brand border border-coral/40 bg-coral/10 px-3 py-2 text-sm text-coral">
-          OAuth not ready on this Worker: {problems.join("; ")}.
+          OAuth not ready on this Worker: {problems.join("; ")}. Set{" "}
+          <code className="text-white/80">SESSION_SECRET</code> (32+), Discord
+          OAuth secrets, and{" "}
+          <code className="text-white/80">SUPABASE_SERVICE_ROLE_KEY</code> on
+          the web Worker — do not expect silent mock login in production.
         </p>
       ) : null}
 
       <div className="mt-8 flex flex-col gap-3">
         <a
-          href="/api/auth/discord"
+          href={discordHref}
           className="rounded-brand bg-[#5865F2] px-4 py-3 text-center font-semibold text-white transition hover:brightness-110"
         >
           Log in with Discord
@@ -75,10 +96,23 @@ export default async function LoginPage({ searchParams }: Props) {
         ) : null}
         {oauth ? (
           <p className="text-xs text-muted">
-            Continues to Discord authorize, then lists servers you can manage
-            where Rallied is installed.
+            Continues to Discord authorize, then returns to{" "}
+            <code className="text-coral">{nextPath || "/app"}</code> with
+            servers you can manage.
           </p>
         ) : null}
+        <a
+          href={inviteHref}
+          className="rounded-brand border border-coral/70 px-4 py-3 text-center font-semibold text-coral transition hover:bg-coral/10"
+        >
+          Add to Discord first
+        </a>
+        <Link
+          href="/demo"
+          className="text-center text-sm text-muted hover:text-lime"
+        >
+          Or explore the /demo sandbox (fixture data)
+        </Link>
         <Link href="/" className="text-center text-sm text-muted hover:text-coral">
           ← Back to marketing
         </Link>

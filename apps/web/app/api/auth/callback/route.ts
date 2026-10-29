@@ -48,6 +48,7 @@ export async function GET(req: NextRequest) {
     const guilds = await fetchOAuthGuilds(token.access_token);
     const adminGuilds = await filterAdminGuilds(guilds);
 
+    const nextRaw = session.oauthNext;
     session.user = {
       id: user.id,
       username: user.username,
@@ -57,18 +58,31 @@ export async function GET(req: NextRequest) {
     session.guilds = adminGuilds;
     session.isMock = false;
     session.oauthState = undefined;
+    session.oauthNext = undefined;
     await session.save();
 
     // Optional: upsert dashboard_users via service role when Supabase wired
     await upsertDashboardUser(user.id, user.username, user.global_name ?? null, avatarUrl(user));
 
+    const safeNext =
+      nextRaw &&
+      nextRaw.startsWith("/app") &&
+      !nextRaw.startsWith("//") &&
+      !nextRaw.includes("://")
+        ? nextRaw
+        : "/app";
+
     const withBot = adminGuilds.filter((g) => g.bot_present);
     if (withBot.length === 0) {
+      const emptyUrl = new URL(safeNext, origin);
+      emptyUrl.searchParams.set("empty", "1");
       return clearDemoGuildCookie(
-        NextResponse.redirect(`${origin}/app?empty=1`),
+        NextResponse.redirect(emptyUrl.toString()),
       );
     }
-    return clearDemoGuildCookie(NextResponse.redirect(`${origin}/app`));
+    return clearDemoGuildCookie(
+      NextResponse.redirect(new URL(safeNext, origin).toString()),
+    );
   } catch (e) {
     const msg = e instanceof Error ? e.message : "oauth_failed";
     console.error("oauth callback", msg);

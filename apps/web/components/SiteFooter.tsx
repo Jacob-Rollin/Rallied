@@ -5,8 +5,9 @@ const LINKS = [
   { href: "/#how-it-works", label: "Features" },
   { href: "/pricing", label: "Pricing" },
   { href: "/guide", label: "Guide" },
+  { href: "/guide#admin", label: "Admin web" },
+  { href: "/login", label: "Log in" },
   { href: "/demo", label: "Demo" },
-  { href: "/guide#ghostless", label: "Ghostless" },
 ] as const;
 
 export function SiteFooter() {

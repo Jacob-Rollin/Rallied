@@ -17,8 +17,13 @@ export default async function SettingsPage({ searchParams }: Props) {
       <div>
         <h1 className="font-display text-3xl tracking-wide">Settings</h1>
         <p className="mt-1 text-sm text-muted">
-          Grace, public page, Pro vanity. Loaded from{" "}
-          {data.source === "live" ? "Supabase" : "demo / mock"}.
+          Public page on/off, vanity slug →{" "}
+          <code className="text-coral">/s/your-slug</code>, grace rules.{" "}
+          {data.source === "live"
+            ? "Save writes live to Supabase."
+            : data.source === "empty"
+              ? "Needs a live guild + SUPABASE_SERVICE_ROLE_KEY — not silent mock."
+              : "Demo / mock preview (not your live guild)."}
         </p>
       </div>
 

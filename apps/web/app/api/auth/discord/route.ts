@@ -23,10 +23,21 @@ function appOrigin(req: Request): string {
   return new URL(req.url).origin;
 }
 
+/** Only allow post-login redirects under /app (no open redirects). */
+function safeAppNext(raw: string | null): string | undefined {
+  if (!raw) return undefined;
+  const path = raw.trim();
+  if (!path.startsWith("/app")) return undefined;
+  if (path.startsWith("//") || path.includes("://")) return undefined;
+  return path;
+}
+
 /** Start Discord OAuth — or seed mock only when MOCK_AUTH / local-dev allows it. */
 export async function GET(req: Request) {
   const session = await getSession();
   const origin = appOrigin(req);
+  const reqUrl = new URL(req.url);
+  const nextPath = safeAppNext(reqUrl.searchParams.get("next"));
 
   if (!discordOAuthConfigured()) {
     if (mockAuthEnabled()) {
@@ -35,7 +46,7 @@ export async function GET(req: Request) {
       session.guilds = mock.guilds;
       session.isMock = true;
       await session.save();
-      return NextResponse.redirect(new URL("/app", origin));
+      return NextResponse.redirect(new URL(nextPath || "/app", origin));
     }
     const problems = oauthConfigProblems().join("|");
     const login = new URL("/login", origin);
@@ -45,6 +56,7 @@ export async function GET(req: Request) {
         ? `oauth_not_configured:${problems}`
         : "oauth_not_configured",
     );
+    if (nextPath) login.searchParams.set("next", nextPath);
     return NextResponse.redirect(login);
   }
 
@@ -57,6 +69,7 @@ export async function GET(req: Request) {
   const fresh = await getSession();
   const state = randomHex(16);
   fresh.oauthState = state;
+  fresh.oauthNext = nextPath;
   fresh.isMock = false;
   await fresh.save();
 

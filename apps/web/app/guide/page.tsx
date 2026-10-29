@@ -18,7 +18,7 @@ import { SiteHeader } from "../../components/SiteHeader";
 export const metadata: Metadata = {
   title: `How it works — ${BRAND.name}`,
   description:
-    "Visual guide to Rallied LFG desk, party cards, Ready Check, Vibe Check, and Ghostless — matching real Discord bot behavior.",
+    "Visual guide to Rallied LFG desk, party cards, Ready Check, Vibe Check, Ghostless, and the admin web dashboard — matching real Discord bot behavior.",
 };
 
 const SECTIONS = [
@@ -29,6 +29,7 @@ const SECTIONS = [
   { id: "ready", label: "Ready Check" },
   { id: "vibe", label: "Vibe Check" },
   { id: "ghostless", label: "Ghostless" },
+  { id: "admin", label: "Admin web" },
 ] as const;
 
 export default function GuidePage() {
@@ -60,27 +61,36 @@ export default function GuidePage() {
             className="animate-rise mt-4 max-w-xl text-base text-white/75 sm:text-lg"
             style={{ animationDelay: "80ms" }}
           >
-            Set up Rallied on any Discord server, then walk what players see —
-            labels and flows match the live bot.
+            Set up Rallied on any Discord server, walk what players see in
+            Discord, then open the admin web dashboard — labels match the live
+            bot.
           </p>
           <div
             className="animate-rise mt-6 flex flex-wrap gap-3"
             style={{ animationDelay: "120ms" }}
           >
+            <AddToDiscordButton href={inviteHref} />
+            <Link
+              href="/login"
+              className="rounded-brand border border-white/25 px-5 py-2.5 font-semibold text-white/90 transition hover:border-coral/50 hover:text-white"
+            >
+              Log in
+            </Link>
             <Link
               href="/demo"
               className="rounded-brand border border-white/25 px-5 py-2.5 font-semibold text-white/90 transition hover:border-lime/50 hover:text-lime"
             >
               Explore demo
             </Link>
-            <AddToDiscordButton href={inviteHref} />
           </div>
           <p
             className="animate-rise mt-3 max-w-lg text-sm text-white/50"
             style={{ animationDelay: "160ms" }}
           >
-            Install needs Manage Server (or Admin). Create a channel, pin the
-            LFG desk, then players use buttons — no slash required.
+            Install needs Manage Server (or Admin). Pin the LFG desk in Discord,
+            then Log in for the real{" "}
+            <code className="text-white/65">/app</code> dashboard — Explore demo
+            is an optional sandbox.
           </p>
         </div>
       </div>
@@ -312,22 +322,142 @@ export default function GuidePage() {
           </div>
         </section>
 
-        <section className="rounded-brand border border-white/10 bg-slate-elevated/40 px-5 py-8 sm:px-8">
-          <h2 className="font-display text-2xl tracking-wide text-white">
-            Ready to try it
-          </h2>
-          <p className="mt-2 max-w-lg text-sm text-white/70">
-            Walk the admin demo, or add Rallied to your Discord, create an LFG
-            channel, and pin the desk.
+        <section id="admin" className="scroll-mt-32">
+          <p className="font-display text-xs tracking-[0.14em] text-coral">
+            07
           </p>
-          <div className="mt-5 flex flex-wrap gap-3">
+          <h2 className="mt-1 font-display text-3xl tracking-wide text-white">
+            Admin web dashboard
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">
+            After the bot is in your server, open the site and{" "}
+            <strong className="font-semibold text-white">Log in</strong> with
+            Discord OAuth. You need Manage Server (or Admin) on that guild —
+            same bar as the invite.
+          </p>
+
+          <ol className="mt-6 max-w-2xl list-none space-y-4 text-sm leading-relaxed text-white/75">
+            <li className="flex gap-3">
+              <span className="font-display text-xs tracking-wide text-coral">
+                1
+              </span>
+              <span>
+                <strong className="font-semibold text-white">Log in</strong>{" "}
+                (header or below) → Discord authorize. You land on{" "}
+                <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
+                  /app
+                </code>
+                .
+              </span>
+            </li>
+            <li className="flex gap-3">
+              <span className="font-display text-xs tracking-wide text-coral">
+                2
+              </span>
+              <span>
+                <strong className="font-semibold text-white">
+                  Pick your server
+                </strong>{" "}
+                from the switcher — no guild id typing. Only servers you can
+                manage (with the bot present) show as ready.
+              </span>
+            </li>
+            <li className="flex gap-3">
+              <span className="font-display text-xs tracking-wide text-coral">
+                3
+              </span>
+              <span>
+                <strong className="font-semibold text-white">What you see</strong>
+                : Overview (open parties / members / strikes), LFG parties,
+                People, Analytics, Settings, and Disputes (list + status —
+                resolve still in Discord for now).
+              </span>
+            </li>
+            <li className="flex gap-3">
+              <span className="font-display text-xs tracking-wide text-coral">
+                4
+              </span>
+              <span>
+                <strong className="font-semibold text-white">Settings</strong>:
+                turn the public page on/off, set a vanity slug so the share URL
+                is{" "}
+                <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
+                  /s/your-slug
+                </code>
+                , then{" "}
+                <strong className="font-semibold text-white">Save</strong>{" "}
+                (writes live to your server).
+              </span>
+            </li>
+          </ol>
+
+          <div className="mt-6 max-w-2xl space-y-3 rounded-brand border border-white/10 bg-slate-elevated/40 px-4 py-4 text-sm text-white/75 sm:px-5">
+            <p>
+              <strong className="font-semibold text-white">
+                Public page vs admin
+              </strong>
+              —{" "}
+              <code className="text-white/85">/s/…</code> is what members and
+              visitors see.{" "}
+              <code className="text-white/85">/app</code> is the signed-in
+              admin board (Log in).
+            </p>
+            <p>
+              <strong className="font-semibold text-white">
+                Explore demo
+              </strong>{" "}
+              at{" "}
+              <Link href="/demo" className="text-lime hover:underline">
+                /demo
+              </Link>{" "}
+              is an optional sandbox with fixture data. Your real dashboard is
+              always{" "}
+              <Link href="/app" className="text-coral hover:underline">
+                /app
+              </Link>{" "}
+              after Log in.
+            </p>
+          </div>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link
+              href="/login?next=%2Fapp"
+              className="rounded-brand bg-coral px-5 py-2.5 font-semibold text-slate transition hover:brightness-110"
+            >
+              Log in to /app
+            </Link>
             <Link
               href="/demo"
               className="rounded-brand border border-white/25 px-5 py-2.5 font-semibold text-white/90 transition hover:border-lime/50 hover:text-lime"
             >
               Explore demo
             </Link>
+          </div>
+        </section>
+
+        <section className="rounded-brand border border-white/10 bg-slate-elevated/40 px-5 py-8 sm:px-8">
+          <h2 className="font-display text-2xl tracking-wide text-white">
+            Ready to try it
+          </h2>
+          <p className="mt-2 max-w-lg text-sm text-white/70">
+            Add Rallied to Discord, pin the LFG desk, then Log in for your live{" "}
+            <code className="text-white/85">/app</code> dashboard — or walk the
+            sandbox demo first.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
             <AddToDiscordButton href={inviteHref} />
+            <Link
+              href="/login"
+              className="rounded-brand border border-white/25 px-5 py-2.5 font-semibold text-white/90 transition hover:border-coral/50 hover:text-white"
+            >
+              Log in
+            </Link>
+            <Link
+              href="/demo"
+              className="rounded-brand border border-white/25 px-5 py-2.5 font-semibold text-white/90 transition hover:border-lime/50 hover:text-lime"
+            >
+              Explore demo
+            </Link>
             <Link
               href="/pricing"
               className="rounded-brand border border-coral/70 px-5 py-2.5 font-semibold text-coral transition hover:bg-coral/10"

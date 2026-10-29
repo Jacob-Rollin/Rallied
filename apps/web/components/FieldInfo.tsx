@@ -60,11 +60,11 @@ export function FieldInfo({ label, children }: Props) {
   }, [open]);
 
   return (
-    <span ref={rootRef} className="relative inline-flex items-center gap-1">
+    <span ref={rootRef} className="relative inline-flex items-center gap-1.5">
       <span>{label}</span>
       <button
         type="button"
-        className="inline-flex size-[1.05em] shrink-0 items-center justify-center rounded-full text-muted/80 transition-colors hover:text-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-coral"
+        className="relative top-px inline-flex size-[15px] shrink-0 items-center justify-center rounded-sm text-muted/70 transition-colors hover:text-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-coral"
         aria-label={`About ${label}`}
         aria-expanded={open}
         aria-controls={tipId}
@@ -78,25 +78,25 @@ export function FieldInfo({ label, children }: Props) {
         <svg
           aria-hidden="true"
           viewBox="0 0 16 16"
-          width="14"
-          height="14"
+          width="15"
+          height="15"
           fill="none"
           className="block"
         >
           <circle
             cx="8"
             cy="8"
-            r="6.25"
+            r="6.5"
             stroke="currentColor"
-            strokeWidth="1.25"
+            strokeWidth="1"
           />
           <path
-            d="M8 7.15v3.6"
+            d="M8 7.1v3.7"
             stroke="currentColor"
-            strokeWidth="1.25"
+            strokeWidth="1.15"
             strokeLinecap="round"
           />
-          <circle cx="8" cy="5.15" r="0.85" fill="currentColor" />
+          <circle cx="8" cy="5.05" r="0.7" fill="currentColor" />
         </svg>
       </button>
       {open ? (

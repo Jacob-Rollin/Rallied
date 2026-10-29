@@ -36,15 +36,40 @@ export async function runBotHygiene(env: BotEnv): Promise<{
 
   let expired = 0;
   const now = new Date().toISOString();
-  let { data: stale, error } = await sb
-    .from("lfg_parties")
-    .select(
-      "id, game, rank_text, mic, region, slots, status, host_member_id, discord_message_id, discord_channel_id, discord_thread_id, discord_voice_channel_id, scheduled_start_at",
-    )
-    .in("status", ["open", "filled"])
-    .is("deleted_at", null)
-    .lt("expires_at", now)
-    .limit(40);
+
+  /** Optional 008 columns are optional so the pre-migration fallback select type-checks. */
+  type StalePartyRow = {
+    id: string;
+    game: string;
+    rank_text: string;
+    mic?: string | null;
+    region?: string | null;
+    slots: number;
+    status: string;
+    host_member_id: string;
+    discord_message_id: string | null;
+    discord_channel_id: string | null;
+    discord_thread_id?: string | null;
+    discord_voice_channel_id?: string | null;
+    scheduled_start_at?: string | null;
+  };
+
+  let stale: StalePartyRow[] | null = null;
+  let error: { message?: string } | null = null;
+
+  {
+    const res = await sb
+      .from("lfg_parties")
+      .select(
+        "id, game, rank_text, mic, region, slots, status, host_member_id, discord_message_id, discord_channel_id, discord_thread_id, discord_voice_channel_id, scheduled_start_at",
+      )
+      .in("status", ["open", "filled"])
+      .is("deleted_at", null)
+      .lt("expires_at", now)
+      .limit(40);
+    stale = (res.data as StalePartyRow[] | null) ?? null;
+    error = res.error;
+  }
 
   if (
     error &&
@@ -52,7 +77,7 @@ export async function runBotHygiene(env: BotEnv): Promise<{
       error.message ?? "",
     )
   ) {
-    ({ data: stale, error } = await sb
+    const res = await sb
       .from("lfg_parties")
       .select(
         "id, game, rank_text, slots, status, host_member_id, discord_message_id, discord_channel_id, discord_thread_id",
@@ -60,7 +85,9 @@ export async function runBotHygiene(env: BotEnv): Promise<{
       .in("status", ["open", "filled"])
       .is("deleted_at", null)
       .lt("expires_at", now)
-      .limit(40));
+      .limit(40);
+    stale = (res.data as StalePartyRow[] | null) ?? null;
+    error = res.error;
   }
 
   if (error) {
@@ -84,9 +111,7 @@ export async function runBotHygiene(env: BotEnv): Promise<{
       try {
         await cleanupPartyVoice(env, sb, {
           id: row.id,
-          discord_voice_channel_id:
-            (row as { discord_voice_channel_id?: string | null })
-              .discord_voice_channel_id ?? null,
+          discord_voice_channel_id: row.discord_voice_channel_id ?? null,
         });
       } catch (err) {
         console.error("hygiene voice cleanup", row.id, err);
@@ -96,8 +121,8 @@ export async function runBotHygiene(env: BotEnv): Promise<{
         id: row.id,
         game: row.game,
         rank_text: row.rank_text,
-        mic: (row as { mic?: string }).mic ?? "",
-        region: (row as { region?: string }).region ?? "",
+        mic: row.mic ?? "",
+        region: row.region ?? "",
         slots: row.slots,
         status: "closed",
         host_member_id: row.host_member_id,
@@ -105,9 +130,7 @@ export async function runBotHygiene(env: BotEnv): Promise<{
         discord_channel_id: row.discord_channel_id,
         discord_thread_id: row.discord_thread_id ?? null,
         discord_voice_channel_id: null,
-        scheduled_start_at:
-          (row as { scheduled_start_at?: string | null }).scheduled_start_at ??
-          null,
+        scheduled_start_at: row.scheduled_start_at ?? null,
       };
       try {
         await refreshPartyCard(env, sb, card);

@@ -162,8 +162,9 @@ export default function GuidePage() {
                 <strong className="font-semibold text-white">
                   Manage Channels
                 </strong>{" "}
-                (temp voice create/delete), Send Messages, Embed Links, Create
-                Public Threads, Manage Roles, Use Application Commands.
+                (temp voice create/delete), View Channel, Send Messages, Embed
+                Links, Create Public Threads, Send Messages in Threads, Manage
+                Roles, Connect, Move Members, Use Application Commands.
               </span>
             </li>
             <li className="flex gap-3">

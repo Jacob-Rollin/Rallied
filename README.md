@@ -91,7 +91,7 @@ Bot presence check: `DISCORD_BOT_TOKEN` (bot’s guild list) or rows in Supabase
 ## Bot invite URL
 
 ```text
-https://discord.com/api/oauth2/authorize?client_id=YOUR_APP_ID&permissions=2415919104&scope=bot%20applications.commands
+https://discord.com/api/oauth2/authorize?client_id=YOUR_APP_ID&permissions=311671409680&scope=bot%20applications.commands
 ```
 
 Or `buildBotInviteUrl(clientId)` from `@rallied/shared`. Set `NEXT_PUBLIC_DISCORD_CLIENT_ID` so the landing **Add to Discord** button works.

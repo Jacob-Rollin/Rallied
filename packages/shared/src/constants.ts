@@ -101,13 +101,13 @@ export const DISCORD_OAUTH_SCOPES = ["identify", "guilds"] as const;
 
 /**
  * Bot invite permission integer (decimal string for URL).
- * Manage Channels (16) — temp LFG voice create/delete
- * + Send Messages (2048) + Embed Links (16384)
- * + Manage Roles (268435456) + Use Slash Commands (2147483648)
+ * Manage Channels (16) + View Channel (1024) + Send Messages (2048)
+ * + Embed Links (16384) + Connect (1048576) + Move Members (16777216)
+ * + Manage Roles (268435456) + Use Application Commands (2147483648)
+ * + Create Public Threads (34359738368)
+ * + Send Messages in Threads (274877906944)
  */
-export const BOT_INVITE_PERMISSIONS_VALUE = String(
-  16 + 2048 + 16384 + 268435456 + 2147483648,
-);
+export const BOT_INVITE_PERMISSIONS_VALUE = "311671409680";
 
 export const SLASH_COMMANDS = {
   lfg: "lfg",

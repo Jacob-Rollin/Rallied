@@ -7,13 +7,17 @@ import {
   PRO_PRICE_USD,
   buildBotInviteUrl,
 } from "@rallied/shared";
+import { AddToDiscordButton } from "../components/AddToDiscordButton";
 import { FeatureStepIcon } from "../components/FeatureStepIcon";
+import { GhostlessMark } from "../components/GhostlessMark";
 import {
   LfgPartyEmbedMock,
   ReadyCheckMock,
   TierCheck,
   VibeCheckCardMock,
 } from "../components/LandingFeatureMocks";
+import { SiteFooter } from "../components/SiteFooter";
+import { SiteHeader } from "../components/SiteHeader";
 
 const HOW_IT_WORKS: {
   title: string;
@@ -171,20 +175,7 @@ export default function MarketingPage() {
           <div className="hero-vignette absolute inset-0" />
         </div>
 
-        <header className="relative z-10 mx-auto flex w-full max-w-5xl items-center justify-between bg-transparent px-4 py-5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/brand/rallied-wm-transparent-dark.png"
-            alt="Rallied"
-            className="h-12 w-auto bg-transparent sm:h-14"
-          />
-          <a
-            href="/api/auth/discord"
-            className="rounded-brand border border-white/20 px-4 py-2.5 text-base font-medium text-white/90 transition hover:border-coral/50 hover:text-white"
-          >
-            Log in
-          </a>
-        </header>
+        <SiteHeader variant="hero" />
 
         <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-4 pb-14 pt-2 sm:pb-16">
           <p className="animate-rise font-display text-5xl leading-none tracking-wide text-white sm:text-7xl md:text-8xl">
@@ -230,12 +221,7 @@ export default function MarketingPage() {
             className="animate-rise mt-6 flex flex-wrap gap-3 sm:mt-7"
             style={{ animationDelay: "220ms" }}
           >
-            <a
-              href={inviteHref}
-              className="rounded-brand bg-coral px-5 py-2.5 font-semibold text-slate transition hover:brightness-110"
-            >
-              Add to Discord
-            </a>
+            <AddToDiscordButton href={inviteHref} />
             <Link
               href="/demo"
               className="rounded-brand border border-white/25 px-5 py-2.5 font-semibold text-white/90 transition hover:border-lime/50 hover:text-lime"
@@ -259,7 +245,7 @@ export default function MarketingPage() {
         </div>
       </section>
 
-      <section id="how-it-works" className="border-t border-white/10 bg-black/20 py-14">
+      <section id="how-it-works" className="scroll-mt-4 border-t border-white/10 bg-black/20 py-14">
         <div className="mx-auto grid max-w-5xl gap-10 px-4 sm:grid-cols-3 sm:gap-8">
           {HOW_IT_WORKS.map((step, i) => (
             <div
@@ -291,7 +277,37 @@ export default function MarketingPage() {
         </div>
       </section>
 
-      <section id="pricing" className="mx-auto max-w-5xl px-4 py-16">
+      <section
+        id="ghostless"
+        className="scroll-mt-4 border-t border-white/10 py-14"
+      >
+        <div className="mx-auto flex max-w-5xl flex-col gap-8 px-4 sm:flex-row sm:items-center sm:justify-between sm:gap-12">
+          <div className="max-w-xl">
+            <div className="flex items-center gap-2.5">
+              <GhostlessMark size="lg" />
+              <h2 className="font-display text-3xl tracking-wide text-white">
+                Ghostless
+              </h2>
+            </div>
+            <p className="mt-3 text-sm leading-relaxed text-white/80 sm:text-base">
+              A per-server show-rate badge — not global karma. One ghost
+              doesn&apos;t auto-kill Ghostless; you earn it locally after enough
+              sessions at your server&apos;s threshold.
+            </p>
+            <a
+              href="/guide#ghostless"
+              className="mt-5 inline-flex text-sm font-medium text-lime transition hover:underline"
+            >
+              See how Ghostless works
+            </a>
+          </div>
+          <div className="w-full max-w-sm shrink-0 sm:ml-auto">
+            <VibeCheckCardMock />
+          </div>
+        </div>
+      </section>
+
+      <section id="pricing" className="scroll-mt-4 mx-auto max-w-5xl px-4 py-16">
         <h2 className="font-display text-3xl tracking-wide">Pricing</h2>
         <p className="mt-2 max-w-lg text-white/75">
           Per Discord server. Reliability core on Community; Pro adds export and
@@ -309,11 +325,7 @@ export default function MarketingPage() {
               }`}
             >
               <div className="flex flex-wrap items-center gap-2">
-                <p
-                  className={`font-display text-xl tracking-wide ${
-                    tier.founding ? "text-white" : "text-white"
-                  }`}
-                >
+                <p className="font-display text-xl tracking-wide text-white">
                   {tier.name}
                 </p>
                 {tier.founding ? (
@@ -356,33 +368,29 @@ export default function MarketingPage() {
                   </li>
                 ))}
               </ul>
-              <a
+              <AddToDiscordButton
                 href={inviteHref}
-                className={`mt-6 inline-flex items-center justify-center rounded-brand px-4 py-2.5 text-center text-sm font-semibold transition ${
-                  tier.founding
-                    ? "bg-coral text-slate hover:brightness-110"
-                    : "border border-white/20 text-white/90 hover:border-coral/50 hover:text-white"
-                }`}
-              >
-                Add to Discord
-              </a>
+                variant={tier.founding ? "coral" : "outline"}
+                className="mt-6 w-full"
+              />
             </div>
           ))}
         </div>
 
         <div className="mt-8 flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-            <a
-              href={inviteHref}
-              className="rounded-brand bg-coral px-5 py-2.5 font-semibold text-slate transition hover:brightness-110"
-            >
-              Add to Discord
-            </a>
+            <AddToDiscordButton href={inviteHref} />
             <Link
               href="/demo"
               className="rounded-brand border border-white/25 px-5 py-2.5 font-semibold text-white/90 transition hover:border-lime/50 hover:text-lime"
             >
               Explore live demo
+            </Link>
+            <Link
+              href="/guide"
+              className="text-sm text-white/80 underline-offset-4 transition hover:text-lime hover:underline"
+            >
+              How it works
             </Link>
             <Link
               href="/pricing"
@@ -398,35 +406,7 @@ export default function MarketingPage() {
         </div>
       </section>
 
-      <footer className="border-t border-white/10 py-10">
-        <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-white/55">
-            Demo admin:{" "}
-            <Link href="/demo" className="text-coral/90 hover:underline">
-              /demo
-            </Link>
-            {" · "}
-            Public:{" "}
-            <Link href="/s/demo-esports" className="text-white/70 hover:underline">
-              /s/demo-esports
-            </Link>
-            {" · "}
-            <Link
-              href="/s/founding-beta"
-              className="text-white/70 hover:underline"
-            >
-              Founding
-            </Link>
-            {" · "}
-            <Link href="/me" className="text-white/70 hover:underline">
-              Your cards
-            </Link>
-          </p>
-          <p className="text-xs text-white/45">
-            {BRAND.name} · {BRAND.domain}
-          </p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

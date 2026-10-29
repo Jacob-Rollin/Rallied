@@ -18,7 +18,7 @@ rallied/
   apps/web/          Next.js App Router (marketing + OAuth-gated dashboard)
   apps/bot/          Discord Interactions HTTP (slash + buttons)
   packages/shared/   Types & constants
-  supabase/          001_init + 002_phase15 migrations
+  supabase/          migrations 001–006 (init → phase15 → public → pro → threads → ready check)
 ```
 
 ---
@@ -100,11 +100,11 @@ Or `buildBotInviteUrl(clientId)` from `@rallied/shared`. Set `NEXT_PUBLIC_DISCOR
 
 | Command | Notes |
 | --- | --- |
-| `/lfg create\|find\|close` | Create posts a **rich embed** (game, slots, host, Ghostless) |
-| `/vibe @user` | Omit `showed_up` → **button message** (Showed up / Vibes / Ghosted / Dispute) |
+| `/lfg create\|find\|close\|desk` | Create posts a **rich embed**; `/lfg desk` same Manage Server perm as `/setup` |
+| `/vibe @user` | Omit `showed_up` → **button message** (Showed up / Ghosted + vibe 1–5); Dispute is ratee-facing after Ghosted strike |
 | `/ghostless [@user]` | Compact **player-card embed** (this server) |
 | `/strikes list\|add\|remove` | Mods; lockout uses `server_settings.strike_threshold` |
-| `/dispute open\|resolve` | Dispute queue; also Dispute button on Vibe Check |
+| `/dispute open\|resolve` | Ratee opens; mods resolve in Discord (`/dispute resolve`) |
 
 Register: `npm run register-commands`  
 Weekly digest stub: `npx tsx apps/bot/scripts/weekly-digest.ts`
@@ -117,7 +117,10 @@ Weekly digest stub: `npx tsx apps/bot/scripts/weekly-digest.ts`
 Bot token, public key, app id, OAuth client id/secret, redirect URI, Interactions Endpoint URL — see launch checklist.
 
 ### 2. Supabase
-Run `001_init.sql` → `002_phase15.sql` → `003_public_pages.sql` → `004_pro_plan.sql`.
+Run migrations **001→006** in order:
+`001_init.sql` → `002_phase15.sql` → `003_public_pages.sql` → `004_pro_plan.sql` → `005_party_thread.sql` → `006_ready_check.sql`.
+
+Phone paste: Project store `docs/rallied-supabase-all.sql` (combined) or `docs/lfg-desk-setup.md` §3 for 005/006 ALTERs + indexes.
 
 ### 3. Env
 ```bash

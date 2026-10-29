@@ -438,7 +438,7 @@ export function vibeCheckMessage(opts: {
     embeds: [
       {
         description:
-          "Tap a quick result, or pick a vibe score 1–5. Grace window applies before ghost strikes.",
+          "Tap a quick result, or pick a vibe score 1–5. After grace, **Ghosted** issues a strike (this server). Ready Check already counted shows/ghosts when it ran. Dispute is for the flagged player.",
         color: LIME,
       },
     ],
@@ -458,12 +458,6 @@ export function vibeCheckMessage(opts: {
             label: "Ghosted",
             custom_id: custom("ghosted"),
           },
-          {
-            type: 2,
-            style: 2,
-            label: "Dispute",
-            custom_id: `dispute:open:${opts.partyId}:${opts.rateeMemberId}`,
-          },
         ],
       },
       {
@@ -472,7 +466,7 @@ export function vibeCheckMessage(opts: {
           {
             type: 3,
             custom_id: `vibe:score:${opts.partyId}:${opts.rateeMemberId}`,
-            placeholder: "Rate vibe 1–5 (counts as showed up)",
+            placeholder: "Rate vibe 1–5 (optional score)",
             min_values: 1,
             max_values: 1,
             options: [
@@ -482,6 +476,30 @@ export function vibeCheckMessage(opts: {
               { label: "4 — Good", value: "4", description: "Showed up, good vibes" },
               { label: "5 — Great", value: "5", description: "Showed up, great teammate" },
             ],
+          },
+        ],
+      },
+    ],
+  };
+}
+
+/** Public/thread CTA so the ratee (not the rater) can open a dispute. */
+export function vibeGhostDisputeMessage(opts: {
+  rateeMention: string;
+  partyId: string;
+  rateeMemberId: string;
+}) {
+  return {
+    content: `${opts.rateeMention} — flagged **Ghosted** after grace (this server). Only you can dispute:`,
+    components: [
+      {
+        type: 1,
+        components: [
+          {
+            type: 2,
+            style: 2,
+            label: "Dispute",
+            custom_id: `dispute:open:${opts.partyId}:${opts.rateeMemberId}`,
           },
         ],
       },
@@ -802,8 +820,9 @@ export function lfgHowItWorksMessage() {
       "**How Rallied LFG works** (this server only)",
       "• **Create party** — pick a game → form (size, mic, notes) → party card + **squad thread**.",
       "• **Join** — tap the **squad thread** under the card to share invite codes / VC.",
-      "• **Ready Check** — when the squad fills (or host taps it): Ready / Waiting + grace timer; no-shows get a strike.",
+      "• **Ready Check** — when the squad fills (or host taps it): Ready / Waiting + grace timer; no-shows get a strike (source of truth for shows).",
       "• **Leave / Close** — Leave if you're a member; hosts Confirm-close, then **Vibe Check**.",
+      "• **Vibe Check** — Showed up / Ghosted + optional score; Ghosted after grace can strike (no double-count with Ready Check). Flagged player Disputes.",
       "• **Find / My parties** — browse open parties in this server.",
       "• **`/ghostless`** — this-server show rate + Ghostless badge (not a global grade).",
       "Slash backups: `/lfg create` · `/lfg find` · `/vibe` · `/ghostless`",

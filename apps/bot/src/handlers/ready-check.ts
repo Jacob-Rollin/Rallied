@@ -135,7 +135,7 @@ export async function startReadyCheck(opts: {
   const { data: fullParty } = await sb
     .from("lfg_parties")
     .select(
-      "id, game, discord_channel_id, discord_thread_id, ready_check_started_at, grace_ends_at, ready_check_resolved_at",
+      "id, game, discord_channel_id, discord_thread_id, ready_check_started_at, grace_ends_at, ready_check_resolved_at, host_member_id",
     )
     .eq("id", party.id)
     .maybeSingle();
@@ -168,12 +168,23 @@ export async function startReadyCheck(opts: {
     .update({ ready_at: null })
     .eq("party_id", party.id);
 
-  if (!opts.allowAuto) {
+  // Mark starter ready. On auto-fill, also mark host so they aren't a false no-show.
+  await sb
+    .from("lfg_party_members")
+    .update({ ready_at: new Date().toISOString() })
+    .eq("party_id", party.id)
+    .eq("member_id", member.id);
+
+  if (
+    opts.allowAuto &&
+    fullParty.host_member_id &&
+    fullParty.host_member_id !== member.id
+  ) {
     await sb
       .from("lfg_party_members")
       .update({ ready_at: new Date().toISOString() })
       .eq("party_id", party.id)
-      .eq("member_id", member.id);
+      .eq("member_id", fullParty.host_member_id);
   }
 
   const channelId =
@@ -309,7 +320,7 @@ export async function markReady(opts: {
   if (readyCount >= roster.length && roster.length > 0) {
     await finalizeReadyCheck(sb, env, party.id, { allReady: true });
     return ephemeral(
-      "Everyone’s ready — nice. Optional: run **Vibe Check** after you play.",
+      "Everyone’s ready — nice. Optional: run **Vibe Check** after you play (scores only if Ready Check already counted shows).",
     );
   }
 
@@ -325,6 +336,7 @@ export async function markReady(opts: {
 
 /**
  * After grace (or all ready): bump ghostless/shows, strike no-shows, lock message.
+ * Claims via UPDATE … WHERE ready_check_resolved_at IS NULL RETURNING * before side effects.
  */
 export async function finalizeReadyCheck(
   sb: SupabaseClient,
@@ -332,23 +344,36 @@ export async function finalizeReadyCheck(
   partyId: string,
   opts?: { allReady?: boolean },
 ): Promise<{ resolved: boolean; noShows: number }> {
-  const { data: party } = await sb
+  const { data: peek } = await sb
     .from("lfg_parties")
-    .select(
-      "id, game, server_id, grace_ends_at, ready_check_message_id, ready_check_channel_id, ready_check_resolved_at, host_member_id",
-    )
+    .select("id, grace_ends_at, ready_check_resolved_at")
     .eq("id", partyId)
     .maybeSingle();
 
-  if (!party || party.ready_check_resolved_at) {
+  if (!peek || peek.ready_check_resolved_at) {
     return { resolved: false, noShows: 0 };
   }
 
   if (
     !opts?.allReady &&
-    party.grace_ends_at &&
-    new Date(party.grace_ends_at).getTime() > Date.now()
+    peek.grace_ends_at &&
+    new Date(peek.grace_ends_at).getTime() > Date.now()
   ) {
+    return { resolved: false, noShows: 0 };
+  }
+
+  // Claim first so concurrent cron + "all ready" cannot double-count / double-strike.
+  const { data: party } = await sb
+    .from("lfg_parties")
+    .update({ ready_check_resolved_at: new Date().toISOString() })
+    .eq("id", partyId)
+    .is("ready_check_resolved_at", null)
+    .select(
+      "id, game, server_id, grace_ends_at, ready_check_message_id, ready_check_channel_id, host_member_id",
+    )
+    .maybeSingle();
+
+  if (!party) {
     return { resolved: false, noShows: 0 };
   }
 
@@ -424,11 +449,6 @@ export async function finalizeReadyCheck(
       });
     }
   }
-
-  await sb
-    .from("lfg_parties")
-    .update({ ready_check_resolved_at: new Date().toISOString() })
-    .eq("id", partyId);
 
   const graceEndsUnix = party.grace_ends_at
     ? Math.floor(new Date(party.grace_ends_at).getTime() / 1000)

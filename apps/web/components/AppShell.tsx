@@ -6,7 +6,11 @@ import { useEffect, useState } from "react";
 import type { AdminGuild } from "@rallied/shared";
 import { buildBotInviteUrl } from "@rallied/shared";
 import { MOCK_SERVERS } from "@/lib/mock-data";
-import { GUILD_COOKIE, GUILD_QUERY } from "@/lib/guild-params";
+import {
+  GUILD_COOKIE,
+  GUILD_QUERY,
+  isDemoGuildId,
+} from "@/lib/guild-params";
 
 const NAV = [
   { href: "/app", label: "Overview" },
@@ -38,6 +42,10 @@ function writeGuildCookie(guildId: string) {
   document.cookie = `${GUILD_COOKIE}=${encodeURIComponent(guildId)}; path=/; max-age=${maxAge}; samesite=lax`;
 }
 
+function clearGuildCookie() {
+  document.cookie = `${GUILD_COOKIE}=; path=/; max-age=0; samesite=lax`;
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -45,21 +53,49 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [me, setMe] = useState<MeResponse | null>(null);
   const [serverId, setServerId] = useState<string>("");
 
+  const mockFlag = searchParams.get("mock") === "1";
+
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((data: MeResponse) => {
         setMe(data);
-        const fromQuery = searchParams.get(GUILD_QUERY);
-        const fromCookie = readGuildCookie();
-        const first =
+        const allowDemo = Boolean(data.mock) || mockFlag;
+        const fromQuery = searchParams.get(GUILD_QUERY) || "";
+        let fromCookie = readGuildCookie();
+
+        if (
+          data.authenticated &&
+          !allowDemo &&
+          fromCookie &&
+          isDemoGuildId(fromCookie)
+        ) {
+          clearGuildCookie();
+          fromCookie = "";
+        }
+
+        const queryOk =
+          fromQuery &&
+          (allowDemo || !isDemoGuildId(fromQuery) || Boolean(data.mock));
+
+        const firstLive =
           data.guilds?.find((g) => g.bot_present)?.id ||
           data.guilds?.[0]?.id ||
-          MOCK_SERVERS[0].discord_guild_id;
-        const next = fromQuery || fromCookie || first;
+          "";
+
+        const first =
+          data.authenticated && !allowDemo
+            ? firstLive
+            : firstLive || MOCK_SERVERS[0].discord_guild_id;
+
+        const next = (queryOk ? fromQuery : "") || fromCookie || first;
         setServerId(next);
-        if (next) writeGuildCookie(next);
-        if (fromQuery !== next) {
+        if (next && !isDemoGuildId(next)) {
+          writeGuildCookie(next);
+        } else if (next && allowDemo) {
+          writeGuildCookie(next);
+        }
+        if (next && fromQuery !== next) {
           const params = new URLSearchParams(searchParams.toString());
           params.set(GUILD_QUERY, next);
           router.replace(`${pathname}?${params.toString()}`);
@@ -79,16 +115,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     router.refresh();
   }
 
+  // Never fall back to MOCK_SERVERS when authenticated under real OAuth.
   const guilds: AdminGuild[] =
     me?.guilds && me.guilds.length > 0
       ? me.guilds
-      : MOCK_SERVERS.map((s) => ({
-          id: s.discord_guild_id,
-          name: s.name,
-          icon: null,
-          bot_present: true,
-          plan: s.plan,
-        }));
+      : me?.authenticated && !me.mock
+        ? []
+        : MOCK_SERVERS.map((s) => ({
+            id: s.discord_guild_id,
+            name: s.name,
+            icon: null,
+            bot_present: true,
+            plan: s.plan,
+          }));
 
   const server = guilds.find((g) => g.id === serverId) ?? guilds[0];
   const withBot = guilds.filter((g) => g.bot_present);
@@ -100,8 +139,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const inviteUrl = clientId
     ? buildBotInviteUrl(clientId)
     : "https://discord.com/developers/applications";
-
-  const mockFlag = searchParams.get("mock") === "1";
 
   function navHref(href: string) {
     const params = new URLSearchParams();

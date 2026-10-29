@@ -9,7 +9,12 @@ import {
   InteractionResponseType,
   type Interaction,
 } from "../lib/discord.js";
-import { vibeCheckMessage } from "../lib/embeds.js";
+import {
+  vibeCheckMessage,
+  vibeGhostDisputeMessage,
+} from "../lib/embeds.js";
+import { formatError } from "../lib/errors.js";
+import { postThreadMessage } from "../lib/party-message.js";
 import { maybeAssignGhostlessRole } from "../lib/roles.js";
 import { getServerSettings, withinGraceWindow } from "../lib/settings.js";
 import { ensureServerAndMember } from "../lib/supabase.js";
@@ -91,23 +96,8 @@ export async function handleVibe(
   const showedUp = Boolean(showedOpt.value);
   const scoreRaw = getOption(options, "score")?.value;
   const vibeScore = scoreRaw === undefined ? null : Number(scoreRaw);
-  let ghosted = Boolean(getOption(options, "ghosted")?.value ?? !showedUp);
+  const ghosted = Boolean(getOption(options, "ghosted")?.value ?? !showedUp);
   const note = (getOption(options, "note")?.value as string | undefined) ?? null;
-
-  // Grace window: if party filled recently, don't count as ghost for strike path
-  const settings = await getServerSettings(sb, server.id);
-  const { data: party } = await sb
-    .from("lfg_parties")
-    .select("updated_at, created_at")
-    .eq("id", partyId)
-    .maybeSingle();
-  if (party && ghosted) {
-    const start = new Date(party.updated_at || party.created_at).getTime();
-    const minutesLate = (Date.now() - start) / 60000;
-    if (withinGraceWindow(minutesLate, settings.grace_minutes)) {
-      ghosted = false;
-    }
-  }
 
   return recordVibe({
     sb,
@@ -140,14 +130,71 @@ export async function recordVibe(opts: {
   note: string | null;
 }) {
   const { sb, env } = opts;
+
+  // Both rater and ratee must be in the party (anti-grief Ghostless).
+  const { data: raterMem } = await sb
+    .from("lfg_party_members")
+    .select("id")
+    .eq("party_id", opts.partyId)
+    .eq("member_id", opts.raterId)
+    .maybeSingle();
+  const { data: rateeMem } = await sb
+    .from("lfg_party_members")
+    .select("id")
+    .eq("party_id", opts.partyId)
+    .eq("member_id", opts.rateeId)
+    .maybeSingle();
+
+  if (!raterMem || !rateeMem) {
+    return ephemeral(
+      "Both players must be in that party to Vibe Check (this server).",
+    );
+  }
+
+  const { data: party } = await sb
+    .from("lfg_parties")
+    .select(
+      "id, game, server_id, host_member_id, updated_at, created_at, ready_check_resolved_at, discord_thread_id, discord_channel_id",
+    )
+    .eq("id", opts.partyId)
+    .maybeSingle();
+
+  if (!party || party.server_id !== opts.serverId) {
+    return ephemeral("Party not found in this server.");
+  }
+
+  const settings = await getServerSettings(sb, opts.serverId);
+
+  // Grace window: Ghosted inside grace does not count as ghost / strike.
+  let ghosted = opts.ghosted;
+  if (ghosted) {
+    const start = new Date(party.updated_at || party.created_at).getTime();
+    const minutesLate = (Date.now() - start) / 60000;
+    if (withinGraceWindow(minutesLate, settings.grace_minutes)) {
+      ghosted = false;
+    }
+  }
+
+  const showedUp = ghosted ? false : opts.showedUp;
+
+  const { data: existing } = await sb
+    .from("vibe_checks")
+    .select("id")
+    .eq("party_id", opts.partyId)
+    .eq("rater_id", opts.raterId)
+    .eq("ratee_id", opts.rateeId)
+    .maybeSingle();
+
+  const isNew = !existing;
+
   const { error } = await sb.from("vibe_checks").upsert(
     {
       party_id: opts.partyId,
       rater_id: opts.raterId,
       ratee_id: opts.rateeId,
-      showed_up: opts.showedUp,
+      showed_up: showedUp,
       vibe_score: opts.vibeScore,
-      ghosted: opts.ghosted,
+      ghosted,
       note: opts.note,
     },
     { onConflict: "party_id,rater_id,ratee_id" },
@@ -162,22 +209,79 @@ export async function recordVibe(opts: {
     .eq("member_id", opts.rateeId)
     .maybeSingle();
 
-  const shows = (stats?.shows ?? 0) + (opts.showedUp ? 1 : 0);
-  const ghosts = (stats?.ghosts ?? 0) + (opts.ghosted ? 1 : 0);
-  const vibe_sum = (stats?.vibe_sum ?? 0) + (opts.vibeScore ?? 0);
-  const vibe_count = (stats?.vibe_count ?? 0) + (opts.vibeScore != null ? 1 : 0);
+  let shows = stats?.shows ?? 0;
+  let ghosts = stats?.ghosts ?? 0;
+  let vibe_sum = stats?.vibe_sum ?? 0;
+  let vibe_count = stats?.vibe_count ?? 0;
 
-  await sb.from("ghostless_stats").upsert(
-    {
-      server_id: opts.serverId,
-      member_id: opts.rateeId,
-      shows,
-      ghosts,
-      vibe_sum,
-      vibe_count,
-    },
-    { onConflict: "server_id,member_id" },
-  );
+  // Ready-check is the source of truth for shows/ghosts when it already resolved.
+  // Re-taps never bump aggregates (upsert is idempotent; stats must match).
+  const readyResolved = Boolean(party.ready_check_resolved_at);
+  let struck = false;
+
+  if (isNew) {
+    if (showedUp && !readyResolved) {
+      shows += 1;
+    }
+    if (ghosted && !readyResolved) {
+      ghosts += 1;
+    }
+    if (opts.vibeScore != null) {
+      vibe_sum += opts.vibeScore;
+      vibe_count += 1;
+    }
+
+    await sb.from("ghostless_stats").upsert(
+      {
+        server_id: opts.serverId,
+        member_id: opts.rateeId,
+        shows,
+        ghosts,
+        vibe_sum,
+        vibe_count,
+      },
+      { onConflict: "server_id,member_id" },
+    );
+
+    // Ghosted after grace → strike, unless ready-check already struck this party.
+    if (ghosted && !readyResolved) {
+      const alreadyStruck = await hasPartyNoShowStrike(
+        sb,
+        opts.serverId,
+        opts.rateeId,
+        party.id,
+      );
+      if (!alreadyStruck) {
+        await sb.from("strikes").insert({
+          server_id: opts.serverId,
+          member_id: opts.rateeId,
+          reason: `Vibe Ghosted · ${party.game} (\`${party.id.slice(0, 8)}\`)`,
+          created_by: opts.raterId,
+          active: true,
+        });
+        struck = true;
+
+        const { count } = await sb
+          .from("strikes")
+          .select("*", { count: "exact", head: true })
+          .eq("server_id", opts.serverId)
+          .eq("member_id", opts.rateeId)
+          .eq("active", true);
+
+        if ((count ?? 0) >= settings.strike_threshold) {
+          const until = new Date(
+            Date.now() + settings.lockout_days * 24 * 60 * 60 * 1000,
+          ).toISOString();
+          await sb.from("lockouts").insert({
+            server_id: opts.serverId,
+            member_id: opts.rateeId,
+            until,
+            reason: `Auto lockout: ${settings.strike_threshold}+ active strikes (this server)`,
+          });
+        }
+      }
+    }
+  }
 
   if (env) {
     await maybeAssignGhostlessRole(env, sb, {
@@ -189,7 +293,66 @@ export async function recordVibe(opts: {
     });
   }
 
+  // Ratee-facing Dispute CTA (squad thread) when a Ghosted strike was issued.
+  if (struck && env) {
+    const channelId = party.discord_thread_id || party.discord_channel_id;
+    if (channelId) {
+      const payload = vibeGhostDisputeMessage({
+        rateeMention: `<@${opts.rateeDiscordId}>`,
+        partyId: party.id,
+        rateeMemberId: opts.rateeId,
+      });
+      try {
+        await postThreadMessage(env, channelId, payload.content ?? "", {
+          components: payload.components,
+        });
+      } catch (err) {
+        console.error("vibe dispute notify", formatError(err));
+      }
+    }
+  }
+
+  if (!isNew) {
+    return ephemeral(
+      `Updated Vibe Check for <@${opts.rateeDiscordId}> (stats unchanged — already counted).`,
+    );
+  }
+
+  const showNote = readyResolved
+    ? " · shows/ghosts already set by Ready Check"
+    : "";
+  const strikeNote = struck
+    ? " · strike issued (ratee can Dispute in the squad thread)"
+    : ghosted && readyResolved
+      ? " · no extra strike (Ready Check already handled no-shows)"
+      : "";
+
   return ephemeral(
-    `Vibe Check saved for <@${opts.rateeDiscordId}> (this server). showed_up=${opts.showedUp} ghosted=${opts.ghosted}${opts.vibeScore != null ? ` score=${opts.vibeScore}` : ""}`,
+    `Vibe Check saved for <@${opts.rateeDiscordId}> (this server). showed_up=${showedUp} ghosted=${ghosted}${opts.vibeScore != null ? ` score=${opts.vibeScore}` : ""}${showNote}${strikeNote}`,
+  );
+}
+
+async function hasPartyNoShowStrike(
+  sb: SupabaseClient,
+  serverId: string,
+  memberId: string,
+  partyId: string,
+): Promise<boolean> {
+  const needle = partyId.slice(0, 8);
+  const { data } = await sb
+    .from("strikes")
+    .select("id, reason")
+    .eq("server_id", serverId)
+    .eq("member_id", memberId)
+    .eq("active", true)
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  return (data ?? []).some(
+    (s) =>
+      typeof s.reason === "string" &&
+      s.reason.includes(needle) &&
+      (s.reason.includes("Ready-check no-show") ||
+        s.reason.includes("Vibe Ghosted")),
   );
 }

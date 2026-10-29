@@ -130,8 +130,15 @@ export function DemoAnalyticsClient({
       />
 
       <p className="text-xs text-muted">
-        Pro also adds vanity branding and priority support on live servers —
-        preview here is analytics-only.
+        Pro also adds vanity branding on live servers — preview vanity under{" "}
+        <a href="/demo/settings" className="text-coral hover:underline">
+          Demo → Settings
+        </a>{" "}
+        or unlock on{" "}
+        <a href="/s/demo-esports" className="text-coral hover:underline">
+          /s/demo-esports
+        </a>
+        .
       </p>
     </div>
   );

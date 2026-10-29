@@ -18,16 +18,16 @@ export function isDemoGuildId(guildId: string): boolean {
 /**
  * Use mock dashboard rows when:
  * - session is mock auth
- * - selected guild is an explicit demo id
- * - `?mock=1` (preview mock UI against a real login)
+ * - `?mock=1` / `/demo` (preview mock UI against a real login)
+ *
+ * Stale `demo-guild-*` cookies under real OAuth must NOT force fixtures.
  */
 export function shouldUseMockDashboard(
-  guildId: string,
+  _guildId: string,
   opts: { isMockSession?: boolean; forceMock?: boolean },
 ): boolean {
   if (opts.forceMock) return true;
   if (opts.isMockSession) return true;
-  if (isDemoGuildId(guildId)) return true;
   return false;
 }
 

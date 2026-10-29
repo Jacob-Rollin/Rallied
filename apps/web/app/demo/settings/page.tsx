@@ -11,7 +11,9 @@ export default async function DemoSettingsPage() {
       <div>
         <h1 className="font-display text-3xl tracking-wide">Settings</h1>
         <p className="mt-1 text-sm text-muted">
-          Grace, public page, Pro vanity — demo preview (changes are not saved).
+          Grace, public page, Pro vanity — demo preview. Use{" "}
+          <span className="text-coral">Upgrade to Pro</span> to unlock vanity
+          controls locally (not a purchase).
         </p>
       </div>
 
@@ -25,6 +27,7 @@ export default async function DemoSettingsPage() {
         settings={data.settings}
         billingHref={demoHref("/billing")}
         source={data.source}
+        demoProUnlock
       />
     </div>
   );

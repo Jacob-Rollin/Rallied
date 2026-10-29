@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   COMMUNITY_PRICE_USD,
   PLANS,
   PRO_PRICE_USD,
+  buildBotInviteUrl,
   isProPlan,
   type PlanId,
   type ServerSettings,
@@ -19,6 +21,11 @@ type Props = {
   settings: ServerSettings | null;
   billingHref: string;
   source: string;
+  /**
+   * Demo/mock only: Upgrade to Pro unlocks vanity controls locally (no Stripe).
+   * Live `/app` must omit this — real `servers.plan` gates vanity.
+   */
+  demoProUnlock?: boolean;
 };
 
 const DEFAULTS: Omit<
@@ -47,17 +54,23 @@ export function SettingsClient({
   settings,
   billingHref,
   source,
+  demoProUnlock = false,
 }: Props) {
+  const router = useRouter();
   const base = settings ?? {
     ...DEFAULTS,
     server_id: "",
     created_at: "",
     updated_at: "",
   };
-  const pro = isProPlan(plan);
+  const planIsPro = isProPlan(plan);
+  const [demoProPreview, setDemoProPreview] = useState(false);
+  const pro = planIsPro || (demoProUnlock && demoProPreview);
+  const canWrite = source === "live";
 
   const [grace, setGrace] = useState(base.grace_minutes);
   const [threshold, setThreshold] = useState(base.strike_threshold);
+  const [lockoutDays, setLockoutDays] = useState(base.lockout_days);
   const [roleId, setRoleId] = useState(base.ghostless_role_id ?? "");
   const [digestChannel, setDigestChannel] = useState(
     base.digest_channel_id ?? "",
@@ -66,9 +79,68 @@ export function SettingsClient({
   const [publicPage, setPublicPage] = useState(base.public_page_enabled);
   const [publicMembers, setPublicMembers] = useState(base.public_member_list);
   const [hidePoweredBy, setHidePoweredBy] = useState(base.hide_powered_by);
-  const [accent, setAccent] = useState(base.public_accent ?? "");
+  const [accent, setAccent] = useState(
+    base.public_accent ?? (demoProUnlock ? "#B8F000" : ""),
+  );
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const [saveErr, setSaveErr] = useState<string | null>(null);
 
   const previewPath = `/s/${slug || discordGuildId}`;
+  const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
+  const inviteHref = clientId
+    ? buildBotInviteUrl(clientId)
+    : "https://discord.com/developers/applications";
+
+  async function saveSettings() {
+    if (!canWrite) return;
+    setSaving(true);
+    setSaveMsg(null);
+    setSaveErr(null);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          discordGuildId,
+          public_page_enabled: publicPage,
+          public_member_list: publicMembers,
+          slug: slug || null,
+          grace_minutes: grace,
+          strike_threshold: threshold,
+          lockout_days: lockoutDays,
+          ghostless_role_id: roleId || null,
+          digest_channel_id: digestChannel || null,
+          hide_powered_by: hidePoweredBy,
+          public_accent: accent || null,
+        }),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        hint?: string;
+        vanityRejected?: boolean;
+        ok?: boolean;
+      };
+      if (!res.ok) {
+        setSaveErr(
+          json.error
+            ? `${json.error}${json.hint ? ` — ${json.hint}` : ""}`
+            : `Save failed (${res.status})`,
+        );
+        return;
+      }
+      setSaveMsg(
+        json.vanityRejected
+          ? "Saved (Pro vanity fields skipped — upgrade for hide Powered by / accent)."
+          : "Settings saved.",
+      );
+      router.refresh();
+    } catch (err) {
+      setSaveErr(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="space-y-10">
@@ -83,9 +155,13 @@ export function SettingsClient({
             {priceLockCents != null
               ? ` · $${(priceLockCents / 100).toFixed(2)}/mo lock`
               : ""}
+            {demoProUnlock && demoProPreview ? " · Pro preview" : ""}
           </p>
           <p className="mt-1 text-xs text-muted">
-            Data source: {source}. Saves still stub until write API ships.
+            Data source: {source}.{" "}
+            {canWrite
+              ? "Save writes server_settings when live."
+              : "Demo changes stay in this browser tab (not saved)."}
           </p>
         </div>
       </section>
@@ -135,20 +211,83 @@ export function SettingsClient({
 
       <section className="space-y-4">
         <h2 className="font-display text-xl tracking-wide">Pro vanity</h2>
+
+        {demoProUnlock && demoProPreview ? (
+          <p
+            className="rounded-brand border border-lime/40 bg-lime/10 px-3 py-2 text-xs text-lime"
+            role="status"
+          >
+            <span className="font-semibold uppercase tracking-wider">
+              Demo · Pro preview
+            </span>
+            {" — "}
+            Vanity controls unlocked locally. Not a purchase — Discord is
+            unchanged. See a live Pro vanity card at{" "}
+            <Link href="/s/founding-beta" className="underline hover:text-white">
+              /s/founding-beta
+            </Link>
+            .
+          </p>
+        ) : null}
+
         {!pro ? (
-          <div className="rounded-brand border border-coral/30 bg-coral/5 p-4 text-sm">
+          <div className="rounded-brand border border-coral/40 bg-coral/5 p-4 text-sm">
             <p className="text-muted">
               Hide “Powered by” and custom accent require Pro ($
-              {PRO_PRICE_USD}/mo) or Founding Pro.
+              {PRO_PRICE_USD}/mo) or Founding Pro. Community can still set slug +
+              public toggles.
             </p>
-            <Link
-              href={billingHref}
-              className="mt-3 inline-block text-coral hover:underline"
-            >
-              Upgrade to Pro →
-            </Link>
+            {demoProUnlock ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDemoProPreview(true);
+                    setHidePoweredBy(true);
+                    if (!accent) setAccent("#B8F000");
+                  }}
+                  className="mt-4 inline-block rounded-brand bg-coral px-4 py-2 text-sm font-semibold text-slate transition hover:brightness-110"
+                >
+                  Upgrade to Pro
+                </button>
+                <p className="mt-2 text-xs text-muted">
+                  Demo only — unlocks a mock Pro vanity preview (not a
+                  purchase).
+                </p>
+              </>
+            ) : (
+              <Link
+                href={billingHref}
+                className="mt-3 inline-block text-coral hover:underline"
+              >
+                Upgrade to Pro →
+              </Link>
+            )}
           </div>
         ) : null}
+
+        {demoProUnlock && demoProPreview && !planIsPro ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setDemoProPreview(false);
+                setHidePoweredBy(base.hide_powered_by);
+                setAccent(base.public_accent ?? "");
+              }}
+              className="rounded-brand border border-white/20 px-3 py-1.5 text-xs font-semibold text-white/85 transition hover:border-coral/50"
+            >
+              Back to locked view
+            </button>
+            <a
+              href={inviteHref}
+              className="rounded-brand bg-coral px-3 py-1.5 text-xs font-semibold text-slate transition hover:brightness-110"
+            >
+              Add to Discord
+            </a>
+          </div>
+        ) : null}
+
         <label
           className={`flex items-center gap-3 text-sm ${!pro ? "opacity-40" : ""}`}
         >
@@ -174,6 +313,30 @@ export function SettingsClient({
             className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white disabled:cursor-not-allowed"
           />
         </label>
+
+        {pro ? (
+          <div
+            className="rounded-brand border border-white/10 bg-slate-elevated/40 px-4 py-3 text-xs text-muted"
+            style={
+              accent && /^#?[0-9a-fA-F]{6}$/.test(accent.trim())
+                ? {
+                    borderColor: `${accent.startsWith("#") ? accent : `#${accent}`}55`,
+                  }
+                : undefined
+            }
+          >
+            Preview header chrome:{" "}
+            {hidePoweredBy ? (
+              <span className="text-lime/80">Founding / Pro · </span>
+            ) : (
+              <>
+                Powered by <span className="text-coral">Rallied</span>
+                {" · "}
+              </>
+            )}
+            this Discord server only
+          </div>
+        ) : null}
       </section>
 
       <section className="space-y-4">
@@ -200,6 +363,17 @@ export function SettingsClient({
             className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white"
           />
         </label>
+        <label className="block max-w-sm text-sm">
+          <span className="text-muted">Lockout days</span>
+          <input
+            type="number"
+            min={1}
+            max={365}
+            value={lockoutDays}
+            onChange={(e) => setLockoutDays(Number(e.target.value))}
+            className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white"
+          />
+        </label>
         <label className="block max-w-md text-sm">
           <span className="text-muted">Ghostless Discord role ID</span>
           <input
@@ -218,14 +392,31 @@ export function SettingsClient({
             className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white"
           />
         </label>
+      </section>
+
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
-          disabled
-          className="cursor-not-allowed rounded-brand border border-white/15 px-4 py-2 text-sm text-muted"
+          disabled={!canWrite || saving}
+          onClick={() => void saveSettings()}
+          className="rounded-brand bg-coral px-4 py-2 text-sm font-semibold text-slate disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Save (write API later)
+          {saving ? "Saving…" : "Save settings"}
         </button>
-      </section>
+        {!canWrite ? (
+          <p className="text-xs text-muted">
+            {demoProUnlock
+              ? "Demo settings are local preview only."
+              : <>
+                  Needs live guild +{" "}
+                  <code className="text-coral">SUPABASE_SERVICE_ROLE_KEY</code>{" "}
+                  on the web Worker.
+                </>}
+          </p>
+        ) : null}
+        {saveMsg ? <p className="text-xs text-lime">{saveMsg}</p> : null}
+        {saveErr ? <p className="text-xs text-coral">{saveErr}</p> : null}
+      </div>
 
       <section className="space-y-4">
         <h2 className="font-display text-xl tracking-wide">Billing snapshot</h2>

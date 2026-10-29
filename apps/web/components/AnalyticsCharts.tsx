@@ -10,16 +10,27 @@ const LABEL_INSIDE_MIN = 36;
 
 type Metric = "parties" | "vibes" | "ghosts";
 
-function DeltaLine({ prior, current }: { prior: number; current: number }) {
+function DeltaLine({
+  prior,
+  current,
+  lowerIsBetter = false,
+}: {
+  prior: number;
+  current: number;
+  /** Ghost flags etc. — decrease is good (lime), increase is bad (coral). */
+  lowerIsBetter?: boolean;
+}) {
   const pct = pctChange(current, prior);
   const up = pct != null && pct > 0;
   const down = pct != null && pct < 0;
   const flat = pct === 0;
+  const good = lowerIsBetter ? down : up;
+  const bad = lowerIsBetter ? up : down;
 
   return (
     <p
       className={`mt-1.5 text-xs tabular-nums ${
-        up ? "text-lime" : down ? "text-coral" : "text-muted"
+        good ? "text-lime" : bad ? "text-coral" : "text-muted"
       }`}
     >
       {pct == null ? (
@@ -105,12 +116,15 @@ export function AnalyticsKpiCard({
   value,
   prior,
   valueClassName,
+  lowerIsBetter = false,
 }: {
   label: string;
   value: number | string;
   /** Prior-period total for WoW %; omit to hide delta. */
   prior?: number | null;
   valueClassName?: string;
+  /** Invert WoW colors (e.g. Ghost flags — lower is better). */
+  lowerIsBetter?: boolean;
 }) {
   const numeric =
     typeof value === "number"
@@ -130,7 +144,11 @@ export function AnalyticsKpiCard({
         {value}
       </p>
       {prior != null && numeric != null ? (
-        <DeltaLine prior={prior} current={numeric} />
+        <DeltaLine
+          prior={prior}
+          current={numeric}
+          lowerIsBetter={lowerIsBetter}
+        />
       ) : null}
     </div>
   );

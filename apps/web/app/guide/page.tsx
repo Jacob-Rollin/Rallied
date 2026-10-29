@@ -156,8 +156,9 @@ export default function GuidePage() {
                 <strong className="font-semibold text-white">
                   Grant the bot permissions
                 </strong>{" "}
-                in that channel: Send Messages, Embed Links, Create Public
-                Threads, Manage Roles, Use Application Commands.
+                in that channel: Manage Channels, View Channel, Send Messages,
+                Embed Links, Create Public Threads, Send Messages in Threads,
+                Manage Roles, Connect, Move Members, Use Application Commands.
               </span>
             </li>
             <li className="flex gap-3">

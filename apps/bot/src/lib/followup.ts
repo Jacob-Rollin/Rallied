@@ -201,13 +201,36 @@ async function afterPartyPosted(
   messageId: string,
   guildId?: string | null,
 ): Promise<void> {
-  let { data: party, error: partyErr } = await sb
-    .from("lfg_parties")
-    .select(
-      "id, game, rank_text, mic, region, slots, status, host_member_id, discord_message_id, discord_channel_id, discord_thread_id, discord_voice_channel_id, scheduled_start_at",
-    )
-    .eq("id", partyId)
-    .maybeSingle();
+  type PostedPartyRow = {
+    id: string;
+    game: string;
+    rank_text: string;
+    mic?: string | null;
+    region?: string | null;
+    slots: number;
+    status: string;
+    host_member_id: string;
+    discord_message_id: string | null;
+    discord_channel_id: string | null;
+    discord_thread_id?: string | null;
+    discord_voice_channel_id?: string | null;
+    scheduled_start_at?: string | null;
+  };
+
+  let party: PostedPartyRow | null = null;
+  let partyErr: { message?: string } | null = null;
+
+  {
+    const res = await sb
+      .from("lfg_parties")
+      .select(
+        "id, game, rank_text, mic, region, slots, status, host_member_id, discord_message_id, discord_channel_id, discord_thread_id, discord_voice_channel_id, scheduled_start_at",
+      )
+      .eq("id", partyId)
+      .maybeSingle();
+    party = (res.data as PostedPartyRow | null) ?? null;
+    partyErr = res.error;
+  }
 
   if (
     partyErr &&
@@ -215,13 +238,14 @@ async function afterPartyPosted(
       partyErr.message ?? "",
     )
   ) {
-    ({ data: party } = await sb
+    const res = await sb
       .from("lfg_parties")
       .select(
         "id, game, rank_text, slots, status, host_member_id, discord_message_id, discord_channel_id, discord_thread_id",
       )
       .eq("id", partyId)
-      .maybeSingle());
+      .maybeSingle();
+    party = (res.data as PostedPartyRow | null) ?? null;
   }
 
   if (!party) {
@@ -250,12 +274,15 @@ async function afterPartyPosted(
   });
 
   const card: PartyCardState = {
-    ...party,
-    mic: (party as { mic?: string }).mic ?? "",
-    region: (party as { region?: string }).region ?? "",
-    scheduled_start_at:
-      (party as { scheduled_start_at?: string | null }).scheduled_start_at ??
-      null,
+    id: party.id,
+    game: party.game,
+    rank_text: party.rank_text,
+    mic: party.mic ?? "",
+    region: party.region ?? "",
+    slots: party.slots,
+    status: party.status,
+    host_member_id: party.host_member_id,
+    scheduled_start_at: party.scheduled_start_at ?? null,
     discord_channel_id: channelId,
     discord_message_id: messageId,
     discord_thread_id: threadId,

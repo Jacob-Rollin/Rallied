@@ -21,25 +21,37 @@ export function LfgPartyEmbedMock() {
         <EmbedShell accent="coral">
           <EmbedTitle>LFG · Valorant</EmbedTitle>
           <EmbedDesc>
-            Tap Join, then coordinate in the squad thread.
+            Tap Join, then hop into voice / the squad thread.
           </EmbedDesc>
           <EmbedFields>
-            <EmbedField name="Notes" inline>
+            <EmbedField name="Rank" inline>
               Diamond+
+            </EmbedField>
+            <EmbedField name="Mic" inline>
+              Required
+            </EmbedField>
+            <EmbedField name="Region" inline>
+              NA
             </EmbedField>
             <EmbedField name="Slots" inline>
               <span className="tabular-nums">2/5</span>
             </EmbedField>
             <EmbedField name="Ghostless" inline>
-              <span className="text-lime">94%</span>
+              <span className="text-lime">☑ 94%</span>
+            </EmbedField>
+            <EmbedField name="Starts" inline>
+              <span className="tabular-nums">in 30m</span>
             </EmbedField>
             <EmbedField name="Squad">
               @Nova (host)
               <br />
               @Kai
             </EmbedField>
+            <EmbedField name="Voice">
+              #LFG · Valorant — tap Join VC
+            </EmbedField>
             <EmbedField name="Squad chat">
-              #Squad · Valorant — hop in to share codes / VC
+              #Squad · Valorant — hop in to share codes
             </EmbedField>
           </EmbedFields>
           <EmbedFooter
@@ -55,6 +67,7 @@ export function LfgPartyEmbedMock() {
         <ButtonRow>
           <DiscBtn label="Ready Check" tone="blurple" />
           <DiscBtn label="Vibe Check" tone="gray" />
+          <DiscBtn label="Join VC" tone="green" />
         </ButtonRow>
         <ThreadRow label="Squad · Valorant" />
       </BotChrome>

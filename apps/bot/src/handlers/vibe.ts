@@ -141,18 +141,20 @@ export async function recordVibe(opts: {
 }) {
   const { sb, env } = opts;
 
-  // Both rater and ratee must be in the party (anti-grief Ghostless).
+  // Both rater and ratee must be seated (not waitlist) — anti-grief Ghostless.
   const { data: raterMem } = await sb
     .from("lfg_party_members")
     .select("id")
     .eq("party_id", opts.partyId)
     .eq("member_id", opts.raterId)
+    .in("role", ["host", "member"])
     .maybeSingle();
   const { data: rateeMem } = await sb
     .from("lfg_party_members")
     .select("id")
     .eq("party_id", opts.partyId)
     .eq("member_id", opts.rateeId)
+    .in("role", ["host", "member"])
     .maybeSingle();
 
   if (!raterMem || !rateeMem) {

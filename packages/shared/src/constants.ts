@@ -101,10 +101,12 @@ export const DISCORD_OAUTH_SCOPES = ["identify", "guilds"] as const;
 
 /**
  * Bot invite permission integer (decimal string for URL).
- * Send Messages (2048) + Embed Links (16384) + Use Slash Commands (2147483648) + Manage Roles (268435456)
+ * Manage Channels (16) — temp LFG voice create/delete
+ * + Send Messages (2048) + Embed Links (16384)
+ * + Manage Roles (268435456) + Use Slash Commands (2147483648)
  */
 export const BOT_INVITE_PERMISSIONS_VALUE = String(
-  2048 + 16384 + 2147483648 + 268435456,
+  16 + 2048 + 16384 + 268435456 + 2147483648,
 );
 
 export const SLASH_COMMANDS = {

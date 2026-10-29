@@ -302,8 +302,11 @@ async function startPartyVibePick(
 
   const { data: rows } = await sb
     .from("lfg_party_members")
-    .select("member_id, member:members!inner(id, discord_user_id, display_name)")
-    .eq("party_id", partyId);
+    .select(
+      "role, member_id, member:members!inner(id, discord_user_id, display_name)",
+    )
+    .eq("party_id", partyId)
+    .in("role", ["host", "member"]);
 
   const members = (rows ?? [])
     .map((row) => {

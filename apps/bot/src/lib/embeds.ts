@@ -32,12 +32,13 @@ export const CORAL = parseInt(BRAND.colors.coral.replace("#", ""), 16);
 export const LIME = parseInt(BRAND.colors.ghostlessLime.replace("#", ""), 16);
 
 /**
- * Join / Leave / Close / Ready Check / Vibe.
- * Join hidden when filled/closed. Ready Check on open|filled (host starts Play mock).
+ * Join / Waitlist / Leave / Close / Ready Check / Vibe (+ optional Join VC link).
+ * Filled parties keep a Waitlist button. Ready Check on open|filled.
  */
 export function lfgPartyComponents(
   partyId: string,
   status: "open" | "filled" | "closed" = "open",
+  opts?: { voiceUrl?: string | null },
 ) {
   const rows: unknown[] = [];
   const primary: unknown[] = [];
@@ -47,6 +48,13 @@ export function lfgPartyComponents(
       type: 2,
       style: 3,
       label: "Join",
+      custom_id: `lfg:join:${partyId}`,
+    });
+  } else if (status === "filled") {
+    primary.push({
+      type: 2,
+      style: 2,
+      label: "Waitlist",
       custom_id: `lfg:join:${partyId}`,
     });
   }
@@ -77,7 +85,7 @@ export function lfgPartyComponents(
     secondary.push({
       type: 2,
       style: 1,
-      label: status === "filled" ? "Ready Check" : "Ready Check",
+      label: "Ready Check",
       custom_id: `lfg:ready:${partyId}`,
     });
   }
@@ -87,6 +95,14 @@ export function lfgPartyComponents(
     label: "Vibe Check",
     custom_id: `lfg:vibe:${partyId}`,
   });
+  if (opts?.voiceUrl && (status === "open" || status === "filled")) {
+    secondary.push({
+      type: 2,
+      style: 5,
+      label: "Join VC",
+      url: opts.voiceUrl,
+    });
+  }
   rows.push({ type: 1, components: secondary.slice(0, 5) });
 
   return rows;
@@ -95,22 +111,32 @@ export function lfgPartyComponents(
 export function lfgPartyEmbed(opts: {
   game: string;
   rankText: string;
+  mic?: string;
+  region?: string;
   slots: number;
   filled: number;
+  waitlistCount?: number;
   hostName: string;
   hostMention: string;
   partyId: string;
   ghostlessLabel?: string | null;
   members?: { mention: string; role: string }[];
   threadId?: string | null;
+  voiceChannelId?: string | null;
+  scheduledStartAt?: string | null;
   status?: "open" | "filled" | "closed";
 }): Embed {
   const status = opts.status ?? "open";
   const titlePrefix =
     status === "filled" ? "Filled" : status === "closed" ? "Closed" : "LFG";
+  const seated =
+    opts.members?.filter((m) => m.role === "host" || m.role === "member") ??
+    [];
+  const waitlisted =
+    opts.members?.filter((m) => m.role === "waitlist") ?? [];
   const roster =
-    opts.members && opts.members.length > 0
-      ? opts.members
+    seated.length > 0
+      ? seated
           .map((m) =>
             m.role === "host" ? `${m.mention} (host)` : m.mention,
           )
@@ -118,11 +144,19 @@ export function lfgPartyEmbed(opts: {
           .slice(0, 1024)
       : opts.hostMention;
 
+  const waitlistCount = opts.waitlistCount ?? waitlisted.length;
+  const slotsValue =
+    waitlistCount > 0
+      ? `${opts.filled}/${opts.slots} · ${waitlistCount} wait`
+      : `${opts.filled}/${opts.slots}`;
+
   const fields: EmbedField[] = [
-    { name: "Notes", value: opts.rankText || "Any", inline: true },
+    { name: "Rank", value: opts.rankText || "Any", inline: true },
+    { name: "Mic", value: opts.mic || "Any", inline: true },
+    { name: "Region", value: opts.region || "Any", inline: true },
     {
       name: "Slots",
-      value: `${opts.filled}/${opts.slots}`,
+      value: slotsValue,
       inline: true,
     },
     {
@@ -130,13 +164,42 @@ export function lfgPartyEmbed(opts: {
       value: opts.ghostlessLabel ?? "New in this server",
       inline: true,
     },
-    { name: "Squad", value: roster, inline: false },
   ];
+
+  if (opts.scheduledStartAt) {
+    const unix = Math.floor(new Date(opts.scheduledStartAt).getTime() / 1000);
+    fields.push({
+      name: "Starts",
+      value: `<t:${unix}:f> · <t:${unix}:R>`,
+      inline: true,
+    });
+  }
+
+  fields.push({ name: "Squad", value: roster, inline: false });
+
+  if (waitlistCount > 0 && waitlisted.length > 0) {
+    fields.push({
+      name: "Waitlist",
+      value: waitlisted
+        .map((m) => m.mention)
+        .join(", ")
+        .slice(0, 1024),
+      inline: false,
+    });
+  }
+
+  if (opts.voiceChannelId) {
+    fields.push({
+      name: "Voice",
+      value: `<#${opts.voiceChannelId}> — tap **Join VC** or the channel`,
+      inline: false,
+    });
+  }
 
   if (opts.threadId) {
     fields.push({
       name: "Squad chat",
-      value: `<#${opts.threadId}> — hop in to share codes / VC`,
+      value: `<#${opts.threadId}> — hop in to share codes`,
       inline: false,
     });
   }
@@ -146,9 +209,9 @@ export function lfgPartyEmbed(opts: {
     color: status === "closed" ? 0x6b7280 : status === "filled" ? LIME : CORAL,
     description:
       status === "open"
-        ? "Tap **Join**, then coordinate in the squad thread."
+        ? "Tap **Join**, then hop into voice / the squad thread."
         : status === "filled"
-          ? "Party full — Leave frees a slot; Close when you're done."
+          ? "Party full — **Waitlist** for the next seat; Leave frees a slot."
           : "Party closed. Use **Vibe Check** to rate teammates.",
     fields,
     footer: { text: `Rallied · this server only · \`${opts.partyId.slice(0, 8)}\`` },
@@ -159,16 +222,32 @@ export function lfgPartyEmbed(opts: {
 /** Ephemeral find results: pick a party from a select (mobile-friendly). */
 export function lfgFindMessage(opts: {
   lines: string[];
-  parties: { id: string; game: string; rank_text: string; slots: number; filled: number }[];
+  parties: {
+    id: string;
+    game: string;
+    rank_text: string;
+    mic?: string;
+    region?: string;
+    slots: number;
+    filled: number;
+  }[];
   gameFilter?: string | null;
+  filterSummary?: string | null;
 }) {
-  const header = opts.gameFilter
-    ? `Open **${opts.gameFilter}** parties (this server):`
-    : "Open parties (this server):";
+  const headerParts = [
+    opts.gameFilter
+      ? `Open **${opts.gameFilter}** parties (this server):`
+      : "Open parties (this server):",
+  ];
+  if (opts.filterSummary) {
+    headerParts.push(`_Filters: ${opts.filterSummary}_`);
+  }
+  const header = headerParts.join("\n");
 
   const options = opts.parties.slice(0, 25).map((p, i) => {
     const label = `${p.game} · ${p.filled}/${p.slots}`.slice(0, 100);
-    const desc = (p.rank_text || "Any rank").slice(0, 100);
+    const bits = [p.rank_text, p.mic, p.region].filter(Boolean);
+    const desc = (bits.join(" · ") || "Any rank / mic / region").slice(0, 100);
     return {
       label: label.length ? label : `Party ${i + 1}`,
       description: desc,
@@ -685,8 +764,8 @@ export function lfgFindGameSelectMessage() {
 
 /**
  * Immediate MODAL response (type 9) — must not be deferred.
- * Discord modals cannot include select menus or checkboxes — game comes from
- * the prior select (or a text field for Other). Mic is a short text enum.
+ * Discord modals max 5 rows. Catalog: size + mic + rank + region + start.
+ * Other: game + size + mic + notes + start (rank/region live in notes).
  */
 export function lfgCreateModalResponse(gameKey: string) {
   const isOther = gameKey === LFG_OTHER_GAME;
@@ -752,27 +831,74 @@ export function lfgCreateModalResponse(gameKey: string) {
     ],
   });
 
+  if (isOther) {
+    rows.push({
+      type: 1,
+      components: [
+        {
+          type: 4,
+          custom_id: "notes",
+          label: "Rank / region / notes (optional)",
+          style: 2,
+          required: false,
+          max_length: 200,
+          placeholder: "Diamond+ · NA · chill ranked",
+        },
+      ],
+    });
+  } else {
+    rows.push({
+      type: 1,
+      components: [
+        {
+          type: 4,
+          custom_id: "rank",
+          label: "Rank (optional)",
+          style: 1,
+          required: false,
+          max_length: 80,
+          placeholder: "Diamond+, Gold–Plat, Any…",
+        },
+      ],
+    });
+    rows.push({
+      type: 1,
+      components: [
+        {
+          type: 4,
+          custom_id: "region",
+          label: "Region (optional)",
+          style: 1,
+          required: false,
+          max_length: 40,
+          placeholder: "NA, EU, West, Oce…",
+        },
+      ],
+    });
+  }
+
   rows.push({
     type: 1,
     components: [
       {
         type: 4,
-        custom_id: "notes",
-        label: "Notes / rank (optional)",
-        style: 2,
+        custom_id: "start",
+        label: "Start time (optional)",
+        style: 1,
         required: false,
-        max_length: 200,
-        placeholder: "Rank, region, vibe…",
+        max_length: 32,
+        placeholder: "in 30m · in 1h · YYYY-MM-DD HH:MM UTC",
       },
     ],
   });
 
+  // Discord modal max = 5 action rows.
   return {
     type: InteractionResponseType.MODAL,
     data: {
       custom_id: customId,
       title,
-      components: rows,
+      components: rows.slice(0, 5),
     },
   };
 }
@@ -799,13 +925,18 @@ export function normalizeMic(raw: string): string {
   return raw.trim().slice(0, 40);
 }
 
-/** Compose Notes field: mic enum + free notes (no schema change). */
+/** @deprecated Prefer structured mic + rank + region columns (008). */
 export function composePartyNotes(micRaw: string, notesRaw: string): string {
   const mic = normalizeMic(micRaw);
   const notes = notesRaw.trim();
   if (mic && notes) return `Mic: ${mic} · ${notes}`;
   if (mic) return `Mic: ${mic}`;
   return notes;
+}
+
+/** Normalize region free text for storage / filter. */
+export function normalizeRegion(raw: string): string {
+  return raw.trim().slice(0, 40);
 }
 
 /** Resolve modal/select game key (slug, name, or Other) to a party game string. */
@@ -818,14 +949,15 @@ export function lfgHowItWorksMessage() {
   return {
     content: [
       "**How Rallied LFG works** (this server only)",
-      "• **Create party** — pick a game → form (size, mic, notes) → party card + **squad thread**.",
-      "• **Join** — tap the **squad thread** under the card to share invite codes / VC.",
-      "• **Ready Check** — when the squad fills (or host taps it): Ready / Waiting + grace timer; no-shows get a strike (source of truth for shows).",
-      "• **Leave / Close** — Leave if you're a member; hosts Confirm-close, then **Vibe Check**.",
-      "• **Vibe Check** — Showed up / Ghosted + optional score; Ghosted after grace can strike (no double-count with Ready Check). Flagged player Disputes.",
-      "• **Find / My parties** — browse open parties in this server.",
-      "• **`/ghostless`** — this-server show rate + Ghostless badge (not a global grade).",
-      "Slash backups: `/lfg create` · `/lfg find` · `/vibe` · `/ghostless`",
+      "• **Create party** — pick a game → size, mic, rank, region, optional start → card + **temp voice** + squad thread.",
+      "• **Join / Waitlist** — Join seats you; when full, **Waitlist** promotes when someone Leaves.",
+      "• **Voice** — tap **Join VC** on the card (bot needs **Manage Channels**).",
+      "• **Schedule** — optional start (`in 30m` / UTC time); reminder ~10 minutes before.",
+      "• **Ready Check** — on fill (or host tap): Ready / Waiting + grace; no-shows struck on Community+.",
+      "• **Leave / Close** — Leave (or leave waitlist); hosts Confirm-close (voice deleted), then **Vibe Check**.",
+      "• **Find** — browse / filter by game, mic, region.",
+      "• **`/ghostless`** — this-server show rate (not a global grade).",
+      "Slash: `/lfg create` · `/lfg find` · `/vibe` · `/ghostless`",
     ].join("\n"),
     flags: 64,
   };

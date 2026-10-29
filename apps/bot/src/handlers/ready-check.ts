@@ -53,7 +53,8 @@ async function loadReadyRoster(sb: SupabaseClient, partyId: string) {
     .select(
       "role, ready_at, member:members!inner(id, discord_user_id, display_name)",
     )
-    .eq("party_id", partyId);
+    .eq("party_id", partyId)
+    .in("role", ["host", "member"]);
   if (error) throw error;
   return (data ?? []).map((row) => {
     const m = row.member as unknown as {

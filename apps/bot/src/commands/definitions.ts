@@ -29,6 +29,24 @@ export const commandDefinitions = [
           }),
           { type: 3, name: "rank", description: "Rank / MMR text", required: false },
           {
+            type: 3,
+            name: "mic",
+            description: "Mic: required / optional / any",
+            required: false,
+          },
+          {
+            type: 3,
+            name: "region",
+            description: "Region (NA, EU, West…)",
+            required: false,
+          },
+          {
+            type: 3,
+            name: "start",
+            description: "Optional start: in 30m, in 1h, or YYYY-MM-DD HH:MM UTC",
+            required: false,
+          },
+          {
             type: 4,
             name: "slots",
             description: "Total slots including you (2–20)",
@@ -47,6 +65,24 @@ export const commandDefinitions = [
             description: "Filter by game (optional) — type to autocomplete",
             required: false,
           }),
+          {
+            type: 3,
+            name: "mic",
+            description: "Filter by mic (required / optional / any)",
+            required: false,
+          },
+          {
+            type: 3,
+            name: "region",
+            description: "Filter by region text",
+            required: false,
+          },
+          {
+            type: 3,
+            name: "rank",
+            description: "Filter by rank text",
+            required: false,
+          },
         ],
       },
       {

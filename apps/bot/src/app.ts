@@ -80,7 +80,7 @@ async function handleRegisterCommands(c: AppContext) {
  * Fast-path component replies (no defer):
  * - Create → catalog game select (analytics-stable titles; Discord modals
  *   cannot embed dropdowns, so select is a message step before the modal)
- * - Game select → modal (size + mic + notes)
+ * - Game select → modal (size, mic, rank/region, optional start)
  * - Help → ephemeral text
  */
 function syncComponentResponse(interaction: Interaction) {

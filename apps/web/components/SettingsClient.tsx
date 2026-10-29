@@ -12,6 +12,7 @@ import {
   type PlanId,
   type ServerSettings,
 } from "@rallied/shared";
+import { FieldInfo } from "@/components/FieldInfo";
 
 type Props = {
   serverName: string;
@@ -337,61 +338,109 @@ export function SettingsClient({
             this Discord server only
           </div>
         ) : null}
+
+        <p className="max-w-md text-xs text-muted">
+          On Pro / Founding Pro, the public page shows your Discord server icon
+          (top-right) instead of the Rallied mark. Icons sync when you log into
+          the dashboard; if Discord has no icon, Rallied stays as the fallback.
+        </p>
       </section>
 
       <section className="space-y-4">
         <h2 className="font-display text-xl tracking-wide">Reliability rules</h2>
-        <label className="block max-w-sm text-sm">
-          <span className="text-muted">Grace window (minutes)</span>
+        <div className="block max-w-sm text-sm">
+          <div className="text-muted">
+            <FieldInfo label="Grace window (minutes)">
+              Minutes after a ready-check before a no-show counts as a ghost /
+              strike. Default is 5.
+            </FieldInfo>
+          </div>
           <input
             type="number"
             min={0}
             max={60}
+            aria-label="Grace window (minutes)"
             value={grace}
             onChange={(e) => setGrace(Number(e.target.value))}
             className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white"
           />
-        </label>
-        <label className="block max-w-sm text-sm">
-          <span className="text-muted">Strike threshold → lockout</span>
+        </div>
+        <div className="block max-w-sm text-sm">
+          <div className="text-muted">
+            <FieldInfo label="Strike threshold → lockout">
+              How many strikes before LFG lockout. Default is 3.
+            </FieldInfo>
+          </div>
           <input
             type="number"
             min={1}
             max={20}
+            aria-label="Strike threshold → lockout"
             value={threshold}
             onChange={(e) => setThreshold(Number(e.target.value))}
             className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white"
           />
-        </label>
-        <label className="block max-w-sm text-sm">
-          <span className="text-muted">Lockout days</span>
+        </div>
+        <div className="block max-w-sm text-sm">
+          <div className="text-muted">
+            <FieldInfo label="Lockout days">
+              How long an LFG lockout lasts. Default is 7 days.
+            </FieldInfo>
+          </div>
           <input
             type="number"
             min={1}
             max={365}
+            aria-label="Lockout days"
             value={lockoutDays}
             onChange={(e) => setLockoutDays(Number(e.target.value))}
             className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white"
           />
-        </label>
-        <label className="block max-w-md text-sm">
-          <span className="text-muted">Ghostless Discord role ID</span>
+        </div>
+        <div className="block max-w-md text-sm">
+          <div className="text-muted">
+            <FieldInfo label="Ghostless Discord role ID">
+              Optional. Paste a Discord{" "}
+              <strong className="font-semibold text-white/90">role</strong> ID to
+              auto-assign Ghostless. Enable Developer Mode (User Settings →
+              Advanced), then Server Settings → Roles → Copy Role ID. Leave blank
+              to skip.
+            </FieldInfo>
+          </div>
           <input
             type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="Role ID"
+            aria-label="Ghostless Discord role ID"
             value={roleId}
             onChange={(e) => setRoleId(e.target.value)}
-            className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white"
+            className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white placeholder:text-muted/50"
           />
-        </label>
-        <label className="block max-w-md text-sm">
-          <span className="text-muted">Weekly digest channel ID</span>
+        </div>
+        <div className="block max-w-md text-sm">
+          <div className="text-muted">
+            <FieldInfo label="Weekly digest channel ID">
+              Optional. Paste a Discord{" "}
+              <strong className="font-semibold text-white/90">channel</strong> ID
+              for the weekly digest. Right-click the channel → Copy Channel ID.
+              Leave blank for no channel post.
+            </FieldInfo>
+          </div>
           <input
             type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="Channel ID"
+            aria-label="Weekly digest channel ID"
             value={digestChannel}
             onChange={(e) => setDigestChannel(e.target.value)}
-            className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white"
+            className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white placeholder:text-muted/50"
           />
-        </label>
+        </div>
+        <p className="max-w-md text-xs text-muted">
+          Developer Mode must be on in Discord to copy role and channel IDs.
+        </p>
       </section>
 
       <div className="flex flex-wrap items-center gap-3">

@@ -116,6 +116,13 @@ export interface ApplicationCommandInteractionData {
   components?: ModalActionRow[];
 }
 
+/** Partial guild payload sometimes present on guild interactions. */
+export interface InteractionGuild {
+  id: string;
+  name?: string;
+  icon?: string | null;
+}
+
 export interface Interaction {
   id: string;
   type: number;
@@ -124,9 +131,22 @@ export interface Interaction {
   channel_id?: string;
   member?: DiscordMember;
   user?: DiscordUser;
+  /** Partial guild when Discord includes it (may carry icon hash). */
+  guild?: InteractionGuild;
   data?: ApplicationCommandInteractionData;
   /** Present on MESSAGE_COMPONENT — the message the button/select lives on. */
   message?: InteractionMessageRef;
+}
+
+/** Discord CDN guild icon from icon hash. */
+export function guildIconUrl(
+  guildId: string,
+  iconHash: string | null | undefined,
+  size = 128,
+): string | null {
+  if (!guildId || !iconHash) return null;
+  const ext = iconHash.startsWith("a_") ? "gif" : "png";
+  return `https://cdn.discordapp.com/icons/${guildId}/${iconHash}.${ext}?size=${size}`;
 }
 
 export function ephemeral(content: string) {

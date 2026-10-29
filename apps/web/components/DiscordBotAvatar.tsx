@@ -1,20 +1,22 @@
 /**
- * Square Rallied mark used as Discord bot avatar in marketing mocks.
- * Reuses the favicon/square brand asset — not a letter monogram.
+ * Discord bot avatar for marketing mocks — circular coral disc with
+ * white open-bottom arch + chevron (matches live Discord avatar).
+ * Crops kit `rallied-square-coral.jpg` to a circle via CSS.
+ * SVG twin at `/brand/rallied-discord-avatar.svg` for crisp fallbacks.
  */
 export function DiscordBotAvatar({
-  className = "h-8 w-8",
+  className = "h-10 w-10",
 }: {
   className?: string;
 }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src="/brand/rallied-square-dark.jpg"
+      src="/brand/rallied-square-coral.jpg"
       alt=""
       width={40}
       height={40}
-      className={`shrink-0 rounded object-cover ${className}`}
+      className={`shrink-0 rounded-full object-cover ${className}`}
       aria-hidden
     />
   );

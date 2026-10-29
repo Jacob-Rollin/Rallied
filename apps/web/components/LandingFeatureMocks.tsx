@@ -1,118 +1,100 @@
-import { DiscordBotAvatar } from "./DiscordBotAvatar";
 import { GhostlessMark } from "./GhostlessMark";
+import {
+  BotChrome,
+  ButtonRow,
+  DiscBtn,
+  EmbedDesc,
+  EmbedField,
+  EmbedFields,
+  EmbedFooter,
+  EmbedShell,
+  EmbedTitle,
+  ThreadRow,
+} from "./DiscordMockChrome";
 
-/** Static CSS/React mocks for landing feature previews — not interactive. */
+/** Static CSS/React mocks for landing feature previews — Discord-fidelity chrome. */
 
 export function LfgPartyEmbedMock() {
   return (
-    <div
-      className="feature-mock mt-5 overflow-hidden rounded-brand border border-white/12 bg-[#1e1f22]"
-      aria-hidden
-    >
-      <div className="flex items-center gap-2 border-b border-white/8 px-3 py-2">
-        <DiscordBotAvatar className="h-8 w-8" />
-        <span className="text-xs font-semibold text-white/90">Rallied</span>
-        <span className="rounded bg-white/10 px-1 py-px text-[9px] uppercase tracking-wide text-white/50">
-          Bot
-        </span>
-        <span className="text-[10px] text-white/35">Today at 7:42 PM</span>
-      </div>
-      <div className="flex">
-        <div className="w-1 shrink-0 bg-coral" />
-        <div className="min-w-0 flex-1 px-3 py-2.5">
-          <p className="text-sm font-semibold text-white">LFG · Valorant</p>
-          <p className="mt-0.5 text-[11px] leading-snug text-white/55">
+    <div className="mt-5" aria-hidden>
+      <BotChrome>
+        <EmbedShell accent="coral">
+          <EmbedTitle>LFG · Valorant</EmbedTitle>
+          <EmbedDesc>
             Tap Join, then coordinate in the squad thread.
-          </p>
-          <div className="mt-2.5 grid grid-cols-3 gap-2 text-[11px]">
-            <div>
-              <p className="font-semibold text-white/45">Notes</p>
-              <p className="text-white/80">Diamond+</p>
-            </div>
-            <div>
-              <p className="font-semibold text-white/45">Slots</p>
-              <p className="tabular-nums text-white/80">2/5</p>
-            </div>
-            <div>
-              <p className="font-semibold text-white/45">Ghostless</p>
-              <p className="text-lime">94%</p>
-            </div>
-          </div>
-          <div className="mt-2.5">
-            <p className="text-[11px] font-semibold text-white/45">Squad</p>
-            <p className="mt-0.5 text-[11px] leading-relaxed text-white/75">
+          </EmbedDesc>
+          <EmbedFields>
+            <EmbedField name="Notes" inline>
+              Diamond+
+            </EmbedField>
+            <EmbedField name="Slots" inline>
+              <span className="tabular-nums">2/5</span>
+            </EmbedField>
+            <EmbedField name="Ghostless" inline>
+              <span className="text-lime">94%</span>
+            </EmbedField>
+            <EmbedField name="Squad">
               @Nova (host)
               <br />
               @Kai
-            </p>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            <span className="rounded bg-[#248046] px-2.5 py-1 text-[11px] font-medium text-white">
-              Join
-            </span>
-            <span className="rounded bg-[#4e5058] px-2.5 py-1 text-[11px] font-medium text-white/90">
-              Leave
-            </span>
-            <span className="rounded bg-[#da373c] px-2.5 py-1 text-[11px] font-medium text-white">
-              Close
-            </span>
-          </div>
-        </div>
-      </div>
+            </EmbedField>
+            <EmbedField name="Squad chat">
+              #Squad · Valorant — hop in to share codes / VC
+            </EmbedField>
+          </EmbedFields>
+          <EmbedFooter
+            text="Rallied · this server only · a1b2c3d4"
+            time="7:42 PM"
+          />
+        </EmbedShell>
+        <ButtonRow>
+          <DiscBtn label="Join" tone="green" />
+          <DiscBtn label="Leave" tone="gray" />
+          <DiscBtn label="Close" tone="red" />
+        </ButtonRow>
+        <ButtonRow>
+          <DiscBtn label="Ready Check" tone="blurple" />
+          <DiscBtn label="Vibe Check" tone="gray" />
+        </ButtonRow>
+        <ThreadRow label="Squad · Valorant" />
+      </BotChrome>
     </div>
   );
 }
 
 export function ReadyCheckMock() {
   return (
-    <div
-      className="feature-mock mt-5 overflow-hidden rounded-brand border border-white/12 bg-slate-elevated/80"
-      aria-hidden
-    >
-      <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
-        <p className="text-xs font-semibold tracking-wide text-white/90">
-          Ready check
-        </p>
-        <p className="rounded-brand border border-coral/40 px-2 py-0.5 text-[10px] font-medium tabular-nums text-coral">
-          Grace 0:42
-        </p>
-      </div>
-      <ul className="space-y-1.5 px-3 py-2.5">
-        {[
-          { name: "Nova", state: "ready" as const },
-          { name: "Kai", state: "ready" as const },
-          { name: "Rin", state: "waiting" as const },
-          { name: "Ash", state: "ready" as const },
-        ].map((row) => (
-          <li
-            key={row.name}
-            className="flex items-center justify-between gap-2 text-[11px]"
-          >
-            <span className="flex items-center gap-2 text-white/85">
-              <span className="flex h-5 w-5 items-center justify-center rounded bg-black/35 font-display text-[9px] text-coral">
-                {row.name.slice(0, 1)}
-              </span>
-              {row.name}
-            </span>
-            {row.state === "ready" ? (
-              <span className="inline-flex items-center gap-1 text-lime">
-                <CheckMark className="h-3 w-3" />
-                Ready
-              </span>
-            ) : (
-              <span className="text-white/45">Waiting…</span>
-            )}
-          </li>
-        ))}
-      </ul>
-      <div className="border-t border-white/10 px-3 py-2">
-        <div className="h-1 overflow-hidden rounded bg-white/10">
-          <div className="h-full w-[62%] rounded bg-coral/80" />
-        </div>
-        <p className="mt-1.5 text-[10px] text-white/45">
-          3/4 ready · auto-strike after grace
-        </p>
-      </div>
+    <div className="mt-5" aria-hidden>
+      <BotChrome time="Today at 7:48 PM">
+        <EmbedShell accent="lime">
+          <EmbedTitle>Ready check · Valorant</EmbedTitle>
+          <EmbedDesc>
+            Tap Ready before grace ends in 0:42. No-shows get a strike after
+            grace (this server).
+          </EmbedDesc>
+          <EmbedFields>
+            <EmbedField name="Roster">
+              <ul className="space-y-0.5">
+                <li>✅ Ready — @Nova (host)</li>
+                <li>✅ Ready — @Kai</li>
+                <li>⏳ Waiting… — @Rin</li>
+                <li>✅ Ready — @Ash</li>
+              </ul>
+            </EmbedField>
+            <EmbedField name="Progress">
+              3/4 ready · auto-strike after grace
+            </EmbedField>
+            <EmbedField name="Grace" inline>
+              <span className="tabular-nums text-coral">in 0:42 (7:53 PM)</span>
+            </EmbedField>
+          </EmbedFields>
+          <EmbedFooter text="Rallied · a1b2c3d4" time="7:48 PM" />
+        </EmbedShell>
+        <ButtonRow>
+          <DiscBtn label="Ready" tone="green" />
+          <DiscBtn label="Vibe Check" tone="gray" />
+        </ButtonRow>
+      </BotChrome>
     </div>
   );
 }
@@ -155,34 +137,27 @@ export const VibeCheckCardMock = GhostlessBadgeMock;
 /** Compact post-session Vibe Check (Showed up / Ghosted / Dispute) — matches bot. */
 export function VibeCheckActionsMock() {
   return (
-    <div
-      className="feature-mock mt-5 overflow-hidden rounded-brand border border-white/12 bg-[#2b2d31]"
-      aria-hidden
-    >
-      <p className="px-3 py-2.5 text-[12px] leading-snug text-white/85">
-        <strong className="text-white">Vibe Check</strong> for @Kai — how did
-        they do? (this server)
-      </p>
-      <div className="border-t border-white/8 px-3 py-2">
-        <p className="text-[11px] text-white/55">
-          Tap a quick result, or pick a vibe score 1–5. Grace window applies
-          before ghost strikes.
+    <div className="mt-5" aria-hidden>
+      <BotChrome>
+        <p className="text-[14px] leading-snug text-[#dbdee1]">
+          <strong className="text-[#f2f3f5]">Vibe Check</strong> for @Kai — how
+          did they do? (this server)
         </p>
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
-          <span className="rounded bg-[#248046] px-2.5 py-1 text-[11px] font-medium text-white">
-            Showed up
-          </span>
-          <span className="rounded bg-[#da373c] px-2.5 py-1 text-[11px] font-medium text-white">
-            Ghosted
-          </span>
-          <span className="rounded bg-[#4e5058] px-2.5 py-1 text-[11px] font-medium text-white/90">
-            Dispute
-          </span>
-        </div>
-        <div className="mt-2 rounded border border-white/15 bg-[#1e1f22] px-2.5 py-2 text-[11px] text-white/45">
+        <EmbedShell accent="lime">
+          <EmbedDesc>
+            Tap a quick result, or pick a vibe score 1–5. Grace window applies
+            before ghost strikes.
+          </EmbedDesc>
+        </EmbedShell>
+        <ButtonRow>
+          <DiscBtn label="Showed up" tone="green" />
+          <DiscBtn label="Ghosted" tone="red" />
+          <DiscBtn label="Dispute" tone="gray" />
+        </ButtonRow>
+        <div className="mt-1.5 rounded border border-[#1e1f22] bg-[#1e1f22] px-2.5 py-2 text-[12px] text-[#949ba4]">
           Rate vibe 1–5 (counts as showed up)
         </div>
-      </div>
+      </BotChrome>
     </div>
   );
 }

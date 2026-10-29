@@ -88,12 +88,12 @@ export function SiteHeader({ variant = "solid" }: Props) {
         </nav>
 
         <div className="hidden items-center gap-2.5 md:flex">
-          <a
-            href="/api/auth/discord"
+          <Link
+            href="/login"
             className="whitespace-nowrap rounded-brand border border-white/20 px-3 py-2 text-sm font-medium text-white/90 transition hover:border-coral/50 hover:text-white"
           >
             Log in
-          </a>
+          </Link>
           <AddToDiscordButton
             href={inviteHref}
             className="!whitespace-nowrap !px-4 !py-2 !text-sm"
@@ -102,12 +102,12 @@ export function SiteHeader({ variant = "solid" }: Props) {
 
         {/* Mobile: Log in text + menu trigger only */}
         <div className="flex items-center gap-1 md:hidden">
-          <a
-            href="/api/auth/discord"
+          <Link
+            href="/login"
             className="whitespace-nowrap px-2.5 py-1.5 text-sm font-medium text-white/90 transition hover:text-white"
           >
             Log in
-          </a>
+          </Link>
           <button
             ref={buttonRef}
             type="button"

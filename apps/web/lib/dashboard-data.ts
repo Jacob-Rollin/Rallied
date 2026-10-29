@@ -559,14 +559,23 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
 
 /**
  * Load dashboard bundle for a Discord guild id.
- * @param useMock — demo guild / mock session / ?mock=1
+ * @param useMock — mock session / ?mock=1 / explicit demo only.
+ * Stale demo-guild-* under a live OAuth session must NOT load MOCK_SERVERS.
  */
 export async function loadDashboard(
   guildId: string,
   useMock: boolean,
 ): Promise<DashboardBundle> {
-  if (useMock || isDemoGuildId(guildId)) {
-    return buildMockBundle(guildId);
+  if (useMock) {
+    return buildMockBundle(guildId || "demo-guild-1");
+  }
+  if (!guildId.trim() || isDemoGuildId(guildId)) {
+    return emptyBundle(
+      guildId,
+      !guildId.trim()
+        ? "Select a server from the switcher. If none appear, Add to Discord then Log in again."
+        : "Stale demo guild selection ignored — pick a live server from the switcher (or open /demo for the sandbox).",
+    );
   }
   try {
     return await loadLiveBundle(guildId);
@@ -575,7 +584,7 @@ export async function loadDashboard(
     console.error("loadDashboard live failed", msg, err);
     return emptyBundle(
       guildId,
-      `Dashboard error: ${msg}. Try ?mock=1 or check SUPABASE_SERVICE_ROLE_KEY / SESSION_SECRET on the web Worker.`,
+      `Dashboard error: ${msg}. Check SUPABASE_SERVICE_ROLE_KEY / SESSION_SECRET on the web Worker (not silent mock).`,
     );
   }
 }
@@ -585,7 +594,7 @@ export async function loadPerson(
   memberId: string,
   useMock: boolean,
 ): Promise<DashboardPerson | null> {
-  if (useMock || isDemoGuildId(guildId)) {
+  if (useMock) {
     const member = getMember(memberId);
     if (!member) return null;
     return {
@@ -595,6 +604,7 @@ export async function loadPerson(
       lockout: lockoutFor(member.id),
     };
   }
+  if (!guildId.trim() || isDemoGuildId(guildId)) return null;
 
   const bundle = await loadLiveBundle(guildId);
   return bundle.members.find((m) => m.member.id === memberId) ?? null;

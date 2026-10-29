@@ -83,6 +83,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           data.guilds?.[0]?.id ||
           "";
 
+        // Authenticated live session: never fall back to MOCK_SERVERS ids.
         const first =
           data.authenticated && !allowDemo
             ? firstLive
@@ -98,6 +99,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         if (next && fromQuery !== next) {
           const params = new URLSearchParams(searchParams.toString());
           params.set(GUILD_QUERY, next);
+          // Drop empty=1 once we have a guild with bot
+          const chosen = data.guilds?.find((g) => g.id === next);
+          if (chosen?.bot_present) params.delete("empty");
           router.replace(`${pathname}?${params.toString()}`);
         }
       })
@@ -111,15 +115,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     writeGuildCookie(id);
     const params = new URLSearchParams(searchParams.toString());
     params.set(GUILD_QUERY, id);
+    const chosen = me?.guilds?.find((g) => g.id === id);
+    if (chosen?.bot_present) params.delete("empty");
+    else if (me?.authenticated && !me.mock) params.set("empty", "1");
     router.push(`${pathname}?${params.toString()}`);
     router.refresh();
   }
 
-  // Never fall back to MOCK_SERVERS when authenticated under real OAuth.
-  const guilds: AdminGuild[] =
-    me?.guilds && me.guilds.length > 0
+  const loading = me === null;
+  const liveAuthed = Boolean(me?.authenticated && !me.mock && !mockFlag);
+
+  // Never fall back to MOCK_SERVERS when authenticated under real OAuth,
+  // and never flash mocks while /api/auth/me is still loading.
+  const guilds: AdminGuild[] = loading
+    ? []
+    : me.guilds && me.guilds.length > 0
       ? me.guilds
-      : me?.authenticated && !me.mock
+      : liveAuthed
         ? []
         : MOCK_SERVERS.map((s) => ({
             id: s.discord_guild_id,
@@ -132,8 +144,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const server = guilds.find((g) => g.id === serverId) ?? guilds[0];
   const withBot = guilds.filter((g) => g.bot_present);
   const empty =
-    searchParams.get("empty") === "1" ||
-    (me?.authenticated && withBot.length === 0 && !me.mock);
+    !loading &&
+    (searchParams.get("empty") === "1" ||
+      (liveAuthed && withBot.length === 0));
 
   const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
   const inviteUrl = clientId
@@ -161,7 +174,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             />
           </Link>
           <div className="flex items-center gap-3">
-            {withBot.length > 0 ? (
+            {guilds.length > 0 ? (
               <label className="flex items-center gap-2 text-sm text-muted">
                 <span className="hidden sm:inline">Server</span>
                 <select
@@ -195,22 +208,46 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      {empty ? (
+      {loading ? (
+        <div className="mx-auto max-w-lg px-4 py-20 text-center text-sm text-muted">
+          Loading your servers…
+        </div>
+      ) : empty ? (
         <div className="mx-auto max-w-lg px-4 py-20 text-center">
           <h1 className="font-display text-3xl tracking-wide">No servers yet</h1>
           <p className="mt-3 text-sm text-muted">
             Add Rallied to a Discord server you manage, then refresh. You need
             Manage Server (or Administrator) on that guild. After the bot joins
-            and runs a command, the guild appears in Supabase{" "}
-            <code className="text-coral">servers</code> (
-            <code className="text-coral">bot_present</code>).
+            and runs a command, the guild appears with{" "}
+            <code className="text-coral">bot_present</code>.
           </p>
+          {guilds.length > 0 ? (
+            <ul className="mt-6 space-y-2 text-left text-sm text-white/75">
+              {guilds.map((g) => (
+                <li
+                  key={g.id}
+                  className="rounded-brand border border-white/10 bg-slate-elevated/40 px-3 py-2"
+                >
+                  {g.name}
+                  <span className="ml-2 text-xs text-muted">
+                    {g.bot_present ? "bot ready" : "bot not detected"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
           <a
             href={inviteUrl}
             className="mt-8 inline-block rounded-brand bg-coral px-5 py-2.5 font-semibold text-slate"
           >
             Add to Discord
           </a>
+          <p className="mt-4 text-xs text-muted">
+            Optional sandbox:{" "}
+            <Link href="/demo" className="text-lime hover:underline">
+              Explore demo
+            </Link>
+          </p>
         </div>
       ) : (
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[200px_1fr]">

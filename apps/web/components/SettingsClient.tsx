@@ -45,6 +45,8 @@ const DEFAULTS: Omit<
   slug: null,
   public_page_enabled: true,
   public_member_list: false,
+  list_in_directory: false,
+  discord_invite_url: null,
   hide_powered_by: false,
   public_accent: null,
 };
@@ -84,6 +86,10 @@ export function SettingsClient({
   const [slug, setSlug] = useState(base.slug ?? "");
   const [publicPage, setPublicPage] = useState(base.public_page_enabled);
   const [publicMembers, setPublicMembers] = useState(base.public_member_list);
+  const [listInDirectory, setListInDirectory] = useState(
+    base.list_in_directory,
+  );
+  const [inviteUrl, setInviteUrl] = useState(base.discord_invite_url ?? "");
   const [hidePoweredBy, setHidePoweredBy] = useState(base.hide_powered_by);
   const [accent, setAccent] = useState(
     base.public_accent ?? (demoProUnlock ? "#B8F000" : ""),
@@ -108,6 +114,8 @@ export function SettingsClient({
         discordGuildId,
         public_page_enabled: reliabilityOn ? publicPage : false,
         public_member_list: publicMembers,
+        list_in_directory: reliabilityOn ? listInDirectory : false,
+        discord_invite_url: inviteUrl || null,
         slug: slug || null,
         hide_powered_by: hidePoweredBy,
         public_accent: accent || null,
@@ -181,8 +189,9 @@ export function SettingsClient({
           <input
             type="checkbox"
             checked={publicPage}
+            disabled={starterLocked}
             onChange={(e) => setPublicPage(e.target.checked)}
-            className="h-4 w-4 accent-coral"
+            className="h-4 w-4 accent-coral disabled:cursor-not-allowed"
           />
           <span>Public page enabled</span>
         </label>
@@ -190,8 +199,9 @@ export function SettingsClient({
           <input
             type="checkbox"
             checked={publicMembers}
+            disabled={starterLocked}
             onChange={(e) => setPublicMembers(e.target.checked)}
-            className="h-4 w-4 accent-lime"
+            className="h-4 w-4 accent-lime disabled:cursor-not-allowed"
           />
           <span>Public Ghostless spotlight / list</span>
         </label>
@@ -200,6 +210,7 @@ export function SettingsClient({
           <input
             type="text"
             value={slug}
+            disabled={starterLocked}
             onChange={(e) =>
               setSlug(
                 e.target.value
@@ -208,7 +219,7 @@ export function SettingsClient({
                   .slice(0, 48),
               )
             }
-            className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white"
+            className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white disabled:cursor-not-allowed disabled:opacity-50"
           />
           <span className="mt-1 block text-xs text-muted">
             <Link href={previewPath} className="text-coral hover:underline">
@@ -216,6 +227,50 @@ export function SettingsClient({
             </Link>
           </span>
         </label>
+
+        <div className="max-w-md space-y-3 border-t border-white/10 pt-4">
+          <label className="flex items-start gap-3 text-sm">
+            <input
+              type="checkbox"
+              checked={listInDirectory}
+              disabled={starterLocked || !publicPage}
+              onChange={(e) => setListInDirectory(e.target.checked)}
+              className="mt-0.5 h-4 w-4 accent-coral disabled:cursor-not-allowed"
+            />
+            <span>
+              <FieldInfo label="List in directory">
+                Opt into{" "}
+                <strong className="font-semibold text-white/90">/servers</strong>
+                . Needs public page on + Community / trial / Pro. Shows name,
+                icon, View → your /s page, and Join → your Discord invite. No
+                cross-server Ghostless passport.
+              </FieldInfo>
+            </span>
+          </label>
+          <div className="block text-sm">
+            <div className="text-muted">
+              <FieldInfo label="Discord invite URL">
+                Permanent or long-lived invite for the Join button on /servers.
+                Use a{" "}
+                <strong className="font-semibold text-white/90">
+                  discord.gg
+                </strong>{" "}
+                or discord.com/invite link. Leave blank to hide Join until set.
+              </FieldInfo>
+            </div>
+            <input
+              type="url"
+              inputMode="url"
+              autoComplete="off"
+              placeholder="https://discord.gg/…"
+              aria-label="Discord invite URL"
+              value={inviteUrl}
+              disabled={starterLocked}
+              onChange={(e) => setInviteUrl(e.target.value)}
+              className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white placeholder:text-muted/50 disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </div>
+        </div>
       </section>
 
       <section className="space-y-4">

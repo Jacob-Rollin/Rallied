@@ -2,11 +2,10 @@ import Link from "next/link";
 import { BRAND } from "@rallied/shared";
 
 const LINKS = [
-  { href: "/#how-it-works", label: "Features" },
-  { href: "/pricing", label: "Pricing" },
+  { href: "/servers", label: "Servers" },
+  { href: "/changelog", label: "Changelog" },
   { href: "/guide", label: "Guide" },
-  { href: "/guide#admin", label: "Admin web" },
-  { href: "/login", label: "Log in" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/demo", label: "Demo" },
 ] as const;
 

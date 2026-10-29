@@ -17,6 +17,8 @@ export interface ServerSettingsRow {
   slug?: string | null;
   public_page_enabled?: boolean;
   public_member_list?: boolean;
+  list_in_directory?: boolean;
+  discord_invite_url?: string | null;
 }
 
 const DEFAULTS: Omit<ServerSettingsRow, "server_id"> = {
@@ -30,6 +32,8 @@ const DEFAULTS: Omit<ServerSettingsRow, "server_id"> = {
   slug: null,
   public_page_enabled: true,
   public_member_list: false,
+  list_in_directory: false,
+  discord_invite_url: null,
 };
 
 export async function getServerSettings(

@@ -153,6 +153,8 @@ function mapSettingsRow(row: Record<string, unknown>): ServerSettings {
     slug: (row.slug as string | null) ?? null,
     public_page_enabled: row.public_page_enabled !== false,
     public_member_list: Boolean(row.public_member_list),
+    list_in_directory: Boolean(row.list_in_directory),
+    discord_invite_url: (row.discord_invite_url as string | null) ?? null,
     hide_powered_by: Boolean(row.hide_powered_by),
     public_accent: (row.public_accent as string | null) ?? null,
     created_at: String(row.created_at),

@@ -9,7 +9,11 @@ import type {
   Server,
   ServerSettings,
 } from "@rallied/shared";
-import { isProPlan, publicPagesEnabled } from "@rallied/shared";
+import {
+  directoryListingEnabled,
+  isProPlan,
+  publicPagesEnabled,
+} from "@rallied/shared";
 import {
   MOCK_FOUNDING_SETTINGS,
   MOCK_GHOSTLESS,
@@ -56,6 +60,8 @@ const MOCK_SETTINGS_BY_SERVER: Record<string, ServerSettings> = {
     slug: "demo-esports",
     public_page_enabled: true,
     public_member_list: false,
+    list_in_directory: true,
+    discord_invite_url: "https://discord.gg/rallied-demo",
     hide_powered_by: false,
     public_accent: null,
   },
@@ -65,6 +71,8 @@ const MOCK_SETTINGS_BY_SERVER: Record<string, ServerSettings> = {
     slug: "night-queue",
     public_page_enabled: true,
     public_member_list: true,
+    list_in_directory: true,
+    discord_invite_url: "https://discord.gg/rallied-night",
     hide_powered_by: false,
     public_accent: null,
   },
@@ -76,6 +84,78 @@ const DEMO_SLUGS = new Set(["demo-esports", "night-queue", "founding-beta"]);
 function isDemoPublicKey(slugOrGuildId: string): boolean {
   const key = slugOrGuildId.toLowerCase();
   return DEMO_SLUGS.has(key) || isDemoGuildId(key);
+}
+
+function defaultPublicSettings(server: Server): ServerSettings {
+  return {
+    server_id: server.id,
+    grace_minutes: 5,
+    ghostless_role_id: null,
+    ghostless_role_threshold_pct: 90,
+    ghostless_role_min_sessions: 10,
+    digest_channel_id: null,
+    strike_threshold: 3,
+    lockout_days: 7,
+    slug: null,
+    public_page_enabled: true,
+    public_member_list: false,
+    list_in_directory: false,
+    discord_invite_url: null,
+    hide_powered_by: false,
+    public_accent: null,
+    created_at: server.created_at,
+    updated_at: server.updated_at,
+  };
+}
+
+function mapPublicSettings(row: Record<string, unknown>): ServerSettings {
+  return {
+    server_id: String(row.server_id),
+    grace_minutes: Number(row.grace_minutes ?? 5),
+    ghostless_role_id: (row.ghostless_role_id as string | null) ?? null,
+    ghostless_role_threshold_pct: Number(
+      row.ghostless_role_threshold_pct ?? 90,
+    ),
+    ghostless_role_min_sessions: Number(row.ghostless_role_min_sessions ?? 10),
+    digest_channel_id: (row.digest_channel_id as string | null) ?? null,
+    strike_threshold: Number(row.strike_threshold ?? 3),
+    lockout_days: Number(row.lockout_days ?? 7),
+    slug: (row.slug as string | null) ?? null,
+    public_page_enabled: row.public_page_enabled !== false,
+    public_member_list: Boolean(row.public_member_list),
+    list_in_directory: Boolean(row.list_in_directory),
+    discord_invite_url: (row.discord_invite_url as string | null) ?? null,
+    hide_powered_by: Boolean(row.hide_powered_by),
+    public_accent: (row.public_accent as string | null) ?? null,
+    created_at: String(row.created_at),
+    updated_at: String(row.updated_at),
+  };
+}
+
+export type DirectoryServerCard = {
+  name: string;
+  pathKey: string;
+  iconUrl: string | null;
+  inviteUrl: string | null;
+  /** This server publishes a public Ghostless spotlight (not a passport %). */
+  hasPublicGhostless: boolean;
+};
+
+function toDirectoryCard(
+  server: Server,
+  settings: ServerSettings,
+): DirectoryServerCard | null {
+  if (!settings.public_page_enabled || !settings.list_in_directory) {
+    return null;
+  }
+  if (!directoryListingEnabled(server.plan)) return null;
+  return {
+    name: server.name,
+    pathKey: settings.slug || server.discord_guild_id,
+    iconUrl: server.icon_url,
+    inviteUrl: settings.discord_invite_url,
+    hasPublicGhostless: Boolean(settings.public_member_list),
+  };
 }
 
 export async function resolvePublicServer(
@@ -103,15 +183,8 @@ function resolveMockPublicServer(
 
   if (!server) return null;
 
-  const settings = MOCK_SETTINGS_BY_SERVER[server.id] ?? {
-    ...MOCK_SETTINGS,
-    server_id: server.id,
-    slug: null,
-    public_page_enabled: true,
-    public_member_list: false,
-    hide_powered_by: false,
-    public_accent: null,
-  };
+  const settings =
+    MOCK_SETTINGS_BY_SERVER[server.id] ?? defaultPublicSettings(server);
 
   if (!settings.public_page_enabled) return null;
 
@@ -239,46 +312,8 @@ async function resolveLivePublicServer(
   };
 
   const settings: ServerSettings = settingsRow
-    ? {
-        server_id: String(settingsRow.server_id),
-        grace_minutes: Number(settingsRow.grace_minutes ?? 5),
-        ghostless_role_id:
-          (settingsRow.ghostless_role_id as string | null) ?? null,
-        ghostless_role_threshold_pct: Number(
-          settingsRow.ghostless_role_threshold_pct ?? 90,
-        ),
-        ghostless_role_min_sessions: Number(
-          settingsRow.ghostless_role_min_sessions ?? 10,
-        ),
-        digest_channel_id:
-          (settingsRow.digest_channel_id as string | null) ?? null,
-        strike_threshold: Number(settingsRow.strike_threshold ?? 3),
-        lockout_days: Number(settingsRow.lockout_days ?? 7),
-        slug: (settingsRow.slug as string | null) ?? null,
-        public_page_enabled: settingsRow.public_page_enabled !== false,
-        public_member_list: Boolean(settingsRow.public_member_list),
-        hide_powered_by: Boolean(settingsRow.hide_powered_by),
-        public_accent: (settingsRow.public_accent as string | null) ?? null,
-        created_at: String(settingsRow.created_at),
-        updated_at: String(settingsRow.updated_at),
-      }
-    : {
-        server_id: server.id,
-        grace_minutes: 5,
-        ghostless_role_id: null,
-        ghostless_role_threshold_pct: 90,
-        ghostless_role_min_sessions: 10,
-        digest_channel_id: null,
-        strike_threshold: 3,
-        lockout_days: 7,
-        slug: null,
-        public_page_enabled: true,
-        public_member_list: false,
-        hide_powered_by: false,
-        public_accent: null,
-        created_at: server.created_at,
-        updated_at: server.updated_at,
-      };
+    ? mapPublicSettings(settingsRow)
+    : defaultPublicSettings(server);
 
   if (!settings.public_page_enabled) return null;
   // Path B: Starter / lapsed cannot publish public pages.
@@ -519,6 +554,67 @@ export function listMockPublicServers(): {
       pathKey: settings.slug || s.discord_guild_id,
     };
   }).filter(Boolean) as { name: string; pathKey: string }[];
+}
+
+/** Opt-in /servers directory — no cross-server Ghostless % / passport scores. */
+export async function listDirectoryServers(): Promise<DirectoryServerCard[]> {
+  const live = await listLiveDirectoryServers();
+  if (live.length > 0) return live;
+  return listMockDirectoryServers();
+}
+
+export function listMockDirectoryServers(): DirectoryServerCard[] {
+  return MOCK_SERVERS.map((s) => {
+    const settings = MOCK_SETTINGS_BY_SERVER[s.id];
+    if (!settings) return null;
+    return toDirectoryCard(s, settings);
+  }).filter(Boolean) as DirectoryServerCard[];
+}
+
+async function listLiveDirectoryServers(): Promise<DirectoryServerCard[]> {
+  const sb = getServiceSupabase();
+  if (!sb) return [];
+
+  const { data, error } = await sb
+    .from("server_settings")
+    .select(
+      "slug, public_page_enabled, public_member_list, list_in_directory, discord_invite_url, servers!inner(id, name, plan, discord_guild_id, icon_url)",
+    )
+    .eq("public_page_enabled", true)
+    .eq("list_in_directory", true)
+    .limit(100);
+
+  if (error || !data) return [];
+
+  const cards: DirectoryServerCard[] = [];
+  for (const row of data as Record<string, unknown>[]) {
+    const serverRaw = row.servers as Record<string, unknown> | null;
+    if (!serverRaw) continue;
+    const server: Server = {
+      id: String(serverRaw.id),
+      discord_guild_id: String(serverRaw.discord_guild_id),
+      name: String(serverRaw.name ?? ""),
+      plan: (serverRaw.plan as Server["plan"]) || "trial",
+      price_lock_cents: null,
+      trial_ends_at: null,
+      priority_support: false,
+      stripe_customer_id: null,
+      icon_url: (serverRaw.icon_url as string | null) ?? null,
+      created_at: "",
+      updated_at: "",
+    };
+    const settings = mapPublicSettings({
+      ...row,
+      server_id: server.id,
+      created_at: "",
+      updated_at: "",
+    });
+    const card = toDirectoryCard(server, settings);
+    if (card) cards.push(card);
+  }
+
+  cards.sort((a, b) => a.name.localeCompare(b.name));
+  return cards;
 }
 
 export function publicCardPath(pathKey: string, discordUserId: string) {

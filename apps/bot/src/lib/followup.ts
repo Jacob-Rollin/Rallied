@@ -371,14 +371,8 @@ export async function deliverDeferredResponse(
     await createFollowupMessage(env, interaction, lfgDeskPinHintMessage());
   }
 
-  if (meta?.vibeNudge) {
-    await createFollowupMessage(
-      env,
-      interaction,
-      lfgVibeNudgeMessage(meta.vibeNudge.partyId, meta.vibeNudge.game),
-    );
-  }
-
+  // Start ready-check before the vibe nudge so ready_check_started_at is set
+  // before players can tap "Showed up" (avoids show double-count with finalize).
   if (meta?.startReadyCheck && interaction.guild_id) {
     const sb = createServiceClient(env);
     if (sb) {
@@ -396,6 +390,14 @@ export async function deliverDeferredResponse(
         console.error("auto startReadyCheck failed", err);
       }
     }
+  }
+
+  if (meta?.vibeNudge) {
+    await createFollowupMessage(
+      env,
+      interaction,
+      lfgVibeNudgeMessage(meta.vibeNudge.partyId, meta.vibeNudge.game),
+    );
   }
 
   if (meta?.dismissAfterMs && meta.dismissAfterMs > 0) {

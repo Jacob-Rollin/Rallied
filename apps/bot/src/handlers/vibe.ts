@@ -166,7 +166,7 @@ export async function recordVibe(opts: {
   const { data: party } = await sb
     .from("lfg_parties")
     .select(
-      "id, game, server_id, host_member_id, updated_at, created_at, ready_check_resolved_at, discord_thread_id, discord_channel_id",
+      "id, game, server_id, status, host_member_id, updated_at, created_at, ready_check_started_at, ready_check_resolved_at, discord_thread_id, discord_channel_id",
     )
     .eq("id", opts.partyId)
     .maybeSingle();
@@ -247,16 +247,21 @@ export async function recordVibe(opts: {
   let vibe_sum = stats?.vibe_sum ?? 0;
   let vibe_count = stats?.vibe_count ?? 0;
 
-  // Ready-check is the source of truth for shows/ghosts when it already resolved.
-  // Re-taps never bump aggregates (upsert is idempotent; stats must match).
-  const readyResolved = Boolean(party.ready_check_resolved_at);
+  // Ready-check owns shows/ghosts once the party is filled / RC started /
+  // resolved — so a "Showed up" tap during grace cannot double-count with
+  // finalizeReadyCheck. Re-taps never bump aggregates.
+  const readyOwnsShows = Boolean(
+    party.status === "filled" ||
+      party.ready_check_started_at ||
+      party.ready_check_resolved_at,
+  );
   let struck = false;
 
   if (isNew && reliabilityOn) {
-    if (showedUp && !readyResolved) {
+    if (showedUp && !readyOwnsShows) {
       shows += 1;
     }
-    if (ghosted && !readyResolved) {
+    if (ghosted && !readyOwnsShows) {
       ghosts += 1;
     }
     if (opts.vibeScore != null) {
@@ -276,8 +281,8 @@ export async function recordVibe(opts: {
       { onConflict: "server_id,member_id" },
     );
 
-    // Ghosted after grace → strike, unless ready-check already struck this party.
-    if (ghosted && !readyResolved) {
+    // Ghosted after grace → strike, unless ready-check owns this party.
+    if (ghosted && !readyOwnsShows) {
       const alreadyStruck = await hasPartyNoShowStrike(
         sb,
         opts.serverId,
@@ -362,13 +367,13 @@ export async function recordVibe(opts: {
     };
   }
 
-  const showNote = readyResolved
-    ? " · shows/ghosts already set by Ready Check"
+  const showNote = readyOwnsShows
+    ? " · shows/ghosts owned by Ready Check (vibe score only)"
     : "";
   const strikeNote = struck
     ? " · strike issued (ratee can Dispute in the squad thread)"
-    : ghosted && readyResolved
-      ? " · no extra strike (Ready Check already handled no-shows)"
+    : ghosted && readyOwnsShows
+      ? " · no extra strike (Ready Check owns no-shows for this party)"
       : "";
 
   return ephemeral(

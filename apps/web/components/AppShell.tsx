@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { AdminGuild } from "@rallied/shared";
 import { buildBotInviteUrl } from "@rallied/shared";
 import { MOCK_SERVERS } from "@/lib/mock-data";
@@ -57,8 +57,37 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [me, setMe] = useState<MeResponse | null>(null);
   const [serverId, setServerId] = useState<string>("");
   const [reportOpen, setReportOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuId = useId();
+  const menuPanelRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   const mockFlag = searchParams.get("mock") === "1";
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setMenuOpen(false);
+    }
+    function onPointer(e: MouseEvent | TouchEvent) {
+      const target = e.target as Node;
+      if (
+        menuPanelRef.current?.contains(target) ||
+        menuButtonRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setMenuOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("touchstart", onPointer);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("touchstart", onPointer);
+    };
+  }, [menuOpen]);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -191,23 +220,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 border-b border-white/10 bg-slate/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-          <Link href="/" className="flex items-center gap-2">
+        <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-2.5 sm:gap-3 sm:py-3">
+          <Link href="/" className="flex-none">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/brand/rallied-wm-transparent-dark.png"
               alt="Rallied"
-              className="h-10 w-auto bg-transparent sm:h-11"
+              width={120}
+              height={36}
+              className="block h-9 w-[7.5rem] flex-none bg-transparent object-contain object-left sm:h-10 sm:w-[8.25rem]"
+              style={{ flexShrink: 0 }}
             />
           </Link>
-          <div className="flex items-center gap-3">
+
+          <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:gap-3">
             {guilds.length > 0 ? (
-              <label className="flex items-center gap-2 text-sm text-muted">
-                <span className="hidden sm:inline">Server</span>
+              <label className="flex min-w-0 max-w-[9.5rem] items-center gap-1.5 text-muted sm:max-w-xs md:max-w-sm">
+                <span className="hidden shrink-0 text-sm sm:inline">Server</span>
                 <select
-                  className="rounded-brand border border-white/15 bg-slate-elevated px-2 py-1.5 text-white"
+                  className="h-7 min-w-0 w-full max-w-full truncate rounded-brand border border-white/15 bg-slate-elevated px-1.5 text-[11px] leading-none text-white sm:h-auto sm:px-2 sm:py-1.5 sm:text-sm"
                   value={server?.id ?? ""}
                   onChange={(e) => selectGuild(e.target.value)}
+                  aria-label="Server"
                 >
                   {guilds.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -221,36 +255,95 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </select>
               </label>
             ) : null}
+
             {me?.user ? (
-              <span className="hidden text-xs text-muted sm:inline">
+              <span className="hidden text-xs text-muted md:inline">
                 {me.user.globalName || me.user.username}
                 {me.mock ? " · mock" : ""}
                 {mockFlag ? " · mock preview" : ""}
               </span>
             ) : null}
-            {!loading && me?.authenticated ? (
+
+            {/* Desktop: inline account actions */}
+            <div className="hidden items-center gap-3 sm:flex">
+              {!loading && me?.authenticated ? (
+                <button
+                  type="button"
+                  onClick={() => setReportOpen(true)}
+                  className="text-xs text-muted hover:text-coral"
+                >
+                  Report
+                </button>
+              ) : null}
+              {!loading && me?.ops ? (
+                <Link
+                  href="/ops"
+                  className="text-xs text-muted hover:text-coral"
+                >
+                  Ops
+                </Link>
+              ) : null}
+              <a
+                href="/api/auth/logout"
+                className="text-xs text-muted hover:text-coral"
+              >
+                Log out
+              </a>
+            </div>
+
+            {/* Mobile: hamburger → Report / Ops / Log out */}
+            <div className="relative sm:hidden">
               <button
+                ref={menuButtonRef}
                 type="button"
-                onClick={() => setReportOpen(true)}
-                className="text-xs text-muted hover:text-coral"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-brand border border-white/20 text-white/85 transition hover:border-coral/50 hover:text-white"
+                aria-expanded={menuOpen}
+                aria-controls={menuId}
+                aria-label={menuOpen ? "Close menu" : "Open menu"}
+                onClick={() => setMenuOpen((open) => !open)}
               >
-                Report
+                {menuOpen ? <CloseIcon /> : <MenuIcon />}
               </button>
-            ) : null}
-            {!loading && me?.ops ? (
-              <Link
-                href="/ops"
-                className="text-xs text-muted hover:text-coral"
-              >
-                Ops
-              </Link>
-            ) : null}
-            <a
-              href="/api/auth/logout"
-              className="text-xs text-muted hover:text-coral"
-            >
-              Log out
-            </a>
+              {menuOpen ? (
+                <div
+                  ref={menuPanelRef}
+                  id={menuId}
+                  className="absolute right-0 top-full z-30 mt-1.5 min-w-[9.5rem] border border-white/15 bg-slate-elevated py-1 shadow-lg"
+                  role="menu"
+                >
+                  {!loading && me?.authenticated ? (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className="block w-full px-3 py-2 text-left text-sm text-white/80 hover:bg-white/5 hover:text-coral"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setReportOpen(true);
+                      }}
+                    >
+                      Report
+                    </button>
+                  ) : null}
+                  {!loading && me?.ops ? (
+                    <Link
+                      href="/ops"
+                      role="menuitem"
+                      className="block px-3 py-2 text-sm text-white/80 hover:bg-white/5 hover:text-coral"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      Ops
+                    </Link>
+                  ) : null}
+                  <a
+                    href="/api/auth/logout"
+                    role="menuitem"
+                    className="block px-3 py-2 text-sm text-white/80 hover:bg-white/5 hover:text-coral"
+                  >
+                    Log out
+                  </a>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       </header>
@@ -324,10 +417,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
+            {/* Report lives in header on mobile; keep sidebar entry on lg only */}
             <button
               type="button"
               onClick={() => setReportOpen(true)}
-              className={`rounded-brand px-3 py-2 text-left text-sm transition ${
+              className={`hidden rounded-brand px-3 py-2 text-left text-sm transition lg:block ${
                 reportOpen
                   ? "bg-coral/15 text-coral"
                   : "text-muted hover:bg-white/5 hover:text-white"
@@ -369,5 +463,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         }
       />
     </div>
+  );
+}
+
+function MenuIcon() {
+  return (
+    <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden fill="none">
+      <path
+        d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden fill="none">
+      <path
+        d="M5 5l10 10M15 5 5 15"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

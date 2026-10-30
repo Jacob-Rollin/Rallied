@@ -7,6 +7,7 @@ import {
   syncServerMetadataFromOAuth,
 } from "@/lib/auth/discord";
 import { getSession, mockSessionPayload } from "@/lib/auth/session";
+import { isOpsAllowlisted } from "@/lib/ops-auth";
 
 export async function GET() {
   const session = await getSession();
@@ -16,6 +17,7 @@ export async function GET() {
     return NextResponse.json({
       authenticated: true,
       mock: true,
+      ops: false,
       user: mock.user,
       guilds: mock.guilds,
     });
@@ -56,6 +58,8 @@ export async function GET() {
   return NextResponse.json({
     authenticated: true,
     mock: Boolean(session.isMock),
+    /** True only when Discord user id is in OPS_DISCORD_IDS (same gate as /ops). */
+    ops: !session.isMock && isOpsAllowlisted(session.user.id),
     user: session.user,
     guilds,
   });

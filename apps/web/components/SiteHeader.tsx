@@ -10,6 +10,11 @@ type Props = {
   variant?: "hero" | "solid";
 };
 
+type MeResponse = {
+  authenticated: boolean;
+  ops?: boolean;
+};
+
 const NAV = [
   { href: "/guide", label: "Guide" },
   { href: "/pricing", label: "Pricing" },
@@ -22,9 +27,19 @@ export function SiteHeader({ variant = "solid" }: Props) {
   const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
   const inviteHref = clientId ? buildBotInviteUrl(clientId) : "#add-bot";
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showOps, setShowOps] = useState(false);
   const menuId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: MeResponse | null) => {
+        setShowOps(Boolean(data?.authenticated && data?.ops));
+      })
+      .catch(() => setShowOps(false));
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -89,6 +104,14 @@ export function SiteHeader({ variant = "solid" }: Props) {
         </nav>
 
         <div className="hidden items-center gap-2.5 md:flex">
+          {showOps ? (
+            <Link
+              href="/ops"
+              className="whitespace-nowrap text-sm text-white/55 transition hover:text-coral"
+            >
+              Ops
+            </Link>
+          ) : null}
           <Link
             href="/login"
             className="whitespace-nowrap rounded-brand border border-white/20 px-3 py-2 text-sm font-medium text-white/90 transition hover:border-coral/50 hover:text-white"
@@ -103,6 +126,14 @@ export function SiteHeader({ variant = "solid" }: Props) {
 
         {/* Mobile: Log in text + menu trigger only */}
         <div className="flex items-center gap-1 md:hidden">
+          {showOps ? (
+            <Link
+              href="/ops"
+              className="whitespace-nowrap px-2.5 py-1.5 text-sm text-white/55 transition hover:text-coral"
+            >
+              Ops
+            </Link>
+          ) : null}
           <Link
             href="/login"
             className="whitespace-nowrap px-2.5 py-1.5 text-sm font-medium text-white/90 transition hover:text-white"
@@ -140,6 +171,15 @@ export function SiteHeader({ variant = "solid" }: Props) {
                 {item.label}
               </Link>
             ))}
+            {showOps ? (
+              <Link
+                href="/ops"
+                className="rounded-brand px-3 py-2.5 text-sm text-white/55 transition hover:bg-white/5 hover:text-coral"
+                onClick={() => setMenuOpen(false)}
+              >
+                Ops
+              </Link>
+            ) : null}
             <div className="mt-2 border-t border-white/10 pt-3">
               <AddToDiscordButton
                 href={inviteHref}

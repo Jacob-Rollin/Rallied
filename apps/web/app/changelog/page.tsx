@@ -15,6 +15,11 @@ const ENTRIES: {
   body: string;
 }[] = [
   {
+    date: "2026-10-30",
+    title: "Bot invite permissions (re-auth)",
+    body: "Add to Discord invite integer is 311671409680 (includes Manage Channels for temp voice, plus threads / roles / Connect / Move Members). Existing installs: re-authorize with that permissions value or fix the bot role — calculator alone does not update an installed bot.",
+  },
+  {
     date: "2026-10-29",
     title: "LFG parity — voice, waitlist, filters, schedule",
     body: "Temp voice (Join VC; bot needs Manage Channels), waitlist when full, mic / rank / region on create + Find filters, optional scheduled start with ~T-10m reminder. Still this server only — no LFG Network.",

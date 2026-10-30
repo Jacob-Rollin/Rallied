@@ -1,6 +1,9 @@
 /**
  * Apply Stripe subscription state onto servers rows.
  * Forever-Pro / Official Rallied / founding_pro are never downgraded.
+ * Cancel while active/trialing (cancel_at_period_end) keeps paid plan until
+ * customer.subscription.deleted (period / trial end).
+ * trial_consumed_at is never cleared (anti-farming).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type Stripe from "stripe";
@@ -21,6 +24,8 @@ export type ServerBillingRow = {
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   price_lock_cents: number | null;
+  trial_consumed_at: string | null;
+  trial_ends_at: string | null;
 };
 
 function subscriptionPrice(
@@ -59,12 +64,26 @@ function planFromSub(
   return { plan, interval: billingInterval, priceId };
 }
 
+/** Access continues while Stripe still treats the sub as in-period. */
 function activeLike(status: Stripe.Subscription.Status): boolean {
   return (
     status === "active" ||
     status === "trialing" ||
     status === "past_due"
   );
+}
+
+function trialEndIso(sub: Stripe.Subscription): string | null {
+  if (sub.status !== "trialing") return null;
+  if (typeof sub.trial_end === "number" && sub.trial_end > 0) {
+    return new Date(sub.trial_end * 1000).toISOString();
+  }
+  return null;
+}
+
+function stripeUnixIso(seconds: number | null | undefined): string | null {
+  if (typeof seconds !== "number" || seconds <= 0) return null;
+  return new Date(seconds * 1000).toISOString();
 }
 
 async function findServer(
@@ -77,7 +96,7 @@ async function findServer(
   },
 ): Promise<ServerBillingRow | null> {
   const select =
-    "id, discord_guild_id, plan, forever_pro, stripe_customer_id, stripe_subscription_id, price_lock_cents";
+    "id, discord_guild_id, plan, forever_pro, stripe_customer_id, stripe_subscription_id, price_lock_cents, trial_consumed_at, trial_ends_at";
 
   if (opts.serverId) {
     const { data } = await sb
@@ -112,6 +131,20 @@ async function findServer(
     if (data) return data as ServerBillingRow;
   }
   return null;
+}
+
+/** Set trial_consumed_at once; never clear. */
+function withTrialConsumed(
+  patch: Record<string, unknown>,
+  server: ServerBillingRow,
+  whenIso: string,
+  force = false,
+): void {
+  if (force || !server.trial_consumed_at) {
+    if (!server.trial_consumed_at) {
+      patch.trial_consumed_at = whenIso;
+    }
+  }
 }
 
 /**
@@ -206,6 +239,8 @@ export async function applyCheckoutCompleted(
       ? "founding_pro"
       : plan;
 
+  const nowIso = new Date().toISOString();
+
   const patch: Record<string, unknown> = {
     plan: nextPlan,
     stripe_customer_id: customerId ?? server.stripe_customer_id,
@@ -216,11 +251,14 @@ export async function applyCheckoutCompleted(
       nextPlan === "founding_pro" ? "founding_pro" : plan,
     ),
     priority_support: nextPlan === "pro" || nextPlan === "founding_pro",
-    trial_ends_at: null,
-    updated_at: new Date().toISOString(),
+    updated_at: nowIso,
   };
   if (protectedForever) {
     patch.forever_pro = true;
+  }
+  // Mark consumed when Checkout granted a trial — subscription.updated sets trial_ends_at.
+  if (session.metadata?.rallied_trial === "1") {
+    withTrialConsumed(patch, server, nowIso);
   }
 
   const { error } = await sb.from("servers").update(patch).eq("id", server.id);
@@ -252,9 +290,11 @@ export async function applySubscriptionUpdated(
 
   const { plan, interval, priceId } = planFromSub(sub);
   const protectedForever = isForeverProProtected(server);
+  const nowIso = new Date().toISOString();
 
+  // cancel_at_period_end keeps status active/trialing until period/trial end.
+  // Only non-active-like statuses mean access should drop (or wait for deleted).
   if (!activeLike(sub.status)) {
-    // Cancel / incomplete → lapse unless forever protected
     if (protectedForever) {
       const { error } = await sb
         .from("servers")
@@ -264,26 +304,27 @@ export async function applySubscriptionUpdated(
           stripe_price_id: priceId,
           billing_interval: interval,
           forever_pro: true,
-          // keep plan / price_lock / priority
-          updated_at: new Date().toISOString(),
+          // keep plan / price_lock / priority / trial_consumed_at
+          updated_at: nowIso,
         })
         .eq("id", server.id);
       if (error) return { ok: false, detail: error.message };
       return { ok: true, detail: "protected_no_downgrade" };
     }
 
-    const { error } = await sb
-      .from("servers")
-      .update({
-        plan: "lapsed",
-        stripe_customer_id: customerId ?? server.stripe_customer_id,
-        stripe_subscription_id: sub.id,
-        stripe_price_id: priceId,
-        billing_interval: interval,
-        priority_support: false,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", server.id);
+    // Prefer deleted handler for clean lapse; still safe to mark lapsed here.
+    const patch: Record<string, unknown> = {
+      plan: "lapsed",
+      stripe_customer_id: customerId ?? server.stripe_customer_id,
+      stripe_subscription_id: sub.id,
+      stripe_price_id: priceId,
+      billing_interval: interval,
+      priority_support: false,
+      trial_ends_at: null,
+      updated_at: nowIso,
+    };
+    withTrialConsumed(patch, server, nowIso);
+    const { error } = await sb.from("servers").update(patch).eq("id", server.id);
     if (error) return { ok: false, detail: error.message };
     return { ok: true, detail: "lapsed" };
   }
@@ -293,6 +334,7 @@ export async function applySubscriptionUpdated(
       ? "founding_pro"
       : plan;
 
+  const stripeTrialEnd = trialEndIso(sub);
   const patch: Record<string, unknown> = {
     plan: nextPlan,
     stripe_customer_id: customerId ?? server.stripe_customer_id,
@@ -303,14 +345,32 @@ export async function applySubscriptionUpdated(
       nextPlan === "founding_pro" ? "founding_pro" : plan,
     ),
     priority_support: nextPlan === "pro" || nextPlan === "founding_pro",
-    trial_ends_at: null,
-    updated_at: new Date().toISOString(),
+    // Keep Community/Pro access while cancel_at_period_end; Stripe status stays active/trialing.
+    trial_ends_at: stripeTrialEnd,
+    updated_at: nowIso,
   };
   if (protectedForever) patch.forever_pro = true;
 
+  // Stripe trial started (or metadata said Checkout trial) → lock guild forever.
+  if (
+    sub.status === "trialing" ||
+    sub.trial_start != null ||
+    sub.metadata?.rallied_trial === "1"
+  ) {
+    withTrialConsumed(
+      patch,
+      server,
+      stripeUnixIso(sub.trial_start) ?? nowIso,
+    );
+  }
+
   const { error } = await sb.from("servers").update(patch).eq("id", server.id);
   if (error) return { ok: false, detail: error.message };
-  return { ok: true, detail: `plan=${nextPlan}` };
+  const cancelNote = sub.cancel_at_period_end ? "+cancel_at_period_end" : "";
+  return {
+    ok: true,
+    detail: `plan=${nextPlan};status=${sub.status}${cancelNote}`,
+  };
 }
 
 export async function applySubscriptionDeleted(
@@ -332,6 +392,8 @@ export async function applySubscriptionDeleted(
     return { ok: false, detail: "server_not_found" };
   }
 
+  const nowIso = new Date().toISOString();
+
   if (isForeverProProtected(server)) {
     const { error } = await sb
       .from("servers")
@@ -341,28 +403,57 @@ export async function applySubscriptionDeleted(
         billing_interval: null,
         stripe_customer_id: customerId ?? server.stripe_customer_id,
         forever_pro: true,
-        // keep founding_pro / pro dogfood entitlements
-        updated_at: new Date().toISOString(),
+        trial_ends_at: null,
+        // keep founding_pro / trial_consumed_at
+        updated_at: nowIso,
       })
       .eq("id", server.id);
     if (error) return { ok: false, detail: error.message };
     return { ok: true, detail: "protected_no_downgrade" };
   }
 
-  const { error } = await sb
-    .from("servers")
-    .update({
-      plan: "lapsed",
-      stripe_subscription_id: null,
-      stripe_price_id: null,
-      billing_interval: null,
-      stripe_customer_id: customerId ?? server.stripe_customer_id,
-      priority_support: false,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", server.id);
+  // Period / trial ended (Portal cancel_at_period_end) → Starter. Never clear trial_consumed_at.
+  const patch: Record<string, unknown> = {
+    plan: "lapsed",
+    stripe_subscription_id: null,
+    stripe_price_id: null,
+    billing_interval: null,
+    stripe_customer_id: customerId ?? server.stripe_customer_id,
+    priority_support: false,
+    trial_ends_at: null,
+    updated_at: nowIso,
+  };
+  withTrialConsumed(patch, server, nowIso);
+
+  const { error } = await sb.from("servers").update(patch).eq("id", server.id);
   if (error) return { ok: false, detail: error.message };
   return { ok: true, detail: "lapsed" };
+}
+
+/**
+ * True if this Stripe customer already used a subscription trial
+ * (secondary check — guild trial_consumed_at is source of truth).
+ */
+export async function stripeCustomerHadTrial(
+  stripe: Stripe,
+  customerId: string,
+): Promise<boolean> {
+  try {
+    const subs = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "all",
+      limit: 30,
+    });
+    return subs.data.some(
+      (s) =>
+        s.trial_start != null ||
+        s.metadata?.rallied_trial === "1" ||
+        s.status === "trialing",
+    );
+  } catch (err) {
+    console.error("stripeCustomerHadTrial", err);
+    return false;
+  }
 }
 
 /** Count Founding Pro seats (for ≤10 program). */

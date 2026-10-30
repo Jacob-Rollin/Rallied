@@ -188,10 +188,11 @@ export default function PricingPage() {
           Free matching. Paid reliability.
         </h1>
         <p className="mt-3 max-w-xl text-white/75">
-          Billed per Discord server. 14-day Community trial, then Starter caps
-          or paid — Community ${COMMUNITY_PRICE_USD} · Pro ${PRO_PRICE_USD} ·
-          Founding ${FOUNDING_PRO_PRICE_USD} locked (≤{PLANS.founding_pro.seatCap}
-          ).
+          Billed per Discord server. Community Checkout: card required, one
+          14-day trial (charged after trial; cancel keeps access until trial
+          ends). Then Starter caps or paid — Community ${COMMUNITY_PRICE_USD} ·
+          Pro ${PRO_PRICE_USD} · Founding ${FOUNDING_PRO_PRICE_USD} locked (≤
+          {PLANS.founding_pro.seatCap}).
         </p>
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -239,11 +240,11 @@ export default function PricingPage() {
               </p>
               {tier.trial ? (
                 <p className="mt-2 text-xs font-medium text-lime">
-                  14-day free trial
+                  14-day trial · card at Checkout · once per server
                 </p>
               ) : tier.id === "free" ? (
                 <p className="mt-2 text-xs font-medium text-white/55">
-                  After trial if unpaid
+                  After trial / cancel period ends
                 </p>
               ) : tier.id === "pro" ? (
                 <p className="mt-2 text-xs font-medium text-white/55">
@@ -366,7 +367,7 @@ export default function PricingPage() {
             <Link href="/app/billing" className="text-coral hover:underline">
               /app/billing
             </Link>{" "}
-            after Log in — trial + Starter caps (per server) are live.
+            after Log in — Checkout trial (card required) + Starter caps are live.
           </p>
           <div className="flex flex-wrap gap-3">
             <AddToDiscordButton href={inviteHref} />

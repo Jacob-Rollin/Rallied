@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { isUsableServerName, trialEndsAtFromNow } from "@rallied/shared";
+import { isUsableServerName } from "@rallied/shared";
 import { fetchGuildMeta } from "./discord.js";
 import { normalizeSupabaseUrl, type BotEnv } from "./env.js";
 import { bootstrapNewServerPlan } from "./entitlements.js";
@@ -58,8 +58,10 @@ async function resolveGuildIdentity(
  * "Selected server" placeholders. When the provided name is missing/invalid,
  * fetch the real guild via the bot token (if `env` is passed) and persist it.
  *
- * New servers start on `plan=trial` with `trial_ends_at = now+14d`.
- * Paid plans are never reset. Pass `env` to apply dogfood / trial bootstrap.
+ * New servers start on `plan=free` (Starter). Community trial is Stripe Checkout
+ * only (card required, one per guild via trial_consumed_at). Never delete this
+ * row on bot leave — reinstall must reuse history. Paid plans are never reset.
+ * Pass `env` for dogfood / legacy trial bootstrap.
  */
 export async function ensureServerAndMember(
   sb: SupabaseClient,
@@ -93,8 +95,8 @@ export async function ensureServerAndMember(
     const insertRow: Record<string, unknown> = {
       discord_guild_id: guildId,
       name: persistName,
-      plan: "trial",
-      trial_ends_at: trialEndsAtFromNow(),
+      plan: "free",
+      trial_ends_at: null,
     };
     if (identity.iconUrl) insertRow.icon_url = identity.iconUrl;
 
@@ -160,8 +162,9 @@ export async function ensureServerAndMember(
   if (env) {
     const planFields = await bootstrapNewServerPlan(sb, env, guildId, {
       id: server.id,
-      plan: String(server.plan ?? "trial"),
+      plan: String(server.plan ?? "free"),
       trial_ends_at: (server.trial_ends_at as string | null) ?? null,
+      trial_consumed_at: (server.trial_consumed_at as string | null) ?? null,
       created_at: server.created_at as string | undefined,
     });
     Object.assign(server, planFields);

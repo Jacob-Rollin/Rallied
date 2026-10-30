@@ -21,6 +21,11 @@ export interface Server {
   /** Effective monthly price lock in cents (499 / 899 / 999 …) */
   price_lock_cents: number | null;
   trial_ends_at: string | null;
+  /**
+   * When set, this Discord guild already used its one Community trial.
+   * Survives uninstall / cancel; never clear from webhooks. Support SQL may null it.
+   */
+  trial_consumed_at?: string | null;
   priority_support: boolean;
   stripe_customer_id: string | null;
   /** Active (or last) Stripe Subscription id */

@@ -23,6 +23,17 @@ export interface Server {
   trial_ends_at: string | null;
   priority_support: boolean;
   stripe_customer_id: string | null;
+  /** Active (or last) Stripe Subscription id */
+  stripe_subscription_id?: string | null;
+  /** Stripe Price id currently billed */
+  stripe_price_id?: string | null;
+  /** month | year from Stripe Price */
+  billing_interval?: "month" | "year" | null;
+  /**
+   * When true, Stripe webhooks never downgrade this server
+   * (Official Rallied / dogfood). Prefer setting via SQL.
+   */
+  forever_pro?: boolean;
   /** Discord guild icon CDN URL (Pro public page vanity) */
   icon_url: string | null;
   created_at: string;

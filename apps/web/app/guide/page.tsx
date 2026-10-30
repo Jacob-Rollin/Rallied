@@ -482,11 +482,16 @@ export default function GuidePage() {
             <p>
               <strong className="font-semibold text-white">Plans</strong> — 14-day
               trial, then Starter free (2 open + 5 creates/24h for this server,
-              no Ghostless). Community $4.99 · Pro $9.99 · Founding $8.99. See{" "}
+              no Ghostless). Community $4.99 · Pro $9.99 · Founding $8.99. Upgrade
+              on{" "}
+              <Link href="/app/billing" className="text-coral hover:underline">
+                /app/billing
+              </Link>{" "}
+              (Stripe Checkout) or compare on{" "}
               <Link href="/pricing" className="text-coral hover:underline">
                 Pricing
               </Link>
-              .
+              . Cancel / update card via Manage billing (Customer Portal).
             </p>
           </div>
 

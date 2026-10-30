@@ -159,6 +159,18 @@ export function pricingPageUrl(baseUrl: string | null | undefined): string {
   return `${base}/pricing`;
 }
 
+/** Admin billing (Checkout / Portal). Discord upgrade buttons use this. */
+export function billingPageUrl(
+  baseUrl: string | null | undefined,
+  guildId?: string | null,
+): string {
+  const base = (baseUrl ?? "https://rallied.gg").replace(/\/$/, "");
+  if (guildId) {
+    return `${base}/app/billing?guild=${encodeURIComponent(guildId)}`;
+  }
+  return `${base}/app/billing`;
+}
+
 export function upgradeCopy(reason: CapBlockReason | "reliability" | "public"): {
   title: string;
   body: string;

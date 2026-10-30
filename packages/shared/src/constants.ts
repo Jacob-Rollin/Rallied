@@ -79,10 +79,46 @@ export const FOUNDING_PRO_PRICE_USD = PLANS.founding_pro.priceMonthly;
 export const PAID_PLAN_IDS = ["community", "pro", "founding_pro"] as const;
 export const PRO_PLAN_IDS = ["pro", "founding_pro"] as const;
 
+/** Official Rallied Discord — forever Founding Pro (never webhook-downgrade). */
+export const OFFICIAL_RALLIED_GUILD_ID = "1564716956198899824";
+
+export type PaidCheckoutPlan = (typeof PAID_PLAN_IDS)[number];
+export type BillingInterval = "month" | "year";
+
 export function isProPlan(
   plan: string | null | undefined,
 ): plan is "pro" | "founding_pro" {
   return plan === "pro" || plan === "founding_pro";
+}
+
+export function isPaidPlan(
+  plan: string | null | undefined,
+): plan is PaidCheckoutPlan {
+  return (
+    plan === "community" || plan === "pro" || plan === "founding_pro"
+  );
+}
+
+/**
+ * Servers Stripe must never downgrade on cancel/update → free/lapsed.
+ * Official guild id, forever_pro flag, or plan already founding_pro.
+ */
+export function isForeverProProtected(server: {
+  discord_guild_id?: string | null;
+  plan?: string | null;
+  forever_pro?: boolean | null;
+}): boolean {
+  if (server.forever_pro) return true;
+  if (server.discord_guild_id === OFFICIAL_RALLIED_GUILD_ID) return true;
+  if (server.plan === "founding_pro") return true;
+  return false;
+}
+
+/** Monthly cents to persist on servers.price_lock_cents after Checkout. */
+export function priceLockCentsForPlan(
+  plan: PaidCheckoutPlan,
+): number {
+  return PLANS[plan].priceCents;
 }
 
 export const LFG_PARTY_STATUSES = ["open", "filled", "closed"] as const;

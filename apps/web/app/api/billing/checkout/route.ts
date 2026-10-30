@@ -1,0 +1,190 @@
+import { NextRequest, NextResponse } from "next/server";
+import { PLANS, type BillingInterval, type PaidCheckoutPlan } from "@rallied/shared";
+import { getSession } from "@/lib/auth/session";
+import { countFoundingSeats } from "@/lib/billing-sync";
+import {
+  appBaseUrl,
+  getStripe,
+  getStripePriceId,
+  stripeConfigured,
+} from "@/lib/stripe";
+import { getServiceSupabase } from "@/lib/supabase";
+
+type Body = {
+  discordGuildId?: string;
+  plan?: string;
+  interval?: string;
+};
+
+function parsePlan(raw: string | undefined): PaidCheckoutPlan | null {
+  if (raw === "community" || raw === "pro" || raw === "founding_pro") return raw;
+  return null;
+}
+
+function parseInterval(raw: string | undefined): BillingInterval {
+  return raw === "year" ? "year" : "month";
+}
+
+/**
+ * Session-gated Stripe Checkout Session (subscription).
+ * Secrets stay on the Worker — client only receives the hosted Checkout URL.
+ */
+export async function POST(req: NextRequest) {
+  const session = await getSession();
+  if (!session.user || session.isMock) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  if (!stripeConfigured()) {
+    return NextResponse.json(
+      {
+        error: "stripe_not_configured",
+        hint: "Set STRIPE_SECRET_KEY + price IDs on the web Worker (test mode OK).",
+      },
+      { status: 503 },
+    );
+  }
+
+  let body: Body;
+  try {
+    body = (await req.json()) as Body;
+  } catch {
+    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
+
+  const discordGuildId = String(body.discordGuildId ?? "").trim();
+  const plan = parsePlan(String(body.plan ?? "").trim());
+  const interval = parseInterval(String(body.interval ?? "month").trim());
+
+  if (!discordGuildId || !plan) {
+    return NextResponse.json(
+      {
+        error: "missing_fields",
+        hint: "discordGuildId and plan (community|pro|founding_pro) required",
+      },
+      { status: 400 },
+    );
+  }
+
+  const allowed = (session.guilds ?? []).some((g) => g.id === discordGuildId);
+  if (!allowed) {
+    return NextResponse.json({ error: "guild_forbidden" }, { status: 403 });
+  }
+
+  const priceId = getStripePriceId(plan, interval);
+  if (!priceId) {
+    return NextResponse.json(
+      {
+        error: "price_not_configured",
+        hint: `Set STRIPE_PRICE_${plan.toUpperCase()}_${interval === "year" ? "YEARLY" : "MONTHLY"} (or legacy STRIPE_PRICE_* for monthly).`,
+        plan,
+        interval,
+      },
+      { status: 503 },
+    );
+  }
+
+  const sb = getServiceSupabase();
+  if (!sb) {
+    return NextResponse.json(
+      {
+        error: "supabase_unavailable",
+        hint: "Set SUPABASE_SERVICE_ROLE_KEY on the web Worker.",
+      },
+      { status: 503 },
+    );
+  }
+
+  const { data: server, error: sErr } = await sb
+    .from("servers")
+    .select(
+      "id, discord_guild_id, plan, stripe_customer_id, forever_pro, name",
+    )
+    .eq("discord_guild_id", discordGuildId)
+    .maybeSingle();
+
+  if (sErr || !server) {
+    return NextResponse.json(
+      {
+        error: "server_not_found",
+        hint: "Run /setup in Discord so the bot upserts this guild first.",
+        detail: sErr?.message,
+      },
+      { status: 404 },
+    );
+  }
+
+  if (plan === "founding_pro") {
+    const already = server.plan === "founding_pro";
+    if (!already) {
+      const seats = await countFoundingSeats(sb);
+      if (seats >= PLANS.founding_pro.seatCap) {
+        return NextResponse.json(
+          {
+            error: "founding_sold_out",
+            hint: `Founding Pro is capped at ${PLANS.founding_pro.seatCap} seats. Use Pro at list price, or ask Jacob for a Stripe coupon / manual SQL seat.`,
+            seatCap: PLANS.founding_pro.seatCap,
+            seats,
+          },
+          { status: 409 },
+        );
+      }
+    }
+  }
+
+  const stripe = getStripe();
+  if (!stripe) {
+    return NextResponse.json({ error: "stripe_not_configured" }, { status: 503 });
+  }
+
+  const base = appBaseUrl();
+  const successUrl = `${base}/app/billing?guild=${encodeURIComponent(discordGuildId)}&checkout=success`;
+  const cancelUrl = `${base}/app/billing?guild=${encodeURIComponent(discordGuildId)}&checkout=cancel`;
+
+  const metadata = {
+    discord_guild_id: discordGuildId,
+    server_id: String(server.id),
+    rallied_plan: plan,
+    billing_interval: interval,
+    stripe_price_id: priceId,
+  };
+
+  try {
+    const checkout = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      client_reference_id: discordGuildId,
+      customer:
+        typeof server.stripe_customer_id === "string" &&
+        server.stripe_customer_id.startsWith("cus_")
+          ? server.stripe_customer_id
+          : undefined,
+      line_items: [{ price: priceId, quantity: 1 }],
+      allow_promotion_codes: true,
+      metadata,
+      subscription_data: {
+        metadata,
+      },
+    });
+
+    if (!checkout.url) {
+      return NextResponse.json(
+        { error: "checkout_url_missing" },
+        { status: 502 },
+      );
+    }
+
+    return NextResponse.json({
+      url: checkout.url,
+      sessionId: checkout.id,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("checkout.session.create", message);
+    return NextResponse.json(
+      { error: "stripe_error", detail: message },
+      { status: 502 },
+    );
+  }
+}

@@ -34,8 +34,11 @@ export default async function DemoBillingPage() {
       <div>
         <h1 className="font-display text-3xl tracking-wide">Billing</h1>
         <p className="mt-1 text-sm text-muted">
-          Per Discord server. Demo shows Community after a 14-day trial — no
-          free-forever tier.
+          Demo preview only — live Checkout lives on{" "}
+          <Link href="/app/billing" className="text-coral hover:underline">
+            /app/billing
+          </Link>{" "}
+          after Log in.
         </p>
       </div>
 

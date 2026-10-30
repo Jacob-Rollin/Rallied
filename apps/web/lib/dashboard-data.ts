@@ -157,6 +157,11 @@ function mapSettingsRow(row: Record<string, unknown>): ServerSettings {
     discord_invite_url: (row.discord_invite_url as string | null) ?? null,
     hide_powered_by: Boolean(row.hide_powered_by),
     public_accent: (row.public_accent as string | null) ?? null,
+    ical_token: (row.ical_token as string | null | undefined) ?? null,
+    join_min_ghostless_pct:
+      row.join_min_ghostless_pct == null
+        ? null
+        : Number(row.join_min_ghostless_pct),
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
   };

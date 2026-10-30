@@ -5,6 +5,7 @@ import {
   reliabilityEnabled,
 } from "@rallied/shared";
 import { getSession } from "@/lib/auth/session";
+import { randomIcalToken } from "@/lib/ical";
 import { getServiceSupabase } from "@/lib/supabase";
 
 type Body = {
@@ -23,6 +24,12 @@ type Body = {
   lockout_days?: number;
   ghostless_role_threshold_pct?: number;
   ghostless_role_min_sessions?: number;
+  /** Community+: null/empty clears; 0–100 sets Join min Ghostless %. */
+  join_min_ghostless_pct?: number | null;
+  /** Pro: generate a new ical_token (invalidates old subscribe URLs). */
+  rotate_ical_token?: boolean;
+  /** Pro: clear ical_token (disables feed). */
+  clear_ical_token?: boolean;
 };
 
 function cleanSlug(raw: string | null | undefined): string | null {
@@ -195,7 +202,8 @@ export async function POST(req: NextRequest) {
     body.ghostless_role_threshold_pct !== undefined ||
     body.ghostless_role_min_sessions !== undefined ||
     body.ghostless_role_id !== undefined ||
-    body.digest_channel_id !== undefined;
+    body.digest_channel_id !== undefined ||
+    body.join_min_ghostless_pct !== undefined;
 
   if (reliabilityTouched && !reliabilityOn) {
     return NextResponse.json(
@@ -242,6 +250,24 @@ export async function POST(req: NextRequest) {
     patch.digest_channel_id =
       id == null || String(id).trim() === "" ? null : String(id).trim();
   }
+  if (body.join_min_ghostless_pct !== undefined) {
+    if (body.join_min_ghostless_pct == null) {
+      patch.join_min_ghostless_pct = null;
+    } else {
+      const n = Number(body.join_min_ghostless_pct);
+      if (!Number.isFinite(n) || n < 0 || n > 100) {
+        return NextResponse.json(
+          {
+            error: "invalid_join_min_ghostless_pct",
+            hint: "Use null (off) or 0–100.",
+          },
+          { status: 400 },
+        );
+      }
+      // 0 means off (same as null) so admins can clear from a number input.
+      patch.join_min_ghostless_pct = n === 0 ? null : Math.round(n * 100) / 100;
+    }
+  }
 
   let vanityRejected = false;
   if (body.hide_powered_by !== undefined || body.public_accent !== undefined) {
@@ -257,15 +283,33 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  let icalRejected = false;
+  if (body.rotate_ical_token || body.clear_ical_token) {
+    if (!pro) {
+      icalRejected = true;
+    } else if (body.clear_ical_token) {
+      patch.ical_token = null;
+    } else {
+      patch.ical_token = randomIcalToken();
+    }
+  }
+
   if (Object.keys(patch).length <= 1) {
+    const proGate = vanityRejected || icalRejected;
     return NextResponse.json(
       {
-        error: vanityRejected ? "pro_required_for_vanity" : "nothing_to_update",
+        error: vanityRejected
+          ? "pro_required_for_vanity"
+          : icalRejected
+            ? "pro_required_for_ical"
+            : "nothing_to_update",
         hint: vanityRejected
           ? "hide_powered_by / public_accent require plan pro or founding_pro"
-          : undefined,
+          : icalRejected
+            ? "iCal subscribe token requires Pro or Founding Pro"
+            : undefined,
       },
-      { status: vanityRejected ? 403 : 400 },
+      { status: proGate ? 403 : 400 },
     );
   }
 

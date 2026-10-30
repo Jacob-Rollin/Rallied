@@ -409,8 +409,12 @@ export default function GuidePage() {
               <span>
                 <strong className="font-semibold text-white">What you see</strong>
                 : Overview (open parties / members / strikes), LFG parties,
-                People, Analytics, Settings, and Disputes (list + status —
-                resolve still in Discord for now).
+                People, Analytics, Settings, and Disputes — Community+ admins
+                Overturn / Uphold on the web (same as{" "}
+                <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
+                  /dispute resolve
+                </code>
+                ).
               </span>
             </li>
             <li className="flex gap-3">
@@ -434,7 +438,16 @@ export default function GuidePage() {
                 ) with a Discord invite URL, then{" "}
                 <strong className="font-semibold text-white">Save</strong>{" "}
                 (writes live). Pro / Founding unlock vanity (hide Powered by,
-                accent, Discord guild icon on the public page).
+                accent, Discord guild icon on the public page) and a{" "}
+                <strong className="font-semibold text-white">
+                  Calendar subscribe
+                </strong>{" "}
+                URL — free{" "}
+                <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
+                  .ics
+                </code>{" "}
+                from our Worker for scheduled parties (Apple / Google Calendar
+                subscribe; no Google OAuth).
               </span>
             </li>
           </ol>

@@ -103,7 +103,7 @@ export async function handleDispute(
 
     if (error) return ephemeral(`Could not open dispute: ${error.message}`);
     return ephemeral(
-      `Dispute \`${data.id}\` opened (this server). Mods review with \`/dispute resolve\` (dashboard Overturn/Uphold resolve in Discord).`,
+      `Dispute \`${data.id}\` opened (this server). Mods review with \`/dispute resolve\` or Overturn / Uphold on the admin web Disputes page.`,
     );
   }
 

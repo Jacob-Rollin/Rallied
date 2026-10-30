@@ -103,6 +103,8 @@ function defaultPublicSettings(server: Server): ServerSettings {
     discord_invite_url: null,
     hide_powered_by: false,
     public_accent: null,
+    ical_token: null,
+    join_min_ghostless_pct: null,
     created_at: server.created_at,
     updated_at: server.updated_at,
   };
@@ -127,6 +129,8 @@ function mapPublicSettings(row: Record<string, unknown>): ServerSettings {
     discord_invite_url: (row.discord_invite_url as string | null) ?? null,
     hide_powered_by: Boolean(row.hide_powered_by),
     public_accent: (row.public_accent as string | null) ?? null,
+    ical_token: null,
+    join_min_ghostless_pct: null,
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
   };

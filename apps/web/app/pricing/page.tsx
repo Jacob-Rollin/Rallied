@@ -18,7 +18,7 @@ import { SiteHeader } from "../../components/SiteHeader";
 export const metadata: Metadata = {
   title: `Pricing — ${BRAND.name}`,
   description:
-    "Per Discord server. Starter free under caps. Community $4.99/mo, Pro $9.99/mo, Founding Pro $8.99 locked (≤20).",
+    "Per Discord server. Starter free under caps. Community $4.99/mo, Pro $9.99/mo, Founding Pro $8.99 locked (≤10).",
 };
 
 const TIERS = [

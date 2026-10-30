@@ -231,4 +231,34 @@ export const commandDefinitions = [
       },
     ],
   },
+  {
+    name: "feedback",
+    description: "Report a bug or suggestion to the Rallied team",
+    options: [
+      {
+        type: 3,
+        name: "type",
+        description: "Bug or suggestion",
+        required: true,
+        choices: [
+          { name: "bug", value: "bug" },
+          { name: "suggestion", value: "suggestion" },
+        ],
+      },
+      {
+        type: 3,
+        name: "title",
+        description: "Short title (what broke / what you want)",
+        required: true,
+        max_length: 120,
+      },
+      {
+        type: 3,
+        name: "details",
+        description: "What happened, steps, or idea (be specific)",
+        required: true,
+        max_length: 1800,
+      },
+    ],
+  },
 ] as const;

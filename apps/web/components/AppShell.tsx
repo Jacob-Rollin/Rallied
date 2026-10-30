@@ -12,6 +12,7 @@ import {
   isDemoGuildId,
 } from "@/lib/guild-params";
 import { resolveServerDisplayName } from "@/lib/server-display-name";
+import { ReportFeedbackModal } from "@/components/ReportFeedbackModal";
 
 const NAV_ALL = [
   { href: "/app", label: "Overview", access: "any" as const },
@@ -53,6 +54,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const [me, setMe] = useState<MeResponse | null>(null);
   const [serverId, setServerId] = useState<string>("");
+  const [reportOpen, setReportOpen] = useState(false);
 
   const mockFlag = searchParams.get("mock") === "1";
 
@@ -224,6 +226,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {mockFlag ? " · mock preview" : ""}
               </span>
             ) : null}
+            {!loading && me?.authenticated ? (
+              <button
+                type="button"
+                onClick={() => setReportOpen(true)}
+                className="text-xs text-muted hover:text-coral"
+              >
+                Report
+              </button>
+            ) : null}
             <a
               href="/api/auth/logout"
               className="text-xs text-muted hover:text-coral"
@@ -303,6 +314,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </Link>
               );
             })}
+            <button
+              type="button"
+              onClick={() => setReportOpen(true)}
+              className={`rounded-brand px-3 py-2 text-left text-sm transition ${
+                reportOpen
+                  ? "bg-coral/15 text-coral"
+                  : "text-muted hover:bg-white/5 hover:text-white"
+              }`}
+            >
+              Report
+            </button>
             <p className="mt-4 hidden text-xs text-muted lg:block">
               Viewing{" "}
               <span className="text-white/80">
@@ -322,6 +344,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <main className="min-w-0">{children}</main>
         </div>
       )}
+
+      <ReportFeedbackModal
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        discordGuildId={server?.id}
+        guildName={
+          server
+            ? resolveServerDisplayName({
+                oauthName: server.name,
+                guildId: server.id,
+              })
+            : undefined
+        }
+      />
     </div>
   );
 }

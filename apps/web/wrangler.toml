@@ -51,3 +51,7 @@ binding = "ASSETS"
 #   STRIPE_PRICE_PRO_MONTHLY / _YEARLY
 #   STRIPE_PRICE_FOUNDING_PRO_MONTHLY (/ _YEARLY optional)
 #   Legacy aliases: STRIPE_PRICE_COMMUNITY, STRIPE_PRICE_PRO, STRIPE_PRICE_FOUNDING_PRO
+#
+# Feedback ops inbox (/ops):
+#   OPS_DISCORD_IDS                (SECRET — comma-separated Discord user snowflakes)
+#   OPS_FEEDBACK_CHANNEL_ID        (optional — staff channel for new-report embeds)

@@ -5,6 +5,7 @@ import {
   oauthConfigProblems,
 } from "@/lib/auth/config";
 import { buildAuthorizeUrl } from "@/lib/auth/discord";
+import { safePostLoginNext } from "@/lib/auth/safe-next";
 import { getSession, mockSessionPayload } from "@/lib/auth/session";
 
 /** Web Crypto — works under Node and Workers (nodejs_compat). */
@@ -23,21 +24,12 @@ function appOrigin(req: Request): string {
   return new URL(req.url).origin;
 }
 
-/** Only allow post-login redirects under /app (no open redirects). */
-function safeAppNext(raw: string | null): string | undefined {
-  if (!raw) return undefined;
-  const path = raw.trim();
-  if (!path.startsWith("/app")) return undefined;
-  if (path.startsWith("//") || path.includes("://")) return undefined;
-  return path;
-}
-
 /** Start Discord OAuth — or seed mock only when MOCK_AUTH / local-dev allows it. */
 export async function GET(req: Request) {
   const session = await getSession();
   const origin = appOrigin(req);
   const reqUrl = new URL(req.url);
-  const nextPath = safeAppNext(reqUrl.searchParams.get("next"));
+  const nextPath = safePostLoginNext(reqUrl.searchParams.get("next"));
 
   if (!discordOAuthConfigured()) {
     if (mockAuthEnabled()) {

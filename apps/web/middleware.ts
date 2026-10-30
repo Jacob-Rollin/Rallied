@@ -39,14 +39,17 @@ function clearSessionCookie(res: NextResponse, cookieName: string) {
 }
 
 /**
- * Gate /app/* — require session cookie.
- * Mock admin only when MOCK_AUTH=1 (or local + OAuth missing).
+ * Gate /app/* and /ops/* — require session cookie.
+ * Mock admin only for /app when MOCK_AUTH=1 (or local + OAuth missing).
+ * /ops never auto-seeds mock — allowlist check happens in the page.
  * Stale mock cookies must not block real Discord login once OAuth is wired.
  * Bad/stale session cookies must not 500 the whole dashboard.
  */
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  if (!pathname.startsWith("/app")) {
+  const isApp = pathname.startsWith("/app");
+  const isOps = pathname.startsWith("/ops");
+  if (!isApp && !isOps) {
     return NextResponse.next();
   }
 
@@ -80,7 +83,8 @@ export async function middleware(req: NextRequest) {
   }
 
   if (!session.user) {
-    if (allowMock) {
+    // Mock auto-login is /app only — ops requires a real Discord identity.
+    if (isApp && allowMock) {
       const mock = mockSessionPayload();
       session.user = mock.user;
       session.guilds = mock.guilds;
@@ -97,5 +101,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/app/:path*"],
+  matcher: ["/app/:path*", "/ops", "/ops/:path*"],
 };

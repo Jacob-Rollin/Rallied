@@ -11,7 +11,7 @@ export interface SessionData {
   };
   guilds?: AdminGuild[];
   oauthState?: string;
-  /** Safe post-OAuth path (must start with /app). */
+  /** Safe post-OAuth path (/app… or /ops…). */
   oauthNext?: string;
   isMock?: boolean;
 }

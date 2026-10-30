@@ -20,6 +20,11 @@ export interface BotEnv {
    * Include Official Rallied: 1564716956198899824
    */
   DOGFOOD_GUILD_IDS?: string;
+  /**
+   * Optional staff inbox channel for new feedback embeds.
+   * Fail open when unset — DB insert still succeeds.
+   */
+  OPS_FEEDBACK_CHANNEL_ID?: string;
 }
 
 export function readNodeEnv(): BotEnv {
@@ -35,6 +40,7 @@ export function readNodeEnv(): BotEnv {
     REGISTER_COMMANDS_SECRET: process.env.REGISTER_COMMANDS_SECRET,
     PUBLIC_WEB_URL: process.env.PUBLIC_WEB_URL,
     DOGFOOD_GUILD_IDS: process.env.DOGFOOD_GUILD_IDS,
+    OPS_FEEDBACK_CHANNEL_ID: process.env.OPS_FEEDBACK_CHANNEL_ID,
   };
 }
 

@@ -34,6 +34,7 @@ const SECTIONS = [
   { id: "ghostless", label: "Ghostless" },
   { id: "leaderboard", label: "Leaderboard" },
   { id: "admin", label: "Admin web" },
+  { id: "report", label: "Report bugs" },
 ] as const;
 
 export default function GuidePage() {
@@ -636,6 +637,33 @@ export default function GuidePage() {
               Explore demo
             </Link>
           </div>
+        </section>
+
+        <section id="report" className="scroll-mt-32">
+          <p className="font-display text-xs tracking-[0.14em] text-coral">
+            10
+          </p>
+          <h2 className="mt-1 font-display text-3xl tracking-wide text-white">
+            How to report bugs
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">
+            Anyone in a Discord server with Rallied can file a bug or suggestion.
+            Use{" "}
+            <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
+              /feedback
+            </code>{" "}
+            in Discord (type + short title + details), or tap{" "}
+            <strong className="font-semibold text-white">Report</strong> after{" "}
+            <Link href="/login?next=%2Fapp" className="text-coral hover:underline">
+              Log in
+            </Link>{" "}
+            on{" "}
+            <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
+              /app
+            </code>
+            . The Rallied team triages privately — you get an ephemeral ack in
+            Discord (or a confirmation on the web). No public ticket board.
+          </p>
         </section>
 
         <section className="rounded-brand border border-white/10 bg-slate-elevated/40 px-5 py-8 sm:px-8">

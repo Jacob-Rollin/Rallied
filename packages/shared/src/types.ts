@@ -1,4 +1,10 @@
-import type { DISPUTE_STATUSES, LFG_PARTY_STATUSES } from "./constants";
+import type {
+  DISPUTE_STATUSES,
+  FEEDBACK_KINDS,
+  FEEDBACK_STATUSES,
+  FEEDBACK_SURFACES,
+  LFG_PARTY_STATUSES,
+} from "./constants";
 
 export type PlanId =
   | "trial"
@@ -12,6 +18,12 @@ export type PlanId =
 export type LfgPartyStatus = (typeof LFG_PARTY_STATUSES)[number];
 
 export type DisputeStatus = (typeof DISPUTE_STATUSES)[number];
+
+export type FeedbackKind = (typeof FEEDBACK_KINDS)[number];
+
+export type FeedbackSurface = (typeof FEEDBACK_SURFACES)[number];
+
+export type FeedbackStatus = (typeof FEEDBACK_STATUSES)[number];
 
 export interface Server {
   id: string;
@@ -221,6 +233,23 @@ export interface PlayerCardData {
   ghostless: GhostlessStats | null;
   activeStrikes: Strike[];
   activeLockout: Lockout | null;
+}
+
+/** Product feedback / bug report (015). Ops triage on /ops. */
+export interface FeedbackReport {
+  id: string;
+  kind: FeedbackKind;
+  surface: FeedbackSurface;
+  status: FeedbackStatus;
+  title: string;
+  details: string;
+  reporter_discord_user_id: string;
+  reporter_display_name: string;
+  discord_guild_id: string | null;
+  guild_name: string | null;
+  internal_note: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 /** Dashboard access level for a selected guild. */

@@ -4,6 +4,7 @@ import { ephemeral, type Interaction } from "../lib/discord.js";
 import { formatError } from "../lib/errors.js";
 import { handleButton } from "./buttons.js";
 import { handleDispute } from "./dispute.js";
+import { handleFeedback } from "./feedback.js";
 import { handleGhostless } from "./ghostless.js";
 import { handleLeaderboard } from "./leaderboard.js";
 import { handleCreateModalSubmit, handleLfg, handleSetup } from "./lfg.js";
@@ -32,6 +33,8 @@ export async function routeCommand(
         return await handleLeaderboard(interaction, sb, env);
       case "dispute":
         return await handleDispute(interaction, sb, env);
+      case "feedback":
+        return await handleFeedback(interaction, sb, env);
       default:
         return ephemeral(`Unknown command: ${name ?? "?"}`);
     }

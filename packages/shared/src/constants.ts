@@ -127,6 +127,20 @@ export const LFG_PARTY_STATUSES = ["open", "filled", "closed"] as const;
 
 export const DISPUTE_STATUSES = ["open", "upheld", "overturned"] as const;
 
+/** Feedback / bug inbox (015) — kinds reporters pick. */
+export const FEEDBACK_KINDS = ["bug", "suggestion"] as const;
+
+/** Where the report was filed. */
+export const FEEDBACK_SURFACES = ["bot", "web", "discord"] as const;
+
+/** Ops status workflow: new → triaging → done | wontfix */
+export const FEEDBACK_STATUSES = [
+  "new",
+  "triaging",
+  "done",
+  "wontfix",
+] as const;
+
 export const PARTY_PURGE_DAYS = 14;
 
 export const DEFAULT_GRACE_MINUTES = 5;
@@ -155,6 +169,7 @@ export const SLASH_COMMANDS = {
   ghostless: "ghostless",
   dispute: "dispute",
   leaderboard: "leaderboard",
+  feedback: "feedback",
 } as const;
 
 /** Custom_id prefixes for message component interactions. */

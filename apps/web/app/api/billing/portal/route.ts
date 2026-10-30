@@ -10,6 +10,9 @@ type Body = {
 
 /**
  * Session-gated Stripe Customer Portal (cancel / update payment method).
+ * Cancel behavior (at period end vs immediate) is controlled in Stripe Dashboard
+ * → Settings → Billing → Customer portal → Cancellation. Prefer “at period end”
+ * so access continues through trial_end / current_period_end.
  */
 export async function POST(req: NextRequest) {
   const session = await getSession();

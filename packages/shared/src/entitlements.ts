@@ -115,6 +115,13 @@ export function trialEndsAtFromNow(now = new Date(), days = TRIAL_DAYS): string 
   return new Date(now.getTime() + days * 86400_000).toISOString();
 }
 
+/** True when this guild may still receive Stripe Community trial_period_days. */
+export function isCommunityTrialEligible(server: {
+  trial_consumed_at?: string | null;
+}): boolean {
+  return !server.trial_consumed_at;
+}
+
 export function reliabilityEnabled(plan: string | null | undefined): boolean {
   return hasCommunityAccess(plan);
 }

@@ -600,18 +600,21 @@ export default function GuidePage() {
               after Log in.
             </p>
             <p>
-              <strong className="font-semibold text-white">Plans</strong> — 14-day
-              Community trial, then Starter free (2 open + 5 creates/24h for this
-              server, no Ghostless). Community $4.99 · Pro $9.99 · Founding $8.99
-              locked (≤10 seats) — all per Discord server. Upgrade on{" "}
+              <strong className="font-semibold text-white">Plans</strong> —
+              Community Checkout requires a card; first time gets a 14-day trial
+              (charged after trial ends). One trial per Discord server
+              (reinstall does not reset it). Cancel keeps access until the trial
+              or paid period ends, then Starter (2 open + 5 creates/24h, no
+              Ghostless). Community $4.99 · Pro $9.99 · Founding $8.99 locked
+              (≤10 seats). Upgrade on{" "}
               <Link href="/app/billing" className="text-coral hover:underline">
                 /app/billing
               </Link>{" "}
-              (Stripe Checkout) or compare on{" "}
+              or compare on{" "}
               <Link href="/pricing" className="text-coral hover:underline">
                 Pricing
               </Link>
-              . Cancel / update card via Manage billing (Customer Portal).
+              . Manage billing opens the Customer Portal.
             </p>
           </div>
 

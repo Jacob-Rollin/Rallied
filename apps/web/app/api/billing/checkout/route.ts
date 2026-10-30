@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PLANS, type BillingInterval, type PaidCheckoutPlan } from "@rallied/shared";
+import {
+  TRIAL_DAYS,
+  isCommunityTrialEligible,
+  type BillingInterval,
+  type PaidCheckoutPlan,
+  PLANS,
+} from "@rallied/shared";
 import { requireOwnerGuild } from "@/lib/auth/guild-access";
 import { getSession } from "@/lib/auth/session";
-import { countFoundingSeats } from "@/lib/billing-sync";
+import {
+  countFoundingSeats,
+  stripeCustomerHadTrial,
+} from "@/lib/billing-sync";
 import {
   appBaseUrl,
   getStripe,
@@ -28,6 +37,7 @@ function parseInterval(raw: string | undefined): BillingInterval {
 
 /**
  * Session-gated Stripe Checkout Session (subscription).
+ * Community: card always required; trial_period_days only if guild never consumed a trial.
  * Secrets stay on the Worker — client only receives the hosted Checkout URL.
  */
 export async function POST(req: NextRequest) {
@@ -104,7 +114,7 @@ export async function POST(req: NextRequest) {
   const { data: server, error: sErr } = await sb
     .from("servers")
     .select(
-      "id, discord_guild_id, plan, stripe_customer_id, forever_pro, name",
+      "id, discord_guild_id, plan, stripe_customer_id, forever_pro, name, trial_consumed_at",
     )
     .eq("discord_guild_id", discordGuildId)
     .maybeSingle();
@@ -143,17 +153,62 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "stripe_not_configured" }, { status: 503 });
   }
 
+  // Guild-id lock is source of truth; Stripe customer history is a secondary guard.
+  let grantTrial =
+    plan === "community" &&
+    isCommunityTrialEligible({
+      trial_consumed_at: (server.trial_consumed_at as string | null) ?? null,
+    });
+
+  const existingCustomerId =
+    typeof server.stripe_customer_id === "string" &&
+    server.stripe_customer_id.startsWith("cus_")
+      ? server.stripe_customer_id
+      : null;
+
+  if (grantTrial && existingCustomerId) {
+    const hadStripeTrial = await stripeCustomerHadTrial(
+      stripe,
+      existingCustomerId,
+    );
+    if (hadStripeTrial) {
+      grantTrial = false;
+      // Persist lock so reinstall / later Checkout stays paid day-one.
+      if (!server.trial_consumed_at) {
+        await sb
+          .from("servers")
+          .update({
+            trial_consumed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", server.id)
+          .is("trial_consumed_at", null);
+      }
+    }
+  }
+
   const base = appBaseUrl();
   const successUrl = `${base}/app/billing?guild=${encodeURIComponent(discordGuildId)}&checkout=success`;
   const cancelUrl = `${base}/app/billing?guild=${encodeURIComponent(discordGuildId)}&checkout=cancel`;
 
-  const metadata = {
+  const metadata: Record<string, string> = {
     discord_guild_id: discordGuildId,
     server_id: String(server.id),
     rallied_plan: plan,
     billing_interval: interval,
     stripe_price_id: priceId,
+    rallied_trial: grantTrial ? "1" : "0",
   };
+
+  const subscriptionData: {
+    metadata: Record<string, string>;
+    trial_period_days?: number;
+  } = {
+    metadata,
+  };
+  if (grantTrial) {
+    subscriptionData.trial_period_days = TRIAL_DAYS;
+  }
 
   try {
     const checkout = await stripe.checkout.sessions.create({
@@ -161,17 +216,13 @@ export async function POST(req: NextRequest) {
       success_url: successUrl,
       cancel_url: cancelUrl,
       client_reference_id: discordGuildId,
-      customer:
-        typeof server.stripe_customer_id === "string" &&
-        server.stripe_customer_id.startsWith("cus_")
-          ? server.stripe_customer_id
-          : undefined,
+      customer: existingCustomerId ?? undefined,
       line_items: [{ price: priceId, quantity: 1 }],
       allow_promotion_codes: true,
+      // Card required even when trial_period_days is set (no charge until trial ends).
+      payment_method_collection: "always",
       metadata,
-      subscription_data: {
-        metadata,
-      },
+      subscription_data: subscriptionData,
     });
 
     if (!checkout.url) {
@@ -184,6 +235,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       url: checkout.url,
       sessionId: checkout.id,
+      trialGranted: grantTrial,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

@@ -31,9 +31,10 @@ export function PlanBanner({ plan, trialEndsAt, billingHref }: Props) {
           {daysLeft != null ? ` · ${daysLeft} day${daysLeft === 1 ? "" : "s"} left` : ""}
         </p>
         <p className="mt-1 text-white/70">
-          Full Ghostless + unlimited LFG while the trial runs. After that this
-          server drops to Starter caps (2 open · 5 creates/24h) unless you
-          upgrade.
+          Full Ghostless + unlimited LFG while the trial runs. Cancel keeps
+          access until the trial end date (no charge). After that this server
+          drops to Starter caps (2 open · 5 creates/24h) unless you stay
+          subscribed. One trial per Discord server.
         </p>
         <Link
           href={billingHref}

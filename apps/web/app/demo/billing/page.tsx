@@ -70,8 +70,9 @@ export default async function DemoBillingPage() {
               </p>
             ) : (
               <p className="mt-2 text-xs text-muted">
-                Real servers start with a 14-day Community trial, then Starter
-                caps or ${COMMUNITY_PRICE_USD}/mo per Discord server.
+                Live Billing: Community Checkout is card-required with a one-time
+                14-day trial (charged after trial). Cancel keeps access through
+                the period. ${COMMUNITY_PRICE_USD}/mo per Discord server.
               </p>
             )}
           </div>

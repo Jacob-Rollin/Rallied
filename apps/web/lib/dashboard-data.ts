@@ -165,6 +165,7 @@ function mapServerRow(row: Record<string, unknown>): Server {
     price_lock_cents:
       row.price_lock_cents == null ? null : Number(row.price_lock_cents),
     trial_ends_at: (row.trial_ends_at as string | null) ?? null,
+    trial_consumed_at: (row.trial_consumed_at as string | null) ?? null,
     priority_support: Boolean(row.priority_support),
     stripe_customer_id: (row.stripe_customer_id as string | null) ?? null,
     stripe_subscription_id:

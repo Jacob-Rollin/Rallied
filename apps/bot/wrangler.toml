@@ -1,3 +1,4 @@
+# Rallied Discord bot Worker. Tip builds: content change here retriggers rallied-bot.
 name = "rallied-bot"
 main = "src/worker.ts"
 compatibility_date = "2024-10-01"

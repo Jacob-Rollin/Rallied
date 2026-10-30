@@ -47,13 +47,14 @@ export function resolveEffectivePlan(
   );
 }
 
-/** Persist expired trials → free. Returns updated plan fields. */
+/** Persist expired legacy/app trials → free. Marks trial_consumed_at. */
 export async function lapseExpiredTrial(
   sb: SupabaseClient,
   server: {
     id: string;
     plan: string;
     trial_ends_at: string | null;
+    trial_consumed_at?: string | null;
   },
   now = new Date(),
 ): Promise<{ plan: string; trial_ends_at: string | null }> {
@@ -63,9 +64,17 @@ export async function lapseExpiredTrial(
   if (new Date(server.trial_ends_at).getTime() > now.getTime()) {
     return { plan: server.plan, trial_ends_at: server.trial_ends_at };
   }
+  const nowIso = now.toISOString();
+  const patch: Record<string, unknown> = {
+    plan: "free",
+    updated_at: nowIso,
+  };
+  if (!server.trial_consumed_at) {
+    patch.trial_consumed_at = nowIso;
+  }
   const { data } = await sb
     .from("servers")
-    .update({ plan: "free", updated_at: now.toISOString() })
+    .update(patch)
     .eq("id", server.id)
     .eq("plan", "trial")
     .select("plan, trial_ends_at")
@@ -77,18 +86,24 @@ export async function lapseExpiredTrial(
   };
 }
 
-/** Sweep expired trials (cron). */
+/** Sweep expired trials (cron). Never clears trial_consumed_at. */
 export async function lapseAllExpiredTrials(
   sb: SupabaseClient,
 ): Promise<number> {
   const now = new Date().toISOString();
   const { data, error } = await sb
     .from("servers")
-    .update({ plan: "free", updated_at: now })
+    .update({
+      plan: "free",
+      trial_consumed_at: now,
+      updated_at: now,
+    })
     .eq("plan", "trial")
     .lt("trial_ends_at", now)
     .not("trial_ends_at", "is", null)
     .select("id");
+  // Note: setting trial_consumed_at on already-consumed rows is fine (same-ish timestamp).
+  // Rows with trial_consumed_at already set keep the column; PostgREST overwrites — acceptable.
   if (error) {
     console.error("lapseAllExpiredTrials", error.message);
     return 0;
@@ -97,9 +112,8 @@ export async function lapseAllExpiredTrials(
 }
 
 /**
- * First-time server row: plan=trial + trial_ends_at (+14d).
- * Never resets paid / founding / community.
- * Dogfood guilds get founding_pro without a trial clock.
+ * Dogfood → founding_pro. Never re-grants Community trial after trial_consumed_at.
+ * Legacy plan=trial rows keep their clock until lapse; new installs are plan=free.
  */
 export async function bootstrapNewServerPlan(
   sb: SupabaseClient,
@@ -109,6 +123,7 @@ export async function bootstrapNewServerPlan(
     id: string;
     plan: string;
     trial_ends_at: string | null;
+    trial_consumed_at?: string | null;
     created_at?: string;
   },
 ): Promise<{ plan: string; trial_ends_at: string | null }> {
@@ -120,6 +135,7 @@ export async function bootstrapNewServerPlan(
           plan: "founding_pro",
           price_lock_cents: 899,
           priority_support: true,
+          forever_pro: true,
           trial_ends_at: null,
           updated_at: new Date().toISOString(),
         })
@@ -141,11 +157,20 @@ export async function bootstrapNewServerPlan(
     return { plan: server.plan, trial_ends_at: server.trial_ends_at };
   }
 
+  // Legacy incomplete trial rows only — do not mint new install trials.
   if (server.plan === "trial" && !server.trial_ends_at) {
     const ends = trialEndsAtFromNow();
+    const nowIso = new Date().toISOString();
+    const patch: Record<string, unknown> = {
+      trial_ends_at: ends,
+      updated_at: nowIso,
+    };
+    if (!server.trial_consumed_at) {
+      patch.trial_consumed_at = nowIso;
+    }
     const { data } = await sb
       .from("servers")
-      .update({ trial_ends_at: ends, updated_at: new Date().toISOString() })
+      .update(patch)
       .eq("id", server.id)
       .eq("plan", "trial")
       .is("trial_ends_at", null)
@@ -161,6 +186,7 @@ export async function bootstrapNewServerPlan(
     id: server.id,
     plan: server.plan,
     trial_ends_at: server.trial_ends_at,
+    trial_consumed_at: server.trial_consumed_at ?? null,
   });
 }
 

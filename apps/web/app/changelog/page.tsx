@@ -22,6 +22,11 @@ const ENTRIES: {
 }[] = [
   {
     date: "2026-10-30",
+    title: "Community trial · cancel keeps access",
+    body: `Community Checkout requires a card. First trial per Discord server is 14 days (charged after trial). Cancel during trial or after paying keeps access until trial/period end, then Starter. Uninstall does not grant another trial. Official / forever_pro never downgraded.`,
+  },
+  {
+    date: "2026-10-30",
     title: "Rallied Mod dashboard access",
     body: "Community+ (trial / Community / Pro / Founding): owners pick Discord role(s) in Settings → Rallied Mod roles. Members with those roles Log in to Overview, LFG, People, Disputes (Overturn/Uphold), and Analytics — not Settings writes or Billing. Starter: no Mod access (upgrade CTA). Owners with Manage Server still get the full /app.",
   },

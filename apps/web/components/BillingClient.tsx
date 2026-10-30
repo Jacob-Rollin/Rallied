@@ -8,6 +8,7 @@ import {
   FOUNDING_PRO_PRICE_USD,
   PLANS,
   PRO_PRICE_USD,
+  isCommunityTrialEligible,
   isPaidPlan,
   isProPlan,
   isStarterPlan,
@@ -22,6 +23,7 @@ type Props = {
   plan: PlanId | string;
   priceLockCents: number | null;
   trialEndsAt: string | null;
+  trialConsumedAt: string | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   billingInterval: "month" | "year" | null;
@@ -45,7 +47,8 @@ const SKUS: Sku[] = [
     title: "Community",
     monthly: COMMUNITY_PRICE_USD,
     annual: PLANS.community.annualCents / 100,
-    blurb: "Unlimited LFG + Ghostless + strikes for this server. Includes 14-day trial on new installs.",
+    blurb:
+      "Unlimited LFG + Ghostless + strikes. First Checkout: 14-day trial (card required, charged after trial). One trial per Discord server.",
     accent: "lime",
   },
   {
@@ -72,6 +75,7 @@ export function BillingClient({
   plan,
   priceLockCents,
   trialEndsAt,
+  trialConsumedAt,
   stripeCustomerId,
   stripeSubscriptionId,
   billingInterval,
@@ -89,6 +93,9 @@ export function BillingClient({
   const pro = isProPlan(plan);
   const paid = isPaidPlan(plan);
   const starter = isStarterPlan(plan);
+  const communityTrialEligible = isCommunityTrialEligible({
+    trial_consumed_at: trialConsumedAt,
+  });
   const lock =
     priceLockCents != null ? (priceLockCents / 100).toFixed(2) : null;
 
@@ -219,13 +226,24 @@ export function BillingClient({
             {plan === "trial" && trialEndsAt ? (
               <p className="mt-1 text-xs text-white/60">
                 Trial ends {new Date(trialEndsAt).toLocaleDateString()} — then
-                Starter caps unless you upgrade.
+                Starter caps unless you stay subscribed. Cancel keeps access
+                until that date (no charge if you cancel during trial).
+              </p>
+            ) : null}
+            {paid && trialEndsAt ? (
+              <p className="mt-1 text-xs text-white/60">
+                Stripe trial through {new Date(trialEndsAt).toLocaleDateString()}
+                — card on file, first charge after trial ends. Cancel anytime;
+                access lasts through the trial.
               </p>
             ) : null}
             {starter ? (
               <p className="mt-1 text-xs text-coral/90">
                 Starter: 2 open parties · 5 creates/24h · no Ghostless (this
                 server).
+                {communityTrialEligible
+                  ? " Community Checkout includes a one-time 14-day trial (card required)."
+                  : " Trial already used for this Discord server — Community bills from day one."}
               </p>
             ) : null}
             {pro && plan === "founding_pro" ? (
@@ -352,7 +370,9 @@ export function BillingClient({
                       ? "Get Founding Pro"
                       : sku.plan === "pro"
                         ? "Upgrade to Pro"
-                        : "Subscribe"}
+                        : sku.plan === "community" && communityTrialEligible
+                          ? "Start 14-day trial"
+                          : "Subscribe"}
               </button>
             </div>
           );
@@ -360,10 +380,11 @@ export function BillingClient({
       </section>
 
       <p className="text-xs text-muted">
-        Per Discord server. Cancel / update card in{" "}
-        <span className="text-white/70">Manage billing</span> (Stripe Customer
-        Portal). Official Rallied and Founding Pro are never stripped by
-        webhooks — safe to test Checkout in Stripe test mode.
+        Per Discord server. Card required at Checkout. Cancel in{" "}
+        <span className="text-white/70">Manage billing</span> keeps paid (or
+        trial) access until the period / trial ends — then Starter. One Community
+        trial per server (uninstall does not reset it). Official Rallied /
+        forever_pro are never downgraded.
       </p>
     </div>
   );

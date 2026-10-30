@@ -372,6 +372,7 @@ async function resolveLivePublicServer(
         ? null
         : Number(serverRow.price_lock_cents),
     trial_ends_at: (serverRow.trial_ends_at as string | null) ?? null,
+    trial_consumed_at: (serverRow.trial_consumed_at as string | null) ?? null,
     priority_support: Boolean(serverRow.priority_support),
     stripe_customer_id:
       (serverRow.stripe_customer_id as string | null) ?? null,
@@ -704,6 +705,7 @@ async function listLiveDirectoryServers(): Promise<DirectoryServerCard[]> {
       plan: (serverRaw.plan as Server["plan"]) || "trial",
       price_lock_cents: null,
       trial_ends_at: null,
+      trial_consumed_at: null,
       priority_support: false,
       stripe_customer_id: null,
       icon_url: (serverRaw.icon_url as string | null) ?? null,

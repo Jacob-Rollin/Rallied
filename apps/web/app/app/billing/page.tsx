@@ -73,6 +73,7 @@ export default async function BillingPage({ searchParams }: Props) {
         plan={plan}
         priceLockCents={current?.price_lock_cents ?? null}
         trialEndsAt={current?.trial_ends_at ?? null}
+        trialConsumedAt={current?.trial_consumed_at ?? null}
         stripeCustomerId={current?.stripe_customer_id ?? null}
         stripeSubscriptionId={current?.stripe_subscription_id ?? null}
         billingInterval={current?.billing_interval ?? null}

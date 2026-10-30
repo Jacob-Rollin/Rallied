@@ -141,7 +141,20 @@ export const FEEDBACK_STATUSES = [
   "wontfix",
 ] as const;
 
+/**
+ * Soft-closed LFG parties (`deleted_at` set) stay in DB for host credit /
+ * monthly Top hosts. Do **not** hard-delete closed parties on a short timer.
+ * @deprecated Use SERVER_INACTIVE_PURGE_DAYS — 14-day party hard-purge is retired.
+ */
 export const PARTY_PURGE_DAYS = 14;
+
+/**
+ * Default inactivity window before optional soft-archive of a guild’s history.
+ * Survive `/setup`, bot leave, and reinstall. Only purge (or soft-archive) when
+ * there is no bot activity and no new parties for this many days.
+ * Easy to change — single product constant.
+ */
+export const SERVER_INACTIVE_PURGE_DAYS = 90;
 
 export const DEFAULT_GRACE_MINUTES = 5;
 export const DEFAULT_STRIKE_THRESHOLD = 3;

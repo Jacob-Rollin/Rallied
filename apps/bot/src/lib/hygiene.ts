@@ -8,23 +8,37 @@ import {
   type PartyCardState,
 } from "./party-message.js";
 import { resolveDueReadyChecks } from "../handlers/ready-check.js";
+import { runRetentionPass } from "./retention.js";
 import { cleanupPartyVoice } from "./voice.js";
 
 const API = "https://discord.com/api/v10";
 
 /**
  * Close open/filled parties past expires_at and refresh Discord cards to Closed.
- * Also finalize ready checks, lapse expired trials, and send schedule reminders.
+ * Also finalize ready checks, lapse expired trials, schedule reminders, and
+ * (opt-in) inactivity soft-archive. Soft-close sets deleted_at for Find UI —
+ * rows stay for Top hosts / Ghostless history. Never deletes servers on leave.
  */
 export async function runBotHygiene(env: BotEnv): Promise<{
   expired: number;
   readyResolved: number;
   trialsLapsed: number;
   reminders: number;
+  retentionSkipped: boolean;
+  retentionCandidates: number;
+  retentionArchived: number;
 }> {
   const sb = createServiceClient(env);
   if (!sb) {
-    return { expired: 0, readyResolved: 0, trialsLapsed: 0, reminders: 0 };
+    return {
+      expired: 0,
+      readyResolved: 0,
+      trialsLapsed: 0,
+      reminders: 0,
+      retentionSkipped: true,
+      retentionCandidates: 0,
+      retentionArchived: 0,
+    };
   }
 
   let trialsLapsed = 0;
@@ -154,7 +168,27 @@ export async function runBotHygiene(env: BotEnv): Promise<{
     console.error("hygiene schedule reminders", err);
   }
 
-  return { expired, readyResolved, trialsLapsed, reminders };
+  let retentionSkipped = true;
+  let retentionCandidates = 0;
+  let retentionArchived = 0;
+  try {
+    const retention = await runRetentionPass(sb, env);
+    retentionSkipped = retention.skipped;
+    retentionCandidates = retention.candidates;
+    retentionArchived = retention.archived;
+  } catch (err) {
+    console.error("hygiene retention", err);
+  }
+
+  return {
+    expired,
+    readyResolved,
+    trialsLapsed,
+    reminders,
+    retentionSkipped,
+    retentionCandidates,
+    retentionArchived,
+  };
 }
 
 /**

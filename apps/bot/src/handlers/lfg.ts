@@ -566,7 +566,12 @@ export async function handleLfg(
   return ephemeral("Unknown `/lfg` subcommand. Try create, find, desk, or close.");
 }
 
-/** `/setup` — admin posts LFG desk; new installs start on Starter (`plan=free`). */
+/**
+ * `/setup` — admin (re)posts LFG desk only.
+ * Upserts server/member name+icon; never deletes parties, members,
+ * ghostless_stats, vibes, strikes, server_events, or leaderboard inputs.
+ * Re-run after channel moves or reinstall — history stays keyed by guild id.
+ */
 export async function handleSetup(
   interaction: Interaction,
   sb: SupabaseClient | null,

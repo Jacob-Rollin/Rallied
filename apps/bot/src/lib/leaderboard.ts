@@ -51,12 +51,13 @@ export async function loadServerLeaderboard(
     { minSessions, limit },
   );
 
+  // Include soft-closed parties — Close/expire sets deleted_at for Find UI,
+  // not to erase monthly host credit. Never filter deleted_at here.
   const { data: parties } = await sb
     .from("lfg_parties")
     .select("host_member_id")
     .eq("server_id", serverId)
-    .gte("created_at", since)
-    .is("deleted_at", null);
+    .gte("created_at", since);
 
   const countByHost = new Map<string, number>();
   for (const row of parties ?? []) {

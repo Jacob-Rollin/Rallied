@@ -22,6 +22,11 @@ const ENTRIES: {
 }[] = [
   {
     date: "2026-10-30",
+    title: "History survives /setup",
+    body: "Re-running /setup (or reinstalling the bot) only re-pins the LFG desk — it does not wipe parties, Ghostless, or Top hosts. Closed parties still count toward Top hosts this month. Inactive servers may be soft-archived after 90 days with no activity (not on setup).",
+  },
+  {
+    date: "2026-10-30",
     title: "Report bugs & suggestions",
     body: "Anyone in a server with Rallied can use Discord /feedback (type + title + details). Admins and Rallied Mods can also tap Report in /app. The team triages in a private ops inbox — no public ticket board.",
   },

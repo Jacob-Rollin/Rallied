@@ -51,6 +51,12 @@ export interface Server {
    * (Official Rallied / dogfood). Prefer setting via SQL.
    */
   forever_pro?: boolean;
+  /**
+   * Soft-archive timestamp after prolonged inactivity (default 90 days).
+   * Never set by `/setup` or bot leave — opt-in retention job only.
+   * Child history remains until a future hard purge (ops-only).
+   */
+  archived_at?: string | null;
   /** Discord guild icon CDN URL (Pro public page vanity) */
   icon_url: string | null;
   created_at: string;

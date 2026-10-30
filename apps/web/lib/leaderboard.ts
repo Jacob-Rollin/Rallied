@@ -13,6 +13,11 @@ export type MonthlyLeaderboard = {
   topHosts: LeaderboardHostEntry[];
 };
 
+/**
+ * Build Most reliable + Top hosts for a server.
+ * `parties` should include soft-closed rows (`deleted_at` set) so host credit
+ * survives Close / expire / `/setup` (Find UI filters those separately).
+ */
 export function buildMonthlyLeaderboard(opts: {
   members: {
     id: string;

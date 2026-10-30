@@ -22,6 +22,11 @@ const ENTRIES: {
 }[] = [
   {
     date: "2026-10-30",
+    title: "Privacy & Terms pages",
+    body: "Draft Privacy Policy and Terms of Service are on /privacy and /terms (footer links). Cover Discord OAuth, per-server Ghostless data, Stripe billing / Community trial rules, and retention — not lawyer-reviewed; placeholders for entity and mailing address.",
+  },
+  {
+    date: "2026-10-30",
     title: "History survives /setup",
     body: "Re-running /setup (or reinstalling the bot) only re-pins the LFG desk — it does not wipe parties, Ghostless, or Top hosts. Closed parties still count toward Top hosts this month. Inactive servers may be soft-archived after 90 days with no activity (not on setup).",
   },
@@ -164,6 +169,14 @@ export default function ChangelogPage() {
           {" · "}
           <Link href="/demo" className="text-coral hover:underline">
             Demo
+          </Link>
+          {" · "}
+          <Link href="/privacy" className="text-coral hover:underline">
+            Privacy
+          </Link>
+          {" · "}
+          <Link href="/terms" className="text-coral hover:underline">
+            Terms
           </Link>
         </p>
       </main>

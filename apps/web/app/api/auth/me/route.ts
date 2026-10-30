@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { mockAuthEnabled } from "@/lib/auth/config";
-import { getBotPresenceAndPlans } from "@/lib/auth/discord";
+import {
+  getBotPresenceAndPlans,
+  syncServerMetadataFromOAuth,
+} from "@/lib/auth/discord";
 import { getSession, mockSessionPayload } from "@/lib/auth/session";
 
 export async function GET() {
@@ -37,6 +40,8 @@ export async function GET() {
       }));
       session.guilds = guilds;
       await session.save();
+      // Best-effort: repair servers.name when still a snowflake (or stale).
+      void syncServerMetadataFromOAuth(guilds);
     } catch (err) {
       console.warn("guild refresh failed", err);
     }

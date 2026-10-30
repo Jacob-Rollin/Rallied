@@ -1,7 +1,11 @@
 import { DataSourceBanner } from "@/components/DataSourceBanner";
 import { SettingsClient } from "@/components/SettingsClient";
 import { loadDashboard } from "@/lib/dashboard-data";
-import { resolveSelectedGuild, withGuildQuery } from "@/lib/guild-context";
+import {
+  displayNameForGuild,
+  resolveSelectedGuild,
+  withGuildQuery,
+} from "@/lib/guild-context";
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -9,8 +13,16 @@ type Props = {
 
 export default async function SettingsPage({ searchParams }: Props) {
   const sp = await searchParams;
-  const { guildId, useMock } = await resolveSelectedGuild({ searchParams: sp });
+  const { guildId, useMock, oauthGuildName } = await resolveSelectedGuild({
+    searchParams: sp,
+  });
   const data = await loadDashboard(guildId, useMock);
+  const serverName = displayNameForGuild({
+    guildId,
+    dbName: data.server?.name,
+    oauthName: oauthGuildName,
+    fallback: "Server",
+  });
 
   return (
     <div className="space-y-8">
@@ -30,7 +42,7 @@ export default async function SettingsPage({ searchParams }: Props) {
       <DataSourceBanner source={data.source} notice={data.notice} />
 
       <SettingsClient
-        serverName={data.server?.name ?? "Server"}
+        serverName={serverName}
         discordGuildId={data.server?.discord_guild_id ?? guildId}
         plan={data.server?.plan ?? "trial"}
         priceLockCents={data.server?.price_lock_cents ?? null}

@@ -113,34 +113,36 @@ export async function filterAdminGuilds(
     plan: plans.get(g.id),
   }));
 
-  // Best-effort: persist Discord guild icons for Pro public vanity.
-  void syncServerIconUrls(adminGuilds);
+  // Best-effort: persist Discord guild name + icon on existing servers rows.
+  void syncServerMetadataFromOAuth(adminGuilds);
 
   return adminGuilds;
 }
 
-/** Upsert icon_url on existing servers rows from OAuth guild icon hashes. */
-export async function syncServerIconUrls(
-  guilds: Pick<AdminGuild, "id" | "icon">[],
+/**
+ * Patch `name` / `icon_url` on existing `servers` rows from OAuth guild data.
+ * Fixes rows that still store the snowflake as `name` (early bot upsert).
+ * Does not insert new servers — bot slash commands own that path.
+ */
+export async function syncServerMetadataFromOAuth(
+  guilds: Pick<AdminGuild, "id" | "name" | "icon">[],
 ): Promise<void> {
   const url = getSupabaseUrl();
   const key = getServiceRoleKey();
   if (!url || !key) return;
 
-  const updates = guilds
-    .map((g) => ({
-      discord_guild_id: g.id,
-      icon_url: discordGuildIconUrl(g.id, g.icon),
-    }))
-    .filter((u): u is { discord_guild_id: string; icon_url: string } =>
-      Boolean(u.icon_url),
-    );
-
   await Promise.all(
-    updates.map(async (u) => {
+    guilds.map(async (g) => {
+      const patch: { name?: string; icon_url?: string } = {};
+      const name = (g.name ?? "").trim();
+      if (name && name !== g.id) patch.name = name;
+      const icon = discordGuildIconUrl(g.id, g.icon);
+      if (icon) patch.icon_url = icon;
+      if (Object.keys(patch).length === 0) return;
+
       try {
         await fetch(
-          `${url}/rest/v1/servers?discord_guild_id=eq.${encodeURIComponent(u.discord_guild_id)}`,
+          `${url}/rest/v1/servers?discord_guild_id=eq.${encodeURIComponent(g.id)}`,
           {
             method: "PATCH",
             headers: {
@@ -149,7 +151,7 @@ export async function syncServerIconUrls(
               "Content-Type": "application/json",
               Prefer: "return=minimal",
             },
-            body: JSON.stringify({ icon_url: u.icon_url }),
+            body: JSON.stringify(patch),
           },
         );
       } catch {
@@ -157,6 +159,13 @@ export async function syncServerIconUrls(
       }
     }),
   );
+}
+
+/** @deprecated Prefer syncServerMetadataFromOAuth (also syncs name). */
+export async function syncServerIconUrls(
+  guilds: Pick<AdminGuild, "id" | "name" | "icon">[],
+): Promise<void> {
+  return syncServerMetadataFromOAuth(guilds);
 }
 
 async function fetchPlansForGuilds(

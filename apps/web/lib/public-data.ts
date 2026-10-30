@@ -27,6 +27,7 @@ import {
 } from "./mock-data";
 import { isDemoGuildId } from "./guild-params";
 import { buildMonthlyLeaderboard } from "./leaderboard";
+import { resolveServerDisplayName } from "./server-display-name";
 import { getServiceSupabase } from "./supabase";
 
 export type PublicParty = LfgParty & {
@@ -154,6 +155,16 @@ export type DirectoryServerCard = {
   hasPublicGhostless: boolean;
 };
 
+function humanServerName(
+  server: Pick<Server, "name" | "discord_guild_id">,
+): string {
+  return resolveServerDisplayName({
+    dbName: server.name,
+    guildId: server.discord_guild_id,
+    fallback: "Discord server",
+  });
+}
+
 function toDirectoryCard(
   server: Server,
   settings: ServerSettings,
@@ -163,7 +174,7 @@ function toDirectoryCard(
   }
   if (!directoryListingEnabled(server.plan)) return null;
   return {
-    name: server.name,
+    name: humanServerName(server),
     pathKey: settings.slug || server.discord_guild_id,
     iconUrl: server.icon_url,
     inviteUrl: settings.discord_invite_url,

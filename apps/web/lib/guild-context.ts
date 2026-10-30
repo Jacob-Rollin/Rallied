@@ -6,6 +6,7 @@ import {
   isDemoGuildId,
   shouldUseMockDashboard,
 } from "@/lib/guild-params";
+import { resolveServerDisplayName } from "@/lib/server-display-name";
 
 export {
   GUILD_COOKIE,
@@ -20,7 +21,22 @@ export type GuildResolveResult = {
   forceMock: boolean;
   isMockSession: boolean;
   useMock: boolean;
+  /** OAuth guild name from session when available. */
+  oauthGuildName: string | null;
 };
+
+/**
+ * Prefer Supabase `servers.name`, then session OAuth guild name.
+ * Never treat a snowflake / empty string as the primary human label.
+ */
+export function displayNameForGuild(opts: {
+  guildId: string;
+  dbName?: string | null;
+  oauthName?: string | null;
+  fallback?: string;
+}): string {
+  return resolveServerDisplayName(opts);
+}
 
 /**
  * Resolve selected guild for server components.
@@ -63,6 +79,8 @@ export async function resolveSelectedGuild(opts?: {
     isMockSession,
     forceMock,
   });
+  const oauthGuildName =
+    guilds.find((g) => g.id === guildId)?.name?.trim() || null;
 
-  return { guildId, forceMock, isMockSession, useMock };
+  return { guildId, forceMock, isMockSession, useMock, oauthGuildName };
 }

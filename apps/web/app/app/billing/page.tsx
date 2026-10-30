@@ -5,7 +5,11 @@ import {
 import { BillingClient } from "@/components/BillingClient";
 import { DataSourceBanner } from "@/components/DataSourceBanner";
 import { loadDashboard } from "@/lib/dashboard-data";
-import { resolveSelectedGuild } from "@/lib/guild-context";
+import {
+  displayNameForGuild,
+  resolveSelectedGuild,
+} from "@/lib/guild-context";
+import { isUsableServerName } from "@/lib/server-display-name";
 import { stripeConfigured } from "@/lib/stripe";
 
 type Props = {
@@ -21,7 +25,9 @@ function one(
 
 export default async function BillingPage({ searchParams }: Props) {
   const sp = await searchParams;
-  const { guildId, useMock } = await resolveSelectedGuild({ searchParams: sp });
+  const { guildId, useMock, oauthGuildName } = await resolveSelectedGuild({
+    searchParams: sp,
+  });
   const data = await loadDashboard(guildId, useMock);
   const current = data.server;
   const plan = (current?.plan ?? "trial") as PlanId;
@@ -39,6 +45,17 @@ export default async function BillingPage({ searchParams }: Props) {
       })
     : false;
 
+  const serverName = current
+    ? displayNameForGuild({
+        guildId,
+        dbName: current.name,
+        oauthName: oauthGuildName,
+        fallback: "Server",
+      })
+    : isUsableServerName(oauthGuildName, guildId)
+      ? oauthGuildName
+      : null;
+
   return (
     <div className="space-y-8">
       <div>
@@ -53,7 +70,7 @@ export default async function BillingPage({ searchParams }: Props) {
 
       <BillingClient
         guildId={guildId}
-        serverName={current?.name ?? null}
+        serverName={serverName}
         plan={plan}
         priceLockCents={current?.price_lock_cents ?? null}
         trialEndsAt={current?.trial_ends_at ?? null}

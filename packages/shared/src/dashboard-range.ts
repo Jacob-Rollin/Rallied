@@ -18,8 +18,8 @@ export const DASHBOARD_RANGE_KEYS: readonly DashboardRangeKey[] = [
   "all",
 ] as const;
 
-/** Default matches prior “this month” dashboard behavior. */
-export const DEFAULT_DASHBOARD_RANGE: DashboardRangeKey = "month";
+/** Default board window — UTC This week (Mon–Sun). */
+export const DEFAULT_DASHBOARD_RANGE: DashboardRangeKey = "week";
 
 export type DashboardRangeOption = {
   key: DashboardRangeKey;

@@ -1354,7 +1354,7 @@ async function loadLiveBundle(
  * Load dashboard bundle for a Discord guild id.
  * @param useMock — mock session / ?mock=1 / explicit demo only.
  * Stale demo-guild-* under a live OAuth session must NOT load MOCK_SERVERS.
- * @param rangeKey — `?range=` UI filter (default this month). Does not purge data.
+ * @param rangeKey — `?range=` UI filter (default this week). Does not purge data.
  */
 export async function loadDashboard(
   guildId: string,

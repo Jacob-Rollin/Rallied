@@ -4,7 +4,7 @@ import { OpsChrome } from "@/components/OpsChrome";
 
 export const metadata: Metadata = {
   title: `Ops — ${BRAND.name}`,
-  description: "Rallied staff feedback inbox",
+  description: "Rallied staff ops — feedback inbox and usage",
   robots: { index: false, follow: false },
 };
 

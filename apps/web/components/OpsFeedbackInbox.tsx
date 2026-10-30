@@ -8,6 +8,7 @@ import {
   type FeedbackReport,
   type FeedbackStatus,
 } from "@rallied/shared";
+import { OpsSubnav } from "@/components/OpsUsagePanel";
 
 const STATUS_STYLE: Record<FeedbackStatus, string> = {
   new: "text-lime",
@@ -49,6 +50,8 @@ export function OpsFeedbackInbox({ reports }: Props) {
           </p>
         </div>
       </header>
+
+      <OpsSubnav active="feedback" />
 
       <div className="mt-6 flex flex-wrap gap-3 border-b border-white/10 pb-4">
         <label className="text-xs text-muted">

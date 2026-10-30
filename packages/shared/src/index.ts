@@ -4,6 +4,7 @@ export * from "./entitlements";
 export * from "./feedback";
 export * from "./games";
 export * from "./leaderboard";
+export * from "./ops-usage";
 export * from "./server-name";
 export * from "./supabase-url";
 export * from "./types";

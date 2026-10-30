@@ -10,8 +10,9 @@ type MeResponse = {
 };
 
 /**
- * Ops top bar — same chrome pattern as /app AppShell (no Overview/LFG tabs).
+ * Ops top bar — same chrome pattern as /app AppShell.
  * Logo → /app; coral OPS mark; Dashboard return; Report + Log out (hamburger on mobile).
+ * Feedback / Usage live in page tabs (OpsSubnav) — not duplicated here.
  */
 export function OpsChrome() {
   const [me, setMe] = useState<MeResponse | null>(null);
@@ -78,18 +79,6 @@ export function OpsChrome() {
 
           <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:gap-3">
             <Link
-              href="/ops"
-              className="hidden text-xs text-muted hover:text-coral sm:inline"
-            >
-              Feedback
-            </Link>
-            <Link
-              href="/ops/usage"
-              className="hidden text-xs text-muted hover:text-coral sm:inline"
-            >
-              Usage
-            </Link>
-            <Link
               href="/app"
               className="hidden text-xs text-muted hover:text-coral sm:inline"
             >
@@ -133,22 +122,6 @@ export function OpsChrome() {
                   className="absolute right-0 top-full z-30 mt-1.5 min-w-[9.5rem] border border-white/15 bg-slate-elevated py-1 shadow-lg"
                   role="menu"
                 >
-                  <Link
-                    href="/ops"
-                    role="menuitem"
-                    className="block px-3 py-2 text-sm text-white/80 hover:bg-white/5 hover:text-coral"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Feedback
-                  </Link>
-                  <Link
-                    href="/ops/usage"
-                    role="menuitem"
-                    className="block px-3 py-2 text-sm text-white/80 hover:bg-white/5 hover:text-coral"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Usage
-                  </Link>
                   <Link
                     href="/app"
                     role="menuitem"

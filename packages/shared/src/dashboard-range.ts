@@ -51,10 +51,10 @@ export type ResolvedDashboardRange = {
   priorStart: Date | null;
   priorEnd: Date | null;
   /**
-   * Chart bucketing: daily for week/month/30d; weekly for all-time
-   * (last 12 UTC weeks ending this week).
+   * Chart bucketing: daily for week/month/30d; monthly for all-time
+   * (last 12 UTC calendar months ending this month).
    */
-  chartMode: "day" | "week";
+  chartMode: "day" | "week" | "month";
   /** One-line definition for docs / UI hints. */
   definition: string;
 };
@@ -156,9 +156,7 @@ export function resolveDashboardRange(
     };
   }
 
-  // all
-  const chartStart = weekStartUtc(now);
-  chartStart.setUTCDate(chartStart.getUTCDate() - 7 * 11); // 12 weeks incl. current
+  // all — charts use last 12 calendar months so labels stay readable as history grows
   return {
     key,
     label: opt.label,
@@ -167,9 +165,9 @@ export function resolveDashboardRange(
     end,
     priorStart: null,
     priorEnd: null,
-    chartMode: "week",
+    chartMode: "month",
     definition:
-      "All retained history while the bot is installed. Charts show the last 12 UTC weeks.",
+      "All retained history while the bot is installed. Charts show the last 12 UTC calendar months.",
   };
 }
 
@@ -186,4 +184,48 @@ export function utcWeekdayLabel(d: Date): string {
 /** Compact month/day for longer charts (UTC). */
 export function utcMonthDayLabel(d: Date): string {
   return `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
+}
+
+/** Day-of-month only — cleaner x-axis inside a single calendar month. */
+export function utcDayOfMonthLabel(d: Date): string {
+  return String(d.getUTCDate());
+}
+
+/** Short month name for all-time charts (UTC), e.g. "Oct". */
+export function utcMonthLabel(d: Date): string {
+  return [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ][d.getUTCMonth()]!;
+}
+
+/**
+ * Which x-axis ticks to show so mobile charts stay readable.
+ * Always includes first + last; spreads ~`maxTicks` labels across the series.
+ */
+export function chartTickIndexes(
+  length: number,
+  maxTicks = 7,
+): ReadonlySet<number> {
+  if (length <= 0) return new Set();
+  if (length <= maxTicks) {
+    return new Set(Array.from({ length }, (_, i) => i));
+  }
+  const out = new Set<number>([0, length - 1]);
+  const inner = maxTicks - 2;
+  for (let t = 1; t <= inner; t++) {
+    const i = Math.round((t * (length - 1)) / (maxTicks - 1));
+    out.add(i);
+  }
+  return out;
 }

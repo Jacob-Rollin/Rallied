@@ -7,6 +7,7 @@ import type { AdminGuild } from "@rallied/shared";
 import { buildBotInviteUrl } from "@rallied/shared";
 import { MOCK_SERVERS } from "@/lib/mock-data";
 import {
+  DASHBOARD_RANGE_QUERY,
   GUILD_COOKIE,
   GUILD_QUERY,
   isDemoGuildId,
@@ -199,6 +200,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const params = new URLSearchParams();
     if (server?.id) params.set(GUILD_QUERY, server.id);
     if (mockFlag) params.set("mock", "1");
+    // Keep Overview/Analytics `?range=` across tab switches so filters “stick”.
+    const range = searchParams.get(DASHBOARD_RANGE_QUERY);
+    if (range) params.set(DASHBOARD_RANGE_QUERY, range);
     const q = params.toString();
     return q ? `${href}?${q}` : href;
   }

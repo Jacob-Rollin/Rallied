@@ -1,9 +1,12 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   DASHBOARD_RANGE_OPTIONS,
   type DashboardRangeKey,
 } from "@rallied/shared";
-import { withDashboardQuery } from "@/lib/guild-params";
+import { GUILD_QUERY, withDashboardQuery } from "@/lib/guild-params";
 
 type Props = {
   /** Pathname only, e.g. `/app` or `/demo/analytics`. */
@@ -17,7 +20,7 @@ type Props = {
 
 /**
  * Compact range control — URL-driven (`?range=`), no heavy card chrome.
- * Segmented links on all viewports (scrolls horizontally on narrow screens).
+ * Segmented links; soft-nav + refresh so Overview/Analytics RSC re-fetch.
  */
 export function DashboardRangeControl({
   pathname,
@@ -26,6 +29,11 @@ export function DashboardRangeControl({
   extra,
   className = "",
 }: Props) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const guildFromUrl = searchParams.get(GUILD_QUERY) || "";
+  const resolvedGuild = guildId || guildFromUrl;
+
   return (
     <div className={`min-w-0 ${className}`}>
       <p className="sr-only">Time range (UTC)</p>
@@ -37,7 +45,7 @@ export function DashboardRangeControl({
         {DASHBOARD_RANGE_OPTIONS.map((opt) => {
           const active = opt.key === current;
           const href = withDashboardQuery(pathname, {
-            guildId,
+            guildId: resolvedGuild,
             range: opt.key,
             extra,
           });
@@ -47,6 +55,16 @@ export function DashboardRangeControl({
               href={href}
               scroll={false}
               aria-current={active ? "true" : undefined}
+              onClick={(e) => {
+                // Force RSC refresh — soft nav alone sometimes left stale boards.
+                if (active) {
+                  e.preventDefault();
+                  return;
+                }
+                e.preventDefault();
+                router.push(href, { scroll: false });
+                router.refresh();
+              }}
               className={`shrink-0 border-b-2 px-2.5 py-1.5 text-xs font-semibold tracking-wide transition sm:text-[13px] ${
                 active
                   ? "border-coral text-white"

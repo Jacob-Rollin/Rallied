@@ -15,9 +15,12 @@ import type {
 } from "@rallied/shared";
 import {
   DEFAULT_DASHBOARD_RANGE,
+  monthStartUtc,
   resolveDashboardRange,
   utcDayKey,
+  utcDayOfMonthLabel,
   utcMonthDayLabel,
+  utcMonthLabel,
   utcWeekdayLabel,
   weekStartUtc,
   type DashboardRangeKey,
@@ -297,6 +300,32 @@ function mockTrendForRange(
   // Stretch the weekly mock across longer windows for demo.
   const base = MOCK_ANALYTICS_TREND;
   const priorBase = MOCK_ANALYTICS_TREND_PRIOR;
+  if (range.chartMode === "month") {
+    const trend: AnalyticsTrendPoint[] = [];
+    const prior: AnalyticsTrendPoint[] = [];
+    const thisMonth = monthStartUtc(range.end);
+    for (let m = 11; m >= 0; m--) {
+      const d = new Date(thisMonth);
+      d.setUTCMonth(d.getUTCMonth() - m);
+      const b = base[m % base.length]!;
+      trend.push({
+        day: utcMonthLabel(d),
+        parties: b.parties * 3 + (m % 4),
+        vibes: b.vibes * 2 + (m % 5),
+        ghosts: b.ghosts,
+      });
+      if (m >= 6) {
+        const pb = priorBase[m % priorBase.length]!;
+        prior.push({
+          day: utcMonthLabel(d),
+          parties: pb.parties * 2,
+          vibes: pb.vibes,
+          ghosts: pb.ghosts,
+        });
+      }
+    }
+    return { trend, prior };
+  }
   if (range.chartMode === "week") {
     const trend: AnalyticsTrendPoint[] = [];
     const prior: AnalyticsTrendPoint[] = [];
@@ -305,7 +334,7 @@ function mockTrendForRange(
       d.setUTCDate(d.getUTCDate() - 7 * w);
       const b = base[w % base.length]!;
       trend.push({
-        day: `W${12 - w}`,
+        day: utcMonthDayLabel(d),
         parties: b.parties + (w % 3),
         vibes: b.vibes + (w % 5),
         ghosts: b.ghosts,
@@ -313,7 +342,7 @@ function mockTrendForRange(
       if (w >= 6) {
         const pb = priorBase[w % priorBase.length]!;
         prior.push({
-          day: `W${12 - w}`,
+          day: utcMonthDayLabel(d),
           parties: pb.parties,
           vibes: pb.vibes,
           ghosts: pb.ghosts,
@@ -322,35 +351,42 @@ function mockTrendForRange(
     }
     return { trend, prior };
   }
-  const days =
-    range.start == null
-      ? 30
-      : Math.max(
-          1,
-          Math.ceil((range.end.getTime() - range.start.getTime()) / 86400_000) +
-            1,
-        );
-  const capped = Math.min(days, 31);
+  // Daily: calendar month or rolling 30d — always fill every UTC day in range.
+  const start =
+    range.start ??
+    (() => {
+      const d = new Date(range.end);
+      d.setUTCDate(d.getUTCDate() - 29);
+      d.setUTCHours(0, 0, 0, 0);
+      return d;
+    })();
+  const endDay = new Date(range.end);
+  endDay.setUTCHours(0, 0, 0, 0);
+  const dayLabel =
+    range.key === "month" ? utcDayOfMonthLabel : utcMonthDayLabel;
   const trend: AnalyticsTrendPoint[] = [];
   const prior: AnalyticsTrendPoint[] = [];
-  for (let i = capped - 1; i >= 0; i--) {
-    const d = new Date(range.end);
-    d.setUTCHours(0, 0, 0, 0);
-    d.setUTCDate(d.getUTCDate() - i);
+  const cursor = new Date(start);
+  cursor.setUTCHours(0, 0, 0, 0);
+  let i = 0;
+  while (cursor.getTime() <= endDay.getTime()) {
     const b = base[i % base.length]!;
+    const label = dayLabel(cursor);
     trend.push({
-      day: capped <= 7 ? utcWeekdayLabel(d) : utcMonthDayLabel(d),
+      day: label,
       parties: b.parties,
       vibes: b.vibes,
       ghosts: b.ghosts,
     });
     const pb = priorBase[i % priorBase.length]!;
     prior.push({
-      day: capped <= 7 ? utcWeekdayLabel(d) : utcMonthDayLabel(d),
+      day: label,
       parties: pb.parties,
       vibes: pb.vibes,
       ghosts: pb.ghosts,
     });
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+    i += 1;
   }
   return { trend, prior };
 }
@@ -474,7 +510,11 @@ function emptyBundle(
 }
 
 /** Daily buckets from `start` (inclusive UTC day) through `end` (inclusive UTC day). */
-function dayBucketsBetween(start: Date, end: Date) {
+function dayBucketsBetween(
+  start: Date,
+  end: Date,
+  opts?: { weekdays?: boolean; dayOfMonth?: boolean },
+) {
   const dayBuckets = new Map<string, AnalyticsTrendPoint>();
   const cursor = new Date(start);
   cursor.setUTCHours(0, 0, 0, 0);
@@ -482,11 +522,16 @@ function dayBucketsBetween(start: Date, end: Date) {
   endDay.setUTCHours(0, 0, 0, 0);
   const spanDays =
     Math.round((endDay.getTime() - cursor.getTime()) / 86400_000) + 1;
-  const useWeekday = spanDays <= 7;
+  const useWeekday = opts?.weekdays ?? spanDays <= 7;
+  const useDayOfMonth = opts?.dayOfMonth === true;
   while (cursor.getTime() <= endDay.getTime()) {
     const key = utcDayKey(cursor);
     dayBuckets.set(key, {
-      day: useWeekday ? utcWeekdayLabel(cursor) : utcMonthDayLabel(cursor),
+      day: useWeekday
+        ? utcWeekdayLabel(cursor)
+        : useDayOfMonth
+          ? utcDayOfMonthLabel(cursor)
+          : utcMonthDayLabel(cursor),
       parties: 0,
       vibes: 0,
       ghosts: 0,
@@ -494,6 +539,17 @@ function dayBucketsBetween(start: Date, end: Date) {
     cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
   return dayBuckets;
+}
+
+/**
+ * Always Mon–Sun (7 bars) for "This week" charts — future days stay at 0
+ * so mobile always shows a full week, not Mon–today only.
+ */
+function weekDayBuckets(now: Date) {
+  const start = weekStartUtc(now);
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 6);
+  return dayBucketsBetween(start, end, { weekdays: true });
 }
 
 /** Weekly buckets for the last `weeks` UTC weeks ending at the week of `end`. */
@@ -505,7 +561,25 @@ function weekBucketsEndingAt(end: Date, weeks: number) {
     start.setUTCDate(start.getUTCDate() - 7 * i);
     const key = utcDayKey(start);
     buckets.set(key, {
-      day: `${start.getUTCMonth() + 1}/${start.getUTCDate()}`,
+      day: utcMonthDayLabel(start),
+      parties: 0,
+      vibes: 0,
+      ghosts: 0,
+    });
+  }
+  return buckets;
+}
+
+/** Monthly buckets for the last `months` UTC calendar months ending at `end`'s month. */
+function monthBucketsEndingAt(end: Date, months: number) {
+  const buckets = new Map<string, AnalyticsTrendPoint>();
+  const thisMonth = monthStartUtc(end);
+  for (let i = months - 1; i >= 0; i--) {
+    const start = new Date(thisMonth);
+    start.setUTCMonth(start.getUTCMonth() - i);
+    const key = `${start.getUTCFullYear()}-${String(start.getUTCMonth() + 1).padStart(2, "0")}`;
+    buckets.set(key, {
+      day: utcMonthLabel(start),
       parties: 0,
       vibes: 0,
       ghosts: 0,
@@ -516,6 +590,11 @@ function weekBucketsEndingAt(end: Date, weeks: number) {
 
 function weekBucketKey(iso: string): string {
   return utcDayKey(weekStartUtc(new Date(iso)));
+}
+
+function monthBucketKey(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
 function parseEventMeta(raw: unknown): { noShows?: number; rosterSize?: number } {
@@ -606,12 +685,12 @@ async function loadLiveBundle(
   const rangeStartIso = range.start?.toISOString() ?? null;
   const priorStartIso = range.priorStart?.toISOString() ?? null;
   const priorEndIso = range.priorEnd?.toISOString() ?? null;
-  // Chart / analytics fetch lower bound: range start, or 12-week chart window for all-time.
+  // Chart / analytics fetch lower bound: range start, or 12-month chart window for all-time.
   const chartFetchStart =
     range.start ??
     (() => {
-      const d = weekStartUtc(now);
-      d.setUTCDate(d.getUTCDate() - 7 * 11);
+      const d = monthStartUtc(now);
+      d.setUTCMonth(d.getUTCMonth() - 11);
       return d;
     })();
   const chartFetchStartIso = chartFetchStart.toISOString();
@@ -967,22 +1046,43 @@ async function loadLiveBundle(
   }[];
 
   const dayBuckets =
-    range.chartMode === "week"
-      ? weekBucketsEndingAt(now, 12)
-      : dayBucketsBetween(range.start ?? chartFetchStart, now);
+    range.key === "week"
+      ? weekDayBuckets(now)
+      : range.chartMode === "month"
+        ? monthBucketsEndingAt(now, 12)
+        : range.chartMode === "week"
+          ? weekBucketsEndingAt(now, 12)
+          : dayBucketsBetween(range.start ?? chartFetchStart, now, {
+              dayOfMonth: range.key === "month",
+            });
   const priorDayBuckets =
-    range.priorStart && range.priorEnd
-      ? dayBucketsBetween(range.priorStart, new Date(range.priorEnd.getTime() - 1))
-      : new Map<string, AnalyticsTrendPoint>();
+    range.key === "week" && range.priorStart
+      ? (() => {
+          const priorEnd = new Date(range.priorStart);
+          priorEnd.setUTCDate(priorEnd.getUTCDate() + 6);
+          return dayBucketsBetween(range.priorStart, priorEnd, {
+            weekdays: true,
+          });
+        })()
+      : range.priorStart && range.priorEnd
+        ? dayBucketsBetween(
+            range.priorStart,
+            new Date(range.priorEnd.getTime() - 1),
+            { dayOfMonth: range.key === "month" },
+          )
+        : new Map<string, AnalyticsTrendPoint>();
+
+  function chartBucketKey(createdAt: string): string {
+    if (range.chartMode === "month") return monthBucketKey(createdAt);
+    if (range.chartMode === "week") return weekBucketKey(createdAt);
+    return createdAt.slice(0, 10);
+  }
 
   function bumpParty(
     buckets: Map<string, AnalyticsTrendPoint>,
     createdAt: string,
   ) {
-    const key =
-      range.chartMode === "week"
-        ? weekBucketKey(createdAt)
-        : createdAt.slice(0, 10);
+    const key = chartBucketKey(createdAt);
     const b = buckets.get(key);
     if (b) b.parties += 1;
   }
@@ -991,10 +1091,7 @@ async function loadLiveBundle(
     createdAt: string,
     ghosted?: boolean,
   ) {
-    const key =
-      range.chartMode === "week"
-        ? weekBucketKey(createdAt)
-        : createdAt.slice(0, 10);
+    const key = chartBucketKey(createdAt);
     const b = buckets.get(key);
     if (!b) return;
     b.vibes += 1;

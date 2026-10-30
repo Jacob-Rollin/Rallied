@@ -21,6 +21,8 @@ type Body = {
   ghostless_role_id?: string | null;
   digest_channel_id?: string | null;
   lockout_days?: number;
+  join_min_ghostless_pct?: number | null;
+  join_lockout_enforced?: boolean;
   ghostless_role_threshold_pct?: number;
   ghostless_role_min_sessions?: number;
 };
@@ -192,6 +194,8 @@ export async function POST(req: NextRequest) {
     body.grace_minutes !== undefined ||
     body.strike_threshold !== undefined ||
     body.lockout_days !== undefined ||
+    body.join_min_ghostless_pct !== undefined ||
+    body.join_lockout_enforced !== undefined ||
     body.ghostless_role_threshold_pct !== undefined ||
     body.ghostless_role_min_sessions !== undefined ||
     body.ghostless_role_id !== undefined ||
@@ -215,6 +219,21 @@ export async function POST(req: NextRequest) {
   }
   if (body.lockout_days !== undefined) {
     patch.lockout_days = clampInt(body.lockout_days, 1, 365, 7);
+  }
+  if (body.join_lockout_enforced !== undefined) {
+    patch.join_lockout_enforced = Boolean(body.join_lockout_enforced);
+  }
+  if (body.join_min_ghostless_pct !== undefined) {
+    if (
+      body.join_min_ghostless_pct == null ||
+      body.join_min_ghostless_pct === ("" as unknown)
+    ) {
+      patch.join_min_ghostless_pct = null;
+    } else {
+      const n = Number(body.join_min_ghostless_pct);
+      patch.join_min_ghostless_pct =
+        !Number.isFinite(n) || n <= 0 ? null : clampInt(n, 1, 100, 80);
+    }
   }
   if (body.ghostless_role_threshold_pct !== undefined) {
     patch.ghostless_role_threshold_pct = clampInt(

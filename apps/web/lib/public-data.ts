@@ -26,6 +26,7 @@ import {
   lockoutFor,
 } from "./mock-data";
 import { isDemoGuildId } from "./guild-params";
+import { buildMonthlyLeaderboard } from "./leaderboard";
 import { getServiceSupabase } from "./supabase";
 
 export type PublicParty = LfgParty & {
@@ -52,6 +53,11 @@ export type PublicServerBundle = {
     member: Member;
     ghostless: GhostlessStats;
   }[];
+  monthlyLeaderboard: {
+    monthLabel: string;
+    mostReliable: { displayName: string; showRatePct: number }[];
+    topHosts: { displayName: string; partiesHosted: number }[];
+  } | null;
 };
 
 const MOCK_SETTINGS_BY_SERVER: Record<string, ServerSettings> = {
@@ -96,6 +102,8 @@ function defaultPublicSettings(server: Server): ServerSettings {
     digest_channel_id: null,
     strike_threshold: 3,
     lockout_days: 7,
+    join_min_ghostless_pct: null,
+    join_lockout_enforced: true,
     slug: null,
     public_page_enabled: true,
     public_member_list: false,
@@ -120,6 +128,11 @@ function mapPublicSettings(row: Record<string, unknown>): ServerSettings {
     digest_channel_id: (row.digest_channel_id as string | null) ?? null,
     strike_threshold: Number(row.strike_threshold ?? 3),
     lockout_days: Number(row.lockout_days ?? 7),
+    join_min_ghostless_pct:
+      row.join_min_ghostless_pct == null
+        ? null
+        : Number(row.join_min_ghostless_pct),
+    join_lockout_enforced: row.join_lockout_enforced !== false,
     slug: (row.slug as string | null) ?? null,
     public_page_enabled: row.public_page_enabled !== false,
     public_member_list: Boolean(row.public_member_list),
@@ -238,6 +251,25 @@ function resolveMockPublicServer(
   const limit = settings.public_member_list ? 12 : 3;
   const spotlight = ranked.slice(0, limit);
 
+  const monthlyLeaderboard = buildMonthlyLeaderboard({
+    members,
+    ghostless: members
+      .map((m) => MOCK_GHOSTLESS[m.id])
+      .filter(Boolean)
+      .map((g) => ({
+        member_id: g!.member_id,
+        shows: g!.shows,
+        ghosts: g!.ghosts,
+        show_rate_pct: g!.show_rate_pct,
+      })),
+    parties: MOCK_PARTIES.filter((p) => p.server_id === contentServerId).map(
+      (p) => ({
+        host_member_id: p.host_member_id,
+        created_at: p.created_at,
+      }),
+    ),
+  });
+
   return {
     server,
     settings,
@@ -251,6 +283,7 @@ function resolveMockPublicServer(
       vibeCount,
     },
     spotlight,
+    monthlyLeaderboard,
   };
 }
 
@@ -326,7 +359,11 @@ async function resolveLivePublicServer(
 
   const weekAgo = new Date(Date.now() - 7 * 86400_000).toISOString();
 
-  const [partiesRes, membersRes, ghostlessRes, weekPartiesRes] =
+  const monthAgo = new Date(
+    Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1),
+  ).toISOString();
+
+  const [partiesRes, membersRes, ghostlessRes, weekPartiesRes, monthPartiesRes] =
     await Promise.all([
       sb
         .from("lfg_parties")
@@ -343,6 +380,12 @@ async function resolveLivePublicServer(
         .select("id")
         .eq("server_id", server.id)
         .gte("created_at", weekAgo),
+      sb
+        .from("lfg_parties")
+        .select("host_member_id, created_at")
+        .eq("server_id", server.id)
+        .gte("created_at", monthAgo)
+        .is("deleted_at", null),
     ]);
 
   const partyIds = ((partiesRes.data ?? []) as { id: string }[]).map(
@@ -428,6 +471,23 @@ async function resolveLivePublicServer(
 
   const limit = settings.public_member_list ? 12 : 3;
 
+  const monthlyLeaderboard = buildMonthlyLeaderboard({
+    members: [...membersById.values()],
+    ghostless: [...ghostlessByMember.values()].map((g) => ({
+      member_id: g.member_id,
+      shows: g.shows,
+      ghosts: g.ghosts,
+      show_rate_pct: g.show_rate_pct,
+    })),
+    parties: ((monthPartiesRes.data ?? []) as {
+      host_member_id: string;
+      created_at: string;
+    }[]).map((p) => ({
+      host_member_id: String(p.host_member_id),
+      created_at: String(p.created_at),
+    })),
+  });
+
   return {
     server,
     settings,
@@ -441,6 +501,7 @@ async function resolveLivePublicServer(
       vibeCount,
     },
     spotlight: ranked.slice(0, limit),
+    monthlyLeaderboard,
   };
 }
 

@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { reliabilityEnabled } from "@rallied/shared";
 import { DataSourceBanner } from "@/components/DataSourceBanner";
+import { MonthlyLeaderboard } from "@/components/MonthlyLeaderboard";
 import { PlanBanner } from "@/components/PlanBanner";
 import { loadDashboard } from "@/lib/dashboard-data";
 import { resolveSelectedGuild, withGuildQuery } from "@/lib/guild-context";
@@ -67,6 +69,14 @@ export default async function OverviewPage({ searchParams }: Props) {
           No open parties yet — create one with{" "}
           <code className="text-coral">/lfg create</code> in Discord.
         </p>
+      ) : null}
+
+      {reliabilityEnabled(data.server?.plan) && data.monthlyLeaderboard ? (
+        <MonthlyLeaderboard
+          monthLabel={data.monthlyLeaderboard.monthLabel}
+          mostReliable={data.monthlyLeaderboard.mostReliable}
+          topHosts={data.monthlyLeaderboard.topHosts}
+        />
       ) : null}
     </div>
   );

@@ -12,6 +12,7 @@ import type {
   ServerSettings,
   Strike,
 } from "@rallied/shared";
+import { monthStartUtc } from "@rallied/shared";
 import {
   MOCK_ANALYTICS_EXTRAS,
   MOCK_ANALYTICS_TREND,
@@ -471,11 +472,13 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
   const weekAgo = new Date(now.getTime() - 7 * 86400_000).toISOString();
   const twoWeeksAgo = new Date(now.getTime() - 14 * 86400_000).toISOString();
   const weekStart = weekStartUtc(now).toISOString();
+  const monthStart = monthStartUtc(now).toISOString();
   const nowIso = now.toISOString();
 
   const [
     settingsRes,
     partiesRes,
+    monthHostPartiesRes,
     membersRes,
     ghostlessRes,
     strikesRes,
@@ -497,6 +500,12 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
       .limit(100),
+    // Top hosts: include soft-closed parties (deleted_at set on Close/expire).
+    sb
+      .from("lfg_parties")
+      .select("host_member_id, created_at")
+      .eq("server_id", serverId)
+      .gte("created_at", monthStart),
     sb
       .from("members")
       .select("*")
@@ -1028,10 +1037,14 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
           ghosts: m.ghostless!.ghosts,
           show_rate_pct: m.ghostless!.show_rate_pct,
         })),
-      parties: parties.map((p) => ({
-        host_member_id: p.host_member_id,
-        created_at: p.created_at,
+      parties: ((monthHostPartiesRes.data ?? []) as {
+        host_member_id: string;
+        created_at: string;
+      }[]).map((p) => ({
+        host_member_id: String(p.host_member_id),
+        created_at: String(p.created_at),
       })),
+      now,
     }),
     reliabilityHealth,
     upcomingScheduled,

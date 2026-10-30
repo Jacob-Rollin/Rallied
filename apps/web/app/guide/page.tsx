@@ -195,7 +195,13 @@ export default function GuidePage() {
             <code className="rounded bg-white/10 px-1 py-0.5 text-white/80">
               /leaderboard
             </code>
-            ) remain as backup.
+            ) remain as backup. Re-running{" "}
+            <code className="rounded bg-white/10 px-1 py-0.5 text-white/80">
+              /setup
+            </code>{" "}
+            only re-posts the desk — party history, Ghostless, and Top hosts
+            stay. Uninstall / reinstall keeps the same Discord server&apos;s
+            stats.
           </p>
         </section>
 
@@ -435,7 +441,8 @@ export default function GuidePage() {
             </code>{" "}
             or the desk{" "}
             <strong className="font-semibold text-white">Board</strong> button.
-            Still this server only — no cross-server ranks.
+            Closed parties still count toward Top hosts for the month. Still this
+            server only — no cross-server ranks.
           </p>
         </section>
 

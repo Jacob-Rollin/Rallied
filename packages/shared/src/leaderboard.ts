@@ -79,7 +79,12 @@ export function rankMostReliable(
     }));
 }
 
-/** Rank hosts by parties hosted count descending. */
+/**
+ * Rank hosts by parties hosted count descending.
+ * Count every party created this month — including soft-closed (`deleted_at`
+ * set). Soft-close is for Find/open UI only; host credit must survive Close
+ * and `/setup`.
+ */
 export function rankTopHosts(
   rows: {
     memberId: string;

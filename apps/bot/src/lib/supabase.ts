@@ -60,7 +60,9 @@ async function resolveGuildIdentity(
  *
  * New servers start on `plan=free` (Starter). Community trial is Stripe Checkout
  * only (card required, one per guild via trial_consumed_at). Never delete this
- * row on bot leave — reinstall must reuse history. Paid plans are never reset.
+ * row on bot leave or `/setup` — reinstall must reuse history (same policy as
+ * trial_consumed_at). Paid plans are never reset. Child rows (parties, members,
+ * ghostless_stats, server_events) stay attached to this servers.id.
  * Pass `env` for dogfood / legacy trial bootstrap.
  */
 export async function ensureServerAndMember(

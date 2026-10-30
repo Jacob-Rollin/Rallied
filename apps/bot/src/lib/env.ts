@@ -25,6 +25,15 @@ export interface BotEnv {
    * Fail open when unset — DB insert still succeeds.
    */
   OPS_FEEDBACK_CHANNEL_ID?: string;
+  /**
+   * When "1"/"true", cron runs inactivity retention pass (default dry-run).
+   * Off by default — setup/reinstall never wipe; purge is opt-in.
+   */
+  RETENTION_PURGE_ENABLED?: string;
+  /** When "1"/"true" with RETENTION_PURGE_ENABLED, soft-archive instead of dry-run. */
+  RETENTION_PURGE_APPLY?: string;
+  /** When "1"/"true", allow soft-archive of forever_pro / Official (dangerous). */
+  RETENTION_INCLUDE_FOREVER_PRO?: string;
 }
 
 export function readNodeEnv(): BotEnv {
@@ -41,6 +50,9 @@ export function readNodeEnv(): BotEnv {
     PUBLIC_WEB_URL: process.env.PUBLIC_WEB_URL,
     DOGFOOD_GUILD_IDS: process.env.DOGFOOD_GUILD_IDS,
     OPS_FEEDBACK_CHANNEL_ID: process.env.OPS_FEEDBACK_CHANNEL_ID,
+    RETENTION_PURGE_ENABLED: process.env.RETENTION_PURGE_ENABLED,
+    RETENTION_PURGE_APPLY: process.env.RETENTION_PURGE_APPLY,
+    RETENTION_INCLUDE_FOREVER_PRO: process.env.RETENTION_INCLUDE_FOREVER_PRO,
   };
 }
 

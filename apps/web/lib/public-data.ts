@@ -427,12 +427,12 @@ async function resolveLivePublicServer(
         .select("id")
         .eq("server_id", server.id)
         .gte("created_at", weekAgo),
+      // Include soft-closed — Top hosts counts Closed parties this month.
       sb
         .from("lfg_parties")
         .select("host_member_id, created_at")
         .eq("server_id", server.id)
-        .gte("created_at", monthAgo)
-        .is("deleted_at", null),
+        .gte("created_at", monthAgo),
     ]);
 
   const partyIds = ((partiesRes.data ?? []) as { id: string }[]).map(

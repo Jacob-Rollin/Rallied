@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { gamesMatch, normalizeGame } from "@rallied/shared";
 import type { BotEnv } from "../lib/env.js";
 import {
+  interactionGuildIdentity,
   actorUser,
   avatarUrl,
   displayName,
@@ -459,11 +460,11 @@ export async function handleLfg(
     await ensureServerAndMember(
       sb,
       interaction.guild_id,
-      undefined,
+      interaction.guild?.name,
       user.id,
       displayName(interaction),
       avatarUrl(user),
-      null,
+      interactionGuildIdentity(interaction).iconUrl,
       env,
     );
     return postLfgDesk();
@@ -472,11 +473,11 @@ export async function handleLfg(
   const { server, member } = await ensureServerAndMember(
     sb,
     interaction.guild_id,
-    undefined,
+    interaction.guild?.name,
     user.id,
     displayName(interaction),
     avatarUrl(user),
-    null,
+    interactionGuildIdentity(interaction).iconUrl,
     env,
   );
 
@@ -581,11 +582,11 @@ export async function handleSetup(
     await ensureServerAndMember(
       sb,
       interaction.guild_id,
-      undefined,
+      interaction.guild?.name,
       user.id,
       displayName(interaction),
       avatarUrl(user),
-      null,
+      interactionGuildIdentity(interaction).iconUrl,
       env,
     );
   }

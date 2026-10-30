@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { trialEndsAtFromNow } from "@rallied/shared";
+import { isUsableServerName, trialEndsAtFromNow } from "@rallied/shared";
+import { fetchGuildMeta } from "./discord.js";
 import { normalizeSupabaseUrl, type BotEnv } from "./env.js";
 import { bootstrapNewServerPlan } from "./entitlements.js";
 import { errorFromUnknown } from "./errors.js";
@@ -16,9 +17,46 @@ export function createServiceClient(env: BotEnv): SupabaseClient | null {
 }
 
 /**
+ * Resolve a usable guild name + icon.
+ * Prefer the caller-provided name/icon; otherwise GET /guilds/{id} with the bot token.
+ * Never returns placeholder / snowflake names.
+ */
+async function resolveGuildIdentity(
+  guildId: string,
+  guildName: string | undefined,
+  iconUrl: string | null,
+  env?: BotEnv,
+): Promise<{ name: string | null; iconUrl: string | null }> {
+  let name = isUsableServerName(guildName, guildId)
+    ? String(guildName).trim()
+    : null;
+  let icon = iconUrl;
+
+  const token =
+    env?.DISCORD_BOT_TOKEN ||
+    (typeof process !== "undefined" ? process.env.DISCORD_BOT_TOKEN : "") ||
+    "";
+  if (token && (!name || !icon)) {
+    const meta = await fetchGuildMeta(token, guildId);
+    if (meta) {
+      if (!name && isUsableServerName(meta.name, guildId)) {
+        name = String(meta.name).trim();
+      }
+      if (!icon && meta.iconUrl) icon = meta.iconUrl;
+    }
+  }
+
+  return { name, iconUrl: icon };
+}
+
+/**
  * Upsert server + member for this guild interaction.
  * Does not clobber an existing display_name/avatar when `displayName` is the
  * `"member"` placeholder (lookups of other users).
+ *
+ * Server `name` / `icon_url`: never write snowflake / "Discord server" /
+ * "Selected server" placeholders. When the provided name is missing/invalid,
+ * fetch the real guild via the bot token (if `env` is passed) and persist it.
  *
  * New servers start on `plan=trial` with `trial_ends_at = now+14d`.
  * Paid plans are never reset. Pass `env` to apply dogfood / trial bootstrap.
@@ -34,6 +72,15 @@ export async function ensureServerAndMember(
   iconUrl: string | null = null,
   env?: BotEnv,
 ) {
+  const identity = await resolveGuildIdentity(
+    guildId,
+    guildName,
+    iconUrl,
+    env,
+  );
+  // Empty string is allowed by schema; never persist guild id / placeholders.
+  const persistName = identity.name ?? "";
+
   const { data: existingServer } = await sb
     .from("servers")
     .select("*")
@@ -45,11 +92,11 @@ export async function ensureServerAndMember(
   if (!server) {
     const insertRow: Record<string, unknown> = {
       discord_guild_id: guildId,
-      name: guildName ?? guildId,
+      name: persistName,
       plan: "trial",
       trial_ends_at: trialEndsAtFromNow(),
     };
-    if (iconUrl) insertRow.icon_url = iconUrl;
+    if (identity.iconUrl) insertRow.icon_url = identity.iconUrl;
 
     const { data: created, error: sErr } = await sb
       .from("servers")
@@ -58,17 +105,15 @@ export async function ensureServerAndMember(
       .single();
 
     if (sErr || !created) {
-      // Race: another interaction inserted first — fall back to upsert name only.
+      // Race: another interaction inserted first — upsert usable name/icon only.
+      const raceRow: Record<string, unknown> = {
+        discord_guild_id: guildId,
+        name: persistName,
+      };
+      if (identity.iconUrl) raceRow.icon_url = identity.iconUrl;
       const { data: raced, error: uErr } = await sb
         .from("servers")
-        .upsert(
-          {
-            discord_guild_id: guildId,
-            name: guildName ?? guildId,
-            ...(iconUrl ? { icon_url: iconUrl } : {}),
-          },
-          { onConflict: "discord_guild_id" },
-        )
+        .upsert(raceRow, { onConflict: "discord_guild_id" })
         .select("*")
         .single();
       if (uErr || !raced) {
@@ -83,11 +128,16 @@ export async function ensureServerAndMember(
     }
   } else {
     const patch: Record<string, unknown> = {};
-    if (guildName && guildName !== server.name) {
-      patch.name = guildName;
+    const currentName = String(server.name ?? "");
+    const currentInvalid = !isUsableServerName(currentName, guildId);
+    if (
+      identity.name &&
+      (currentInvalid || identity.name !== currentName)
+    ) {
+      patch.name = identity.name;
     }
-    if (iconUrl && server.icon_url !== iconUrl) {
-      patch.icon_url = iconUrl;
+    if (identity.iconUrl && server.icon_url !== identity.iconUrl) {
+      patch.icon_url = identity.iconUrl;
     }
     if (Object.keys(patch).length > 0) {
       patch.updated_at = new Date().toISOString();

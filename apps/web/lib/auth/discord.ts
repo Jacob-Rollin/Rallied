@@ -120,13 +120,22 @@ export async function filterAdminGuilds(
   return adminGuilds;
 }
 
+export type DiscordGuildMeta = {
+  name: string;
+  iconUrl: string | null;
+};
+
+function looksLikeNonGuildId(id: string): boolean {
+  return id.startsWith("demo-guild") || !/^\d{17,20}$/.test(id);
+}
+
 /**
- * Fetch a guild's real name via the bot token (GET /guilds/{id}).
- * Used when OAuth/session name is missing and `servers.name` is a placeholder.
+ * Fetch a guild's real name + icon via the bot token (GET /guilds/{id}).
+ * Used when OAuth/session/`servers.name` is a placeholder.
  */
-export async function fetchGuildNameFromDiscord(
+export async function fetchGuildMetaFromDiscord(
   guildId: string,
-): Promise<string | null> {
+): Promise<DiscordGuildMeta | null> {
   const id = guildId.trim();
   if (!id || looksLikeNonGuildId(id)) return null;
   const token = getRuntimeEnv("DISCORD_BOT_TOKEN");
@@ -136,22 +145,30 @@ export async function fetchGuildNameFromDiscord(
       headers: { Authorization: `Bot ${token}` },
     });
     if (!res.ok) return null;
-    const data = (await res.json()) as { name?: string };
+    const data = (await res.json()) as { name?: string; icon?: string | null };
     const name = (data.name ?? "").trim();
-    return isUsableServerName(name, id) ? name : null;
+    if (!isUsableServerName(name, id)) return null;
+    return {
+      name,
+      iconUrl: discordGuildIconUrl(id, data.icon),
+    };
   } catch {
     return null;
   }
 }
 
-function looksLikeNonGuildId(id: string): boolean {
-  return id.startsWith("demo-guild") || !/^\d{17,20}$/.test(id);
+/** @deprecated Prefer fetchGuildMetaFromDiscord when icon may be needed. */
+export async function fetchGuildNameFromDiscord(
+  guildId: string,
+): Promise<string | null> {
+  const meta = await fetchGuildMetaFromDiscord(guildId);
+  return meta?.name ?? null;
 }
 
 /**
  * Patch `name` / `icon_url` on existing `servers` rows from OAuth / Discord.
- * Overwrites empty, snowflake, and "Discord server" placeholders.
- * Does not insert new servers — bot slash commands own that path.
+ * Overwrites empty, snowflake, and placeholder names ("Discord server",
+ * "Selected server", etc). Does not insert new servers — bot owns that path.
  */
 export async function syncServerMetadataFromOAuth(
   guilds: Pick<AdminGuild, "id" | "name" | "icon">[],
@@ -162,16 +179,21 @@ export async function syncServerMetadataFromOAuth(
 
   await Promise.all(
     guilds.map(async (g) => {
-      const patch: { name?: string; icon_url?: string } = {};
+      const patch: { name?: string; icon_url?: string; updated_at?: string } =
+        {};
       let name = (g.name ?? "").trim();
-      if (!isUsableServerName(name, g.id)) {
-        const fromApi = await fetchGuildNameFromDiscord(g.id);
-        if (fromApi) name = fromApi;
+      let icon = discordGuildIconUrl(g.id, g.icon);
+      if (!isUsableServerName(name, g.id) || !icon) {
+        const fromApi = await fetchGuildMetaFromDiscord(g.id);
+        if (fromApi) {
+          if (!isUsableServerName(name, g.id)) name = fromApi.name;
+          if (!icon && fromApi.iconUrl) icon = fromApi.iconUrl;
+        }
       }
       if (isUsableServerName(name, g.id)) patch.name = name;
-      const icon = discordGuildIconUrl(g.id, g.icon);
       if (icon) patch.icon_url = icon;
       if (Object.keys(patch).length === 0) return;
+      patch.updated_at = new Date().toISOString();
 
       try {
         await fetch(
@@ -195,6 +217,71 @@ export async function syncServerMetadataFromOAuth(
 }
 
 /**
+ * Persist a usable Discord guild name/icon onto an existing `servers` row
+ * when the current DB name is invalid. Used by public /servers + /s pages
+ * (no OAuth session) so directory cards show the real guild title.
+ */
+export async function repairServerNameInDb(opts: {
+  serverId: string;
+  guildId: string;
+  currentName?: string | null;
+  currentIconUrl?: string | null;
+}): Promise<DiscordGuildMeta | null> {
+  const guildId = opts.guildId.trim();
+  const nameOk = isUsableServerName(opts.currentName, guildId);
+  const iconOk = Boolean(opts.currentIconUrl);
+  if (nameOk && iconOk) {
+    return {
+      name: String(opts.currentName).trim(),
+      iconUrl: opts.currentIconUrl ?? null,
+    };
+  }
+
+  const meta = await fetchGuildMetaFromDiscord(guildId);
+  if (!meta) {
+    return nameOk
+      ? {
+          name: String(opts.currentName).trim(),
+          iconUrl: opts.currentIconUrl ?? null,
+        }
+      : null;
+  }
+
+  const url = getSupabaseUrl();
+  const key = getServiceRoleKey();
+  if (!url || !key) return meta;
+
+  const patch: { name?: string; icon_url?: string; updated_at: string } = {
+    updated_at: new Date().toISOString(),
+  };
+  if (!nameOk) patch.name = meta.name;
+  if (!iconOk && meta.iconUrl) patch.icon_url = meta.iconUrl;
+
+  try {
+    await fetch(
+      `${url}/rest/v1/servers?id=eq.${encodeURIComponent(opts.serverId)}`,
+      {
+        method: "PATCH",
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify(patch),
+      },
+    );
+  } catch {
+    /* non-fatal — still return resolved meta for this response */
+  }
+
+  return {
+    name: nameOk ? String(opts.currentName).trim() : meta.name,
+    iconUrl: iconOk ? (opts.currentIconUrl ?? null) : meta.iconUrl,
+  };
+}
+
+/**
  * Ensure session guild entries carry real Discord names (not placeholders).
  * Mutates + returns the list; best-effort Discord API fill when needed.
  */
@@ -204,9 +291,9 @@ export async function ensureGuildDisplayNames(
   const out = await Promise.all(
     guilds.map(async (g) => {
       if (isUsableServerName(g.name, g.id)) return g;
-      const fromApi = await fetchGuildNameFromDiscord(g.id);
+      const fromApi = await fetchGuildMetaFromDiscord(g.id);
       if (!fromApi) return g;
-      return { ...g, name: fromApi };
+      return { ...g, name: fromApi.name };
     }),
   );
   return out;

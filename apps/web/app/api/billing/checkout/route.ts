@@ -10,6 +10,7 @@ import { requireOwnerGuild } from "@/lib/auth/guild-access";
 import { getSession } from "@/lib/auth/session";
 import {
   countFoundingSeats,
+  loadUserTrialConsumedAt,
   stripeCustomerHadTrial,
 } from "@/lib/billing-sync";
 import {
@@ -37,7 +38,8 @@ function parseInterval(raw: string | undefined): BillingInterval {
 
 /**
  * Session-gated Stripe Checkout Session (subscription).
- * Community: card always required; trial_period_days only if guild never consumed a trial.
+ * Community: card always required; trial_period_days only if guild
+ * trial_consumed_at is null AND the Checkout Discord user never consumed.
  * Secrets stay on the Worker — client only receives the hosted Checkout URL.
  */
 export async function POST(req: NextRequest) {
@@ -66,6 +68,7 @@ export async function POST(req: NextRequest) {
   const discordGuildId = String(body.discordGuildId ?? "").trim();
   const plan = parsePlan(String(body.plan ?? "").trim());
   const interval = parseInterval(String(body.interval ?? "month").trim());
+  const discordUserId = String(session.user.id ?? "").trim();
 
   if (!discordGuildId || !plan) {
     return NextResponse.json(
@@ -75,6 +78,10 @@ export async function POST(req: NextRequest) {
       },
       { status: 400 },
     );
+  }
+
+  if (!discordUserId) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
   if (!requireOwnerGuild(session, discordGuildId)) {
@@ -153,11 +160,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "stripe_not_configured" }, { status: 503 });
   }
 
-  // Guild-id lock is source of truth; Stripe customer history is a secondary guard.
+  const userTrialConsumedAt = await loadUserTrialConsumedAt(sb, discordUserId);
+
+  // Guild + user locks are source of truth; Stripe customer history is secondary.
   let grantTrial =
     plan === "community" &&
     isCommunityTrialEligible({
       trial_consumed_at: (server.trial_consumed_at as string | null) ?? null,
+      user_trial_consumed_at: userTrialConsumedAt,
     });
 
   const existingCustomerId =
@@ -173,7 +183,7 @@ export async function POST(req: NextRequest) {
     );
     if (hadStripeTrial) {
       grantTrial = false;
-      // Persist lock so reinstall / later Checkout stays paid day-one.
+      // Persist guild lock so reinstall / later Checkout stays paid day-one.
       if (!server.trial_consumed_at) {
         await sb
           .from("servers")
@@ -193,6 +203,7 @@ export async function POST(req: NextRequest) {
 
   const metadata: Record<string, string> = {
     discord_guild_id: discordGuildId,
+    discord_user_id: discordUserId,
     server_id: String(server.id),
     rallied_plan: plan,
     billing_interval: interval,

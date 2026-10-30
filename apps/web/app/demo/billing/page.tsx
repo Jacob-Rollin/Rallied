@@ -93,7 +93,7 @@ export default async function DemoBillingPage() {
           </p>
           <p className="mt-1 text-xs text-white/45">per Discord server</p>
           <p className="mt-1 text-xs font-medium text-lime">
-            14-day trial · card at Checkout · once per server
+            14-day trial · card at Checkout · once per server & Discord user
           </p>
           <p className="mt-2 text-xs text-muted">Full LFG + Ghostless + strikes</p>
           <button

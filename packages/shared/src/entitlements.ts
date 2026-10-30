@@ -115,11 +115,15 @@ export function trialEndsAtFromNow(now = new Date(), days = TRIAL_DAYS): string 
   return new Date(now.getTime() + days * 86400_000).toISOString();
 }
 
-/** True when this guild may still receive Stripe Community trial_period_days. */
-export function isCommunityTrialEligible(server: {
+/**
+ * True when Community Checkout may set trial_period_days: 14.
+ * Requires BOTH guild and Checkout Discord user never consumed a trial.
+ */
+export function isCommunityTrialEligible(opts: {
   trial_consumed_at?: string | null;
+  user_trial_consumed_at?: string | null;
 }): boolean {
-  return !server.trial_consumed_at;
+  return !opts.trial_consumed_at && !opts.user_trial_consumed_at;
 }
 
 export function reliabilityEnabled(plan: string | null | undefined): boolean {

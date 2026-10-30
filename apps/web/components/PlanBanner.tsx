@@ -34,7 +34,7 @@ export function PlanBanner({ plan, trialEndsAt, billingHref }: Props) {
           Full Ghostless + unlimited LFG while the trial runs. Cancel keeps
           access until the trial end date (no charge). After that this server
           drops to Starter caps (2 open · 5 creates/24h) unless you stay
-          subscribed. One trial per Discord server.
+          subscribed. One trial per Discord server and per Discord user.
         </p>
         <Link
           href={billingHref}

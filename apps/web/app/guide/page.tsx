@@ -614,11 +614,11 @@ export default function GuidePage() {
             <p>
               <strong className="font-semibold text-white">Plans</strong> —
               Community Checkout requires a card; first time gets a 14-day trial
-              (charged after trial ends). One trial per Discord server
-              (reinstall does not reset it). Cancel keeps access until the trial
-              or paid period ends, then Starter (2 open + 5 creates/24h, no
-              Ghostless). Community $4.99 · Pro $9.99 · Founding $8.99 locked
-              (≤10 seats). Upgrade on{" "}
+              (charged after trial ends). One trial per Discord server and per
+              Discord user (reinstall / new server does not reset it). Cancel
+              keeps access until the trial or paid period ends, then Starter (2
+              open + 5 creates/24h, no Ghostless). Community $4.99 · Pro $9.99 ·
+              Founding $8.99 locked (≤10 seats). Upgrade on{" "}
               <Link href="/app/billing" className="text-coral hover:underline">
                 /app/billing
               </Link>{" "}

@@ -183,10 +183,10 @@ export default function PricingPage() {
         </h1>
         <p className="mt-3 max-w-xl text-white/75">
           Billed per Discord server. Community Checkout: card required, one
-          14-day trial (charged after trial; cancel keeps access until trial
-          ends). Then Starter caps or paid — Community ${COMMUNITY_PRICE_USD} ·
-          Pro ${PRO_PRICE_USD} · Founding ${FOUNDING_PRO_PRICE_USD} locked (≤
-          {PLANS.founding_pro.seatCap}).
+          14-day trial per server and per Discord user (charged after trial;
+          cancel keeps access until trial ends). Then Starter caps or paid —
+          Community ${COMMUNITY_PRICE_USD} · Pro ${PRO_PRICE_USD} · Founding $
+          {FOUNDING_PRO_PRICE_USD} locked (≤{PLANS.founding_pro.seatCap}).
         </p>
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -234,7 +234,7 @@ export default function PricingPage() {
               </p>
               {tier.trial ? (
                 <p className="mt-2 text-xs font-medium text-lime">
-                  14-day trial · card at Checkout · once per server
+                  14-day trial · card at Checkout · once per server & Discord user
                 </p>
               ) : tier.id === "free" ? (
                 <p className="mt-2 text-xs font-medium text-white/55">

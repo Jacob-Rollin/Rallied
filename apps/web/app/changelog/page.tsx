@@ -38,7 +38,7 @@ const ENTRIES: {
   {
     date: "2026-10-30",
     title: "Community trial · cancel keeps access",
-    body: `Community Checkout requires a card. First trial per Discord server is 14 days (charged after trial). Cancel during trial or after paying keeps access until trial/period end, then Starter. Uninstall does not grant another trial. Official / forever_pro never downgraded.`,
+    body: `Community Checkout requires a card. First trial per Discord server and per Discord user is 14 days (charged after trial). Cancel during trial or after paying keeps access until trial/period end, then Starter. Uninstall / new server does not grant another trial. Official / forever_pro never downgraded.`,
   },
   {
     date: "2026-10-30",
@@ -98,7 +98,7 @@ const ENTRIES: {
   {
     date: "2026-10-29",
     title: "Path B plans",
-    body: `Install starts on Starter (matching under caps; no Ghostless / strikes). Community trial via Checkout + card (14 days, once per server). Community $${COMMUNITY_PRICE_USD}/mo · Pro $${PRO_PRICE_USD}/mo · Founding Pro $${FOUNDING_PRO_PRICE_USD} locked.`,
+    body: `Install starts on Starter (matching under caps; no Ghostless / strikes). Community trial via Checkout + card (14 days, once per server & Discord user). Community $${COMMUNITY_PRICE_USD}/mo · Pro $${PRO_PRICE_USD}/mo · Founding Pro $${FOUNDING_PRO_PRICE_USD} locked.`,
   },
   {
     date: "2026-10-28",

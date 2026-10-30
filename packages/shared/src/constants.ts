@@ -33,7 +33,8 @@ export const GHOSTLESS = {
  * Community $4.99 · Pro $9.99 · Founding = Pro at $8.99 locked (≤10).
  * Starter (free/lapsed) is $0 with caps — see entitlements.ts.
  * Community trial = 14 days via Stripe Checkout (card required, charge after trial).
- * One trial per discord_guild_id (servers.trial_consumed_at) — not Pro.
+ * One trial per discord_guild_id (servers.trial_consumed_at) AND per Discord
+ * user (trial_consumers.discord_user_id) — not Pro. Both must be eligible.
  */
 export const PLANS = {
   trial: {

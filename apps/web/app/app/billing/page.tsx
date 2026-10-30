@@ -4,6 +4,8 @@ import {
 } from "@rallied/shared";
 import { BillingClient } from "@/components/BillingClient";
 import { DataSourceBanner } from "@/components/DataSourceBanner";
+import { getSession } from "@/lib/auth/session";
+import { loadUserTrialConsumedAt } from "@/lib/billing-sync";
 import { loadDashboard } from "@/lib/dashboard-data";
 import {
   displayNameForGuild,
@@ -11,6 +13,7 @@ import {
 } from "@/lib/guild-context";
 import { isUsableServerName } from "@/lib/server-display-name";
 import { stripeConfigured } from "@/lib/stripe";
+import { getServiceSupabase } from "@/lib/supabase";
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -55,6 +58,16 @@ export default async function BillingPage({ searchParams }: Props) {
       ? String(oauthGuildName).trim()
       : null;
 
+  let userTrialConsumedAt: string | null = null;
+  if (!useMock) {
+    const session = await getSession();
+    const userId = session.user?.id;
+    const sb = userId ? getServiceSupabase() : null;
+    if (userId && sb) {
+      userTrialConsumedAt = await loadUserTrialConsumedAt(sb, userId);
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -74,6 +87,7 @@ export default async function BillingPage({ searchParams }: Props) {
         priceLockCents={current?.price_lock_cents ?? null}
         trialEndsAt={current?.trial_ends_at ?? null}
         trialConsumedAt={current?.trial_consumed_at ?? null}
+        userTrialConsumedAt={userTrialConsumedAt}
         stripeCustomerId={current?.stripe_customer_id ?? null}
         stripeSubscriptionId={current?.stripe_subscription_id ?? null}
         billingInterval={current?.billing_interval ?? null}

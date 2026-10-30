@@ -9,6 +9,8 @@ type Props = {
   plan: PlanId | null | undefined;
   disputesHref: string;
   billingHref: string;
+  /** Active dashboard range label (e.g. "This month"). */
+  rangeLabel?: string;
 };
 
 function Trend({
@@ -24,7 +26,7 @@ function Trend({
 }) {
   if (current == null || prior == null) {
     return (
-      <p className="mt-1.5 text-xs text-muted">vs prior 7d · not enough data</p>
+      <p className="mt-1.5 text-xs text-muted">vs prior · not enough data</p>
     );
   }
   const pct = pctChange(current, prior);
@@ -83,6 +85,7 @@ export function ReliabilityHealth({
   plan,
   disputesHref,
   billingHref,
+  rangeLabel = "This month",
 }: Props) {
   const pro = isProPlan(plan);
 
@@ -94,8 +97,9 @@ export function ReliabilityHealth({
             Reliability health
           </h2>
           <p className="mt-1 text-sm text-muted">
-            Last 7 days{pro ? " · Pro trends vs prior week" : " · Community lite"}
-            . Honest empties — no demo fakes on live.
+            {rangeLabel}
+            {pro ? " · Pro trends vs prior period" : " · Community lite"}. Honest
+            empties — no demo fakes on live.
           </p>
         </div>
         {!pro ? (
@@ -103,7 +107,7 @@ export function ReliabilityHealth({
             href={billingHref}
             className="text-xs font-semibold text-coral hover:underline"
           >
-            Pro unlocks week-over-week
+            Pro unlocks period-over-period
           </Link>
         ) : null}
       </div>

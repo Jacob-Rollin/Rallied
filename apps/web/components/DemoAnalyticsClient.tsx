@@ -17,6 +17,7 @@ type Props = {
   extras?: AnalyticsExtras | null;
   topPlayers?: AnalyticsTopPlayer[];
   sourceLabel: string;
+  rangeLabel?: string;
 };
 
 export function DemoAnalyticsClient({
@@ -26,6 +27,7 @@ export function DemoAnalyticsClient({
   extras = null,
   topPlayers = [],
   sourceLabel,
+  rangeLabel = "This month",
 }: Props) {
   const [proPreview, setProPreview] = useState(false);
   const maxParties = useMemo(
@@ -58,7 +60,7 @@ export function DemoAnalyticsClient({
     return (
       <div className="space-y-8">
         <section className="space-y-2">
-          <h2 className="font-display text-xl tracking-wide">This week</h2>
+          <h2 className="font-display text-xl tracking-wide">{rangeLabel}</h2>
           <p className="text-sm text-muted">
             Community gets a simple summary. Full trends + CSV are Pro.
           </p>
@@ -102,17 +104,17 @@ export function DemoAnalyticsClient({
             Demo only — unlocks a mock Pro preview (not a purchase).
           </p>
           {trend.length > 0 ? (
-            <div className="grid grid-cols-7 gap-1 opacity-25" aria-hidden>
+            <div className="flex gap-1 opacity-25" aria-hidden>
               {trend.map((d, i) => (
                 <div
                   key={`${d.day}-${i}`}
-                  className="flex flex-col items-center gap-1"
+                  className="flex min-w-0 flex-1 flex-col items-center gap-1"
                 >
                   <div
                     className="w-full rounded-sm bg-muted"
                     style={{ height: 8 + (d.parties / maxParties) * 48 }}
                   />
-                  <span className="text-[10px] text-muted">{d.day}</span>
+                  <span className="truncate text-[10px] text-muted">{d.day}</span>
                 </div>
               ))}
             </div>
@@ -160,6 +162,7 @@ export function DemoAnalyticsClient({
         extras={extras}
         topPlayers={topPlayers}
         onExport={exportCsv}
+        rangeLabel={rangeLabel}
       />
 
       <p className="text-xs text-muted">

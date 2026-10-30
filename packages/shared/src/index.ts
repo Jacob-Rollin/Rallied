@@ -1,4 +1,5 @@
 export * from "./constants";
+export * from "./dashboard-range";
 export * from "./entitlements";
 export * from "./feedback";
 export * from "./games";

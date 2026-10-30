@@ -1,10 +1,12 @@
 import { AnalyticsClient } from "@/components/AnalyticsClient";
+import { DashboardRangeControl } from "@/components/DashboardRangeControl";
 import { DataSourceBanner } from "@/components/DataSourceBanner";
 import { loadDashboard } from "@/lib/dashboard-data";
 import {
   displayNameForGuild,
+  rangeFromSearchParams,
   resolveSelectedGuild,
-  withGuildQuery,
+  withDashboardQuery,
 } from "@/lib/guild-context";
 
 type Props = {
@@ -16,22 +18,31 @@ export default async function AnalyticsPage({ searchParams }: Props) {
   const { guildId, useMock, oauthGuildName } = await resolveSelectedGuild({
     searchParams: sp,
   });
-  const data = await loadDashboard(guildId, useMock);
+  const rangeKey = rangeFromSearchParams(sp);
+  const data = await loadDashboard(guildId, useMock, rangeKey);
   const plan = data.server?.plan ?? "community";
   const name = displayNameForGuild({
     guildId,
     dbName: data.server?.name,
     oauthName: oauthGuildName,
   });
+  const q = { guildId, range: rangeKey };
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-3xl tracking-wide">Analytics</h1>
-        <p className="mt-1 text-sm text-muted">
-          {name} · volume, totals, soft reliability, top players. Pro unlocks
-          charts + CSV; Community sees this-week counts.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="font-display text-3xl tracking-wide">Analytics</h1>
+          <p className="mt-1 text-sm text-muted">
+            {name} · volume, totals, soft reliability, top players. Pro unlocks
+            charts + CSV; Community sees period counts.
+          </p>
+        </div>
+        <DashboardRangeControl
+          pathname="/app/analytics"
+          current={rangeKey}
+          guildId={guildId}
+        />
       </div>
 
       <DataSourceBanner source={data.source} notice={data.notice} />
@@ -43,9 +54,10 @@ export default async function AnalyticsPage({ searchParams }: Props) {
         priorTrend={data.analyticsTrendPrior}
         extras={data.analyticsExtras}
         topPlayers={data.analyticsTopPlayers}
-        billingHref={withGuildQuery("/app/billing", guildId)}
-        overviewHref={withGuildQuery("/app", guildId)}
+        billingHref={withDashboardQuery("/app/billing", q)}
+        overviewHref={withDashboardQuery("/app", q)}
         sourceLabel={data.source}
+        rangeLabel={data.range.heading}
       />
     </div>
   );

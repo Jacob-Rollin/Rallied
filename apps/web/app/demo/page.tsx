@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DashboardRangeControl } from "@/components/DashboardRangeControl";
 import { DemoDataBanner } from "@/components/DemoDataBanner";
 import { MonthlyLeaderboard } from "@/components/MonthlyLeaderboard";
 import { ReliabilityHealth } from "@/components/ReliabilityHealth";
@@ -6,19 +7,31 @@ import { StandbyPromotions } from "@/components/StandbyPromotions";
 import { UpcomingScheduled } from "@/components/UpcomingScheduled";
 import { DEMO_GUILD_ID, demoHref } from "@/lib/demo";
 import { loadDashboard } from "@/lib/dashboard-data";
+import { rangeFromSearchParams } from "@/lib/guild-params";
+import { withDashboardQuery } from "@/lib/guild-params";
 
-export default async function DemoOverviewPage() {
-  const data = await loadDashboard(DEMO_GUILD_ID, true);
+type Props = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function DemoOverviewPage({ searchParams }: Props) {
+  const sp = await searchParams;
+  const rangeKey = rangeFromSearchParams(sp);
+  const data = await loadDashboard(DEMO_GUILD_ID, true, rangeKey);
   const plan = data.server?.plan;
+  const rangeLabel = data.range.heading;
 
   return (
     <div className="space-y-10">
-      <div>
-        <h1 className="font-display text-3xl tracking-wide">Overview</h1>
-        <p className="mt-1 text-sm text-muted">
-          {data.server?.name ?? "Demo server"} · what server owners see after
-          adding Rallied
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="font-display text-3xl tracking-wide">Overview</h1>
+          <p className="mt-1 text-sm text-muted">
+            {data.server?.name ?? "Demo server"} · what server owners see after
+            adding Rallied
+          </p>
+        </div>
+        <DashboardRangeControl pathname="/demo" current={rangeKey} />
       </div>
 
       <DemoDataBanner />
@@ -30,17 +43,21 @@ export default async function DemoOverviewPage() {
             {
               label: "Open parties",
               value: data.openPartyCount,
-              href: demoHref("/lfg"),
+              href: withDashboardQuery(demoHref("/lfg"), { range: rangeKey }),
             },
             {
               label: "Members",
               value: data.memberCount,
-              href: demoHref("/people"),
+              href: withDashboardQuery(demoHref("/people"), {
+                range: rangeKey,
+              }),
             },
             {
               label: "Active strikes",
               value: data.activeStrikeCount,
-              href: demoHref("/people"),
+              href: withDashboardQuery(demoHref("/people"), {
+                range: rangeKey,
+              }),
             },
           ].map((kpi) => (
             <Link
@@ -62,6 +79,9 @@ export default async function DemoOverviewPage() {
           monthLabel={data.monthlyLeaderboard.monthLabel}
           mostReliable={data.monthlyLeaderboard.mostReliable}
           topHosts={data.monthlyLeaderboard.topHosts}
+          mostReliableIsLifetime={
+            data.monthlyLeaderboard.mostReliableIsLifetime
+          }
         />
       ) : null}
 
@@ -69,19 +89,29 @@ export default async function DemoOverviewPage() {
         <ReliabilityHealth
           health={data.reliabilityHealth}
           plan={plan}
-          disputesHref={demoHref("/disputes")}
-          billingHref={demoHref("/billing")}
+          disputesHref={withDashboardQuery(demoHref("/disputes"), {
+            range: rangeKey,
+          })}
+          billingHref={withDashboardQuery(demoHref("/billing"), {
+            range: rangeKey,
+          })}
+          rangeLabel={rangeLabel}
         />
       ) : null}
 
       <UpcomingScheduled
         parties={data.upcomingScheduled}
         plan={plan}
-        settingsHref={demoHref("/settings")}
+        settingsHref={withDashboardQuery(demoHref("/settings"), {
+          range: rangeKey,
+        })}
         source={data.source}
       />
 
-      <StandbyPromotions health={data.reliabilityHealth} />
+      <StandbyPromotions
+        health={data.reliabilityHealth}
+        rangeLabel={rangeLabel}
+      />
     </div>
   );
 }

@@ -8,15 +8,24 @@ import {
 } from "@rallied/shared";
 
 export type MonthlyLeaderboard = {
+  /** Display label for the host period (e.g. "October 2026", "This week"). */
   monthLabel: string;
   mostReliable: LeaderboardReliableEntry[];
   topHosts: LeaderboardHostEntry[];
+  /**
+   * Most reliable uses lifetime Ghostless % (not period-sliced).
+   * Always true today — kept explicit for UI labeling.
+   */
+  mostReliableIsLifetime: boolean;
 };
 
 /**
  * Build Most reliable + Top hosts for a server.
  * `parties` should include soft-closed rows (`deleted_at` set) so host credit
  * survives Close / expire / `/setup` (Find UI filters those separately).
+ *
+ * Top hosts are filtered by `since` (null = all retained history).
+ * Most reliable stays lifetime Ghostless % — do not rewrite badge formulas.
  */
 export function buildMonthlyLeaderboard(opts: {
   members: {
@@ -33,10 +42,19 @@ export function buildMonthlyLeaderboard(opts: {
   parties: { host_member_id: string; created_at: string }[];
   now?: Date;
   limit?: number;
+  /** Inclusive lower bound for Top hosts; null = all time. Default: UTC month start. */
+  since?: Date | null;
+  /** Override period label (dashboard range heading / month name). */
+  periodLabel?: string;
 }): MonthlyLeaderboard {
   const now = opts.now ?? new Date();
   const limit = opts.limit ?? 5;
-  const since = monthStartUtc(now).getTime();
+  const sinceMs =
+    opts.since === undefined
+      ? monthStartUtc(now).getTime()
+      : opts.since == null
+        ? null
+        : opts.since.getTime();
   const byId = new Map(opts.members.map((m) => [m.id, m]));
 
   const mostReliable = rankMostReliable(
@@ -56,7 +74,7 @@ export function buildMonthlyLeaderboard(opts: {
 
   const counts = new Map<string, number>();
   for (const p of opts.parties) {
-    if (new Date(p.created_at).getTime() < since) continue;
+    if (sinceMs != null && new Date(p.created_at).getTime() < sinceMs) continue;
     counts.set(
       p.host_member_id,
       (counts.get(p.host_member_id) ?? 0) + 1,
@@ -77,8 +95,9 @@ export function buildMonthlyLeaderboard(opts: {
   );
 
   return {
-    monthLabel: monthLabelUtc(now),
+    monthLabel: opts.periodLabel ?? monthLabelUtc(now),
     mostReliable,
     topHosts,
+    mostReliableIsLifetime: true,
   };
 }

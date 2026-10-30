@@ -34,11 +34,11 @@ function DeltaLine({
       }`}
     >
       {pct == null ? (
-        <span>vs prior 7d · n/a</span>
+        <span>vs prior · n/a</span>
       ) : (
         <>
           <span aria-hidden>{up ? "↑" : down ? "↓" : flat ? "→" : ""} </span>
-          {formatPctDelta(pct)} vs prior 7d
+          {formatPctDelta(pct)} vs prior
         </>
       )}
     </p>

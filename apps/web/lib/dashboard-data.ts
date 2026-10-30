@@ -33,6 +33,12 @@ import {
   buildMonthlyLeaderboard,
   type MonthlyLeaderboard,
 } from "./leaderboard";
+import {
+  buildReliabilityHealth,
+  MOCK_RELIABILITY_HEALTH,
+  weekStartUtc,
+  type ReliabilityHealth,
+} from "./reliability-health";
 import { getServiceSupabase, hasServiceRole } from "./supabase";
 import { isDemoGuildId } from "./guild-params";
 
@@ -50,6 +56,17 @@ export type DashboardParty = {
   created_at: string;
   updated_at: string;
   discord_channel_id?: string | null;
+  scheduled_start_at?: string | null;
+};
+
+export type UpcomingScheduledParty = {
+  id: string;
+  game: string;
+  host_name: string;
+  scheduled_start_at: string;
+  status: "open" | "filled" | "closed";
+  slots: number;
+  filled: number;
 };
 
 export type DashboardDispute = Dispute & {
@@ -78,6 +95,7 @@ export type AnalyticsExtras = {
   /** Prior 7d for WoW on soft metrics (mock / when available). */
   priorShowRatePct?: number | null;
   priorAvgVibe?: number | null;
+  priorReadyCheckCompletionPct?: number | null;
 };
 
 export type AnalyticsTopPlayer = {
@@ -109,6 +127,10 @@ export type DashboardBundle = {
   analyticsTopPlayers: AnalyticsTopPlayer[];
   /** Per-server monthly Most reliable + Top hosts (Community+). */
   monthlyLeaderboard: MonthlyLeaderboard | null;
+  /** Overview reliability health (Community lite / Pro trends). */
+  reliabilityHealth: ReliabilityHealth | null;
+  /** Next open/filled parties with scheduled_start_at. */
+  upcomingScheduled: UpcomingScheduledParty[];
   notice: string | null;
 };
 
@@ -206,11 +228,55 @@ function topPlayersFromMembers(
     }));
 }
 
+function upcomingFromParties(
+  parties: DashboardParty[],
+): UpcomingScheduledParty[] {
+  const now = Date.now();
+  return parties
+    .filter(
+      (p) =>
+        p.scheduled_start_at &&
+        new Date(p.scheduled_start_at).getTime() >= now &&
+        (p.status === "open" || p.status === "filled"),
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.scheduled_start_at!).getTime() -
+        new Date(b.scheduled_start_at!).getTime(),
+    )
+    .slice(0, 5)
+    .map((p) => ({
+      id: p.id,
+      game: p.game,
+      host_name: p.host_name,
+      scheduled_start_at: p.scheduled_start_at!,
+      status: p.status,
+      slots: p.slots,
+      filled: p.filled,
+    }));
+}
+
 function buildMockBundle(guildId: string): DashboardBundle {
   const server = mockServerForGuild(guildId);
   const contentId =
     server.id === MOCK_SERVERS[2].id ? MOCK_SERVERS[0].id : server.id;
-  const parties = MOCK_PARTIES.filter((p) => p.server_id === contentId);
+  const parties: DashboardParty[] = MOCK_PARTIES.filter(
+    (p) => p.server_id === contentId,
+  ).map((p) => ({
+    id: p.id,
+    server_id: p.server_id,
+    host_member_id: p.host_member_id,
+    host_name: p.host_name,
+    game: p.game,
+    rank_text: p.rank_text,
+    slots: p.slots,
+    filled: p.filled,
+    status: p.status,
+    expires_at: p.expires_at,
+    created_at: p.created_at,
+    updated_at: p.updated_at,
+    scheduled_start_at: p.scheduled_start_at ?? null,
+  }));
   const members = MOCK_MEMBERS.filter((m) => m.server_id === contentId).map(
     (m) => ({
       member: m,
@@ -255,6 +321,11 @@ function buildMockBundle(guildId: string): DashboardBundle {
         created_at: p.created_at,
       })),
     }),
+    reliabilityHealth: {
+      ...MOCK_RELIABILITY_HEALTH,
+      openDisputes: disputes.filter((d) => d.status === "open").length,
+    },
+    upcomingScheduled: upcomingFromParties(parties),
     notice: "Demo / mock data — not a live guild.",
   };
 }
@@ -281,7 +352,35 @@ function emptyBundle(
     analyticsExtras: null,
     analyticsTopPlayers: [],
     monthlyLeaderboard: null,
+    reliabilityHealth: null,
+    upcomingScheduled: [],
     notice,
+  };
+}
+
+function emptyDayBuckets(daysBackStart: number, daysBackEnd: number) {
+  const dayBuckets = new Map<string, AnalyticsTrendPoint>();
+  for (let i = daysBackStart; i >= daysBackEnd; i--) {
+    const d = new Date();
+    d.setUTCHours(0, 0, 0, 0);
+    d.setUTCDate(d.getUTCDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    dayBuckets.set(key, {
+      day: weekdayLabel(d),
+      parties: 0,
+      vibes: 0,
+      ghosts: 0,
+    });
+  }
+  return dayBuckets;
+}
+
+function parseEventMeta(raw: unknown): { noShows?: number; rosterSize?: number } {
+  if (!raw || typeof raw !== "object") return {};
+  const m = raw as Record<string, unknown>;
+  return {
+    noShows: m.noShows == null ? undefined : Number(m.noShows),
+    rosterSize: m.rosterSize == null ? undefined : Number(m.rosterSize),
   };
 }
 
@@ -319,7 +418,11 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
   const server = mapServerRow(serverRow as Record<string, unknown>);
   const serverId = server.id;
 
-  const weekAgo = new Date(Date.now() - 7 * 86400_000).toISOString();
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 86400_000).toISOString();
+  const twoWeeksAgo = new Date(now.getTime() - 14 * 86400_000).toISOString();
+  const weekStart = weekStartUtc(now).toISOString();
+  const nowIso = now.toISOString();
 
   const [
     settingsRes,
@@ -330,6 +433,12 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
     lockoutsRes,
     disputesRes,
     weekPartiesRes,
+    priorWeekPartiesRes,
+    upcomingRes,
+    readyResolvedRes,
+    priorReadyResolvedRes,
+    eventsRes,
+    noShowStrikesRes,
   ] = await Promise.all([
     sb.from("server_settings").select("*").eq("server_id", serverId).maybeSingle(),
     sb
@@ -351,7 +460,7 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
       .from("lockouts")
       .select("*")
       .eq("server_id", serverId)
-      .gt("until", new Date().toISOString()),
+      .gt("until", nowIso),
     sb
       .from("disputes")
       .select("*")
@@ -363,7 +472,57 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
       .select("id, created_at")
       .eq("server_id", serverId)
       .gte("created_at", weekAgo),
+    sb
+      .from("lfg_parties")
+      .select("id, created_at")
+      .eq("server_id", serverId)
+      .gte("created_at", twoWeeksAgo)
+      .lt("created_at", weekAgo),
+    sb
+      .from("lfg_parties")
+      .select(
+        "id, game, host_member_id, scheduled_start_at, status, slots",
+      )
+      .eq("server_id", serverId)
+      .is("deleted_at", null)
+      .not("scheduled_start_at", "is", null)
+      .gte("scheduled_start_at", nowIso)
+      .in("status", ["open", "filled"])
+      .order("scheduled_start_at", { ascending: true })
+      .limit(5),
+    sb
+      .from("lfg_parties")
+      .select("id, ready_check_resolved_at")
+      .eq("server_id", serverId)
+      .gte("ready_check_resolved_at", weekAgo)
+      .not("ready_check_resolved_at", "is", null),
+    sb
+      .from("lfg_parties")
+      .select("id, ready_check_resolved_at")
+      .eq("server_id", serverId)
+      .gte("ready_check_resolved_at", twoWeeksAgo)
+      .lt("ready_check_resolved_at", weekAgo)
+      .not("ready_check_resolved_at", "is", null),
+    sb
+      .from("server_events")
+      .select("event_type, party_id, member_id, meta, created_at")
+      .eq("server_id", serverId)
+      .gte("created_at", twoWeeksAgo)
+      .order("created_at", { ascending: false })
+      .limit(500),
+    sb
+      .from("strikes")
+      .select("id, reason, created_at")
+      .eq("server_id", serverId)
+      .gte("created_at", weekAgo)
+      .ilike("reason", "Ready-check no-show%"),
   ]);
+
+  // Soft-fail if server_events migration not applied yet
+  const eventsAvailable = !eventsRes.error;
+  if (eventsRes.error) {
+    console.warn("server_events query soft-fail", eventsRes.error.message);
+  }
 
   const partyIdList = ((partiesRes.data ?? []) as { id: string }[]).map(
     (p) => p.id,
@@ -371,23 +530,68 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
   const weekPartyIdList = ((weekPartiesRes.data ?? []) as { id: string }[]).map(
     (p) => p.id,
   );
-  const vibePartyIds = [...new Set([...partyIdList, ...weekPartyIdList])];
+  const priorWeekPartyIdList = (
+    (priorWeekPartiesRes.data ?? []) as { id: string }[]
+  ).map((p) => p.id);
+  const readyPartyIds = (
+    (readyResolvedRes.data ?? []) as { id: string }[]
+  ).map((p) => p.id);
+  const priorReadyPartyIds = (
+    (priorReadyResolvedRes.data ?? []) as { id: string }[]
+  ).map((p) => p.id);
+  const vibePartyIds = [
+    ...new Set([
+      ...partyIdList,
+      ...weekPartyIdList,
+      ...priorWeekPartyIdList,
+      ...readyPartyIds,
+      ...priorReadyPartyIds,
+    ]),
+  ];
 
-  const [partyMembersRes, weekVibesRes] = await Promise.all([
-    partyIdList.length > 0
-      ? sb
-          .from("lfg_party_members")
-          .select("party_id, member_id")
-          .in("party_id", partyIdList)
-      : Promise.resolve({ data: [] as { party_id: string; member_id: string }[] }),
-    vibePartyIds.length > 0
-      ? sb
-          .from("vibe_checks")
-          .select("id, created_at, ghosted, party_id")
-          .in("party_id", vibePartyIds)
-          .gte("created_at", weekAgo)
-      : Promise.resolve({ data: [] as Record<string, unknown>[] }),
-  ]);
+  const [partyMembersRes, weekVibesRes, priorVibesRes, readyPartyMembersRes] =
+    await Promise.all([
+      partyIdList.length > 0
+        ? sb
+            .from("lfg_party_members")
+            .select("party_id, member_id")
+            .in("party_id", partyIdList)
+        : Promise.resolve({
+            data: [] as { party_id: string; member_id: string }[],
+          }),
+      vibePartyIds.length > 0
+        ? sb
+            .from("vibe_checks")
+            .select(
+              "id, created_at, ghosted, party_id, rater_id, vibe_score, showed_up",
+            )
+            .in("party_id", vibePartyIds)
+            .gte("created_at", weekAgo)
+        : Promise.resolve({ data: [] as Record<string, unknown>[] }),
+      vibePartyIds.length > 0
+        ? sb
+            .from("vibe_checks")
+            .select(
+              "id, created_at, ghosted, party_id, rater_id, vibe_score, showed_up",
+            )
+            .in("party_id", vibePartyIds)
+            .gte("created_at", twoWeeksAgo)
+            .lt("created_at", weekAgo)
+        : Promise.resolve({ data: [] as Record<string, unknown>[] }),
+      readyPartyIds.length > 0 || priorReadyPartyIds.length > 0
+        ? sb
+            .from("lfg_party_members")
+            .select("party_id, member_id, role")
+            .in("party_id", [...readyPartyIds, ...priorReadyPartyIds])
+            .in("role", ["host", "member"])
+        : Promise.resolve({
+            data: [] as {
+              party_id: string;
+              member_id: string;
+              role: string;
+            }[],
+          }),
+    ]);
 
   const settings = settingsRes.data
     ? mapSettingsRow(settingsRes.data as Record<string, unknown>)
@@ -482,6 +686,7 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
       created_at: String(p.created_at),
       updated_at: String(p.updated_at),
       discord_channel_id: (p.discord_channel_id as string | null) ?? null,
+      scheduled_start_at: (p.scheduled_start_at as string | null) ?? null,
     };
   });
 
@@ -528,36 +733,57 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
     };
   });
 
-  // Analytics: bucket last 7 days (UTC)
+  // Analytics: bucket last 7 days + prior 7 days (UTC)
   const weekPartyRows = (weekPartiesRes.data ?? []) as {
     id: string;
     created_at: string;
   }[];
+  const priorWeekPartyRows = (priorWeekPartiesRes.data ?? []) as {
+    id: string;
+    created_at: string;
+  }[];
 
-  const dayBuckets = new Map<string, AnalyticsTrendPoint>();
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setUTCHours(0, 0, 0, 0);
-    d.setUTCDate(d.getUTCDate() - i);
-    const key = d.toISOString().slice(0, 10);
-    dayBuckets.set(key, {
-      day: weekdayLabel(d),
-      parties: 0,
-      vibes: 0,
-      ghosts: 0,
-    });
-  }
+  const dayBuckets = emptyDayBuckets(6, 0);
+  const priorDayBuckets = emptyDayBuckets(13, 7);
+
   for (const p of weekPartyRows) {
     const key = p.created_at.slice(0, 10);
     const b = dayBuckets.get(key);
     if (b) b.parties += 1;
   }
-  for (const v of (weekVibesRes.data ?? []) as {
+  for (const p of priorWeekPartyRows) {
+    const key = p.created_at.slice(0, 10);
+    const b = priorDayBuckets.get(key);
+    if (b) b.parties += 1;
+  }
+
+  const weekVibeRows = (weekVibesRes.data ?? []) as {
     created_at: string;
     ghosted?: boolean;
-  }[]) {
+    vibe_score?: number | null;
+    showed_up?: boolean;
+    party_id?: string;
+    rater_id?: string;
+  }[];
+  const priorVibeRows = (priorVibesRes.data ?? []) as {
+    created_at: string;
+    ghosted?: boolean;
+    vibe_score?: number | null;
+    showed_up?: boolean;
+    party_id?: string;
+    rater_id?: string;
+  }[];
+
+  for (const v of weekVibeRows) {
     const key = String(v.created_at).slice(0, 10);
     const b = dayBuckets.get(key);
+    if (!b) continue;
+    b.vibes += 1;
+    if (v.ghosted) b.ghosts += 1;
+  }
+  for (const v of priorVibeRows) {
+    const key = String(v.created_at).slice(0, 10);
+    const b = priorDayBuckets.get(key);
     if (!b) continue;
     b.vibes += 1;
     if (v.ghosted) b.ghosts += 1;
@@ -567,6 +793,165 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
     (n, list) => n + list.length,
     0,
   );
+
+  // Soft analytics extras from vibe checks + ready events
+  function softExtras(
+    vibes: typeof weekVibeRows,
+    readyEvents: { meta: { noShows?: number; rosterSize?: number } }[],
+  ): AnalyticsExtras {
+    let showOk = 0;
+    let showTotal = 0;
+    let vibeSum = 0;
+    let vibeN = 0;
+    for (const v of vibes) {
+      showTotal += 1;
+      if (v.showed_up !== false && !v.ghosted) showOk += 1;
+      if (v.vibe_score != null && Number.isFinite(Number(v.vibe_score))) {
+        vibeSum += Number(v.vibe_score);
+        vibeN += 1;
+      }
+    }
+    let completed = 0;
+    let readyN = 0;
+    for (const e of readyEvents) {
+      const roster = Number(e.meta.rosterSize ?? 0);
+      const noShows = Number(e.meta.noShows ?? 0);
+      if (roster <= 0) continue;
+      readyN += 1;
+      if (noShows === 0) completed += 1;
+    }
+    return {
+      showRatePct:
+        showTotal > 0
+          ? Math.round((showOk / showTotal) * 1000) / 10
+          : null,
+      avgVibe: vibeN > 0 ? Math.round((vibeSum / vibeN) * 10) / 10 : null,
+      readyCheckCompletionPct:
+        readyN > 0 ? Math.round((completed / readyN) * 1000) / 10 : null,
+    };
+  }
+
+  const eventRows = eventsAvailable
+    ? ((eventsRes.data ?? []) as {
+        event_type: string;
+        party_id: string | null;
+        member_id: string | null;
+        meta: unknown;
+        created_at: string;
+      }[])
+    : [];
+
+  const readyEvents7d = eventRows
+    .filter(
+      (e) =>
+        e.event_type === "ready_check_resolved" &&
+        e.created_at >= weekAgo,
+    )
+    .map((e) => ({ meta: parseEventMeta(e.meta), created_at: e.created_at }));
+  const readyEventsPrior = eventRows
+    .filter(
+      (e) =>
+        e.event_type === "ready_check_resolved" &&
+        e.created_at >= twoWeeksAgo &&
+        e.created_at < weekAgo,
+    )
+    .map((e) => ({ meta: parseEventMeta(e.meta), created_at: e.created_at }));
+
+  const extrasCurrent = softExtras(weekVibeRows, readyEvents7d);
+  const extrasPrior = softExtras(priorVibeRows, readyEventsPrior);
+  const analyticsExtras: AnalyticsExtras | null =
+    extrasCurrent.showRatePct != null ||
+    extrasCurrent.avgVibe != null ||
+    extrasCurrent.readyCheckCompletionPct != null
+      ? {
+          ...extrasCurrent,
+          priorShowRatePct: extrasPrior.showRatePct,
+          priorAvgVibe: extrasPrior.avgVibe,
+          priorReadyCheckCompletionPct: extrasPrior.readyCheckCompletionPct,
+        }
+      : null;
+
+  // Vibe response: distinct raters / seated on ready-checked parties
+  const seatedByParty = new Map<string, Set<string>>();
+  for (const row of readyPartyMembersRes.data ?? []) {
+    const r = row as { party_id: string; member_id: string };
+    const set = seatedByParty.get(r.party_id) ?? new Set();
+    set.add(r.member_id);
+    seatedByParty.set(r.party_id, set);
+  }
+  function vibeResponseFor(
+    partyIds: string[],
+    vibes: typeof weekVibeRows,
+  ): { raters: number; seated: number } | null {
+    if (partyIds.length === 0) return null;
+    let seated = 0;
+    for (const id of partyIds) {
+      seated += seatedByParty.get(id)?.size ?? 0;
+    }
+    if (seated <= 0) return null;
+    const raters = new Set(
+      vibes
+        .filter((v) => v.party_id && partyIds.includes(String(v.party_id)))
+        .map((v) => String(v.rater_id)),
+    );
+    return { raters: raters.size, seated };
+  }
+
+  const standbyPromotionsThisWeek = eventsAvailable
+    ? eventRows.filter(
+        (e) =>
+          e.event_type === "waitlist_promote" && e.created_at >= weekStart,
+      ).length
+    : null;
+
+  const reliabilityHealth = buildReliabilityHealth({
+    openDisputes: disputes.filter((d) => d.status === "open").length,
+    readyEvents: readyEvents7d,
+    priorReadyEvents: readyEventsPrior,
+    standbyPromotionsThisWeek,
+    vibeResponse: vibeResponseFor(readyPartyIds, weekVibeRows),
+    priorVibeResponse: vibeResponseFor(priorReadyPartyIds, priorVibeRows),
+    noShowStrikeCount7d: (noShowStrikesRes.data ?? []).length,
+    readyChecksResolved7d: readyPartyIds.length,
+  });
+
+  const upcomingFill = new Map<string, number>();
+  const upcomingIds = ((upcomingRes.data ?? []) as { id: string }[]).map(
+    (p) => p.id,
+  );
+  if (upcomingIds.length > 0) {
+    for (const id of upcomingIds) {
+      upcomingFill.set(id, fillCounts.get(id) ?? 0);
+    }
+    // Fill counts may miss upcoming parties not in the latest-100 list
+    const missing = upcomingIds.filter((id) => !fillCounts.has(id));
+    if (missing.length > 0) {
+      const { data: extraPm } = await sb
+        .from("lfg_party_members")
+        .select("party_id")
+        .in("party_id", missing);
+      for (const row of extraPm ?? []) {
+        const pid = String((row as { party_id: string }).party_id);
+        upcomingFill.set(pid, (upcomingFill.get(pid) ?? 0) + 1);
+      }
+    }
+  }
+
+  const upcomingScheduled: UpcomingScheduledParty[] = (
+    (upcomingRes.data ?? []) as Record<string, unknown>[]
+  ).map((p) => {
+    const hostId = String(p.host_member_id);
+    const host = membersById.get(hostId);
+    return {
+      id: String(p.id),
+      game: String(p.game),
+      host_name: host?.display_name || "Unknown",
+      scheduled_start_at: String(p.scheduled_start_at),
+      status: p.status as UpcomingScheduledParty["status"],
+      slots: Number(p.slots ?? 5),
+      filled: upcomingFill.get(String(p.id)) ?? 1,
+    };
+  });
 
   return {
     source: "live",
@@ -581,8 +966,8 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
     activeStrikeCount,
     disputes,
     analyticsTrend: [...dayBuckets.values()],
-    analyticsTrendPrior: [],
-    analyticsExtras: null,
+    analyticsTrendPrior: [...priorDayBuckets.values()],
+    analyticsExtras,
     analyticsTopPlayers: topPlayersFromMembers(members),
     monthlyLeaderboard: buildMonthlyLeaderboard({
       members: members.map((m) => m.member),
@@ -599,6 +984,8 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
         created_at: p.created_at,
       })),
     }),
+    reliabilityHealth,
+    upcomingScheduled,
     notice: null,
   };
 }

@@ -26,14 +26,28 @@ export function MonthlyLeaderboard({
     <section className={compact ? "space-y-3" : "space-y-4"}>
       <div>
         <h2 className="font-display text-xl tracking-wide">
-          Leaderboard · {monthLabel}
+          {compact ? `Leaderboard · ${monthLabel}` : `This month · ${monthLabel}`}
         </h2>
         <p className="mt-1 text-sm text-muted">
-          This server only — Most reliable (Ghostless %) and Top hosts.
+          {compact
+            ? "This server only — Most reliable (Ghostless %) and Top hosts."
+            : "Most reliable + Top hosts — same board as /leaderboard (this server only)."}
         </p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-brand border border-white/10 bg-slate-elevated/40 p-4">
+      <div
+        className={
+          compact
+            ? "grid gap-4 sm:grid-cols-2"
+            : "grid gap-0 overflow-hidden rounded-brand border border-white/10 bg-slate-elevated/40 sm:grid-cols-2"
+        }
+      >
+        <div
+          className={
+            compact
+              ? "rounded-brand border border-white/10 bg-slate-elevated/40 p-4"
+              : "border-b border-white/10 p-4 sm:border-b-0 sm:border-r"
+          }
+        >
           <p className="text-xs uppercase tracking-wider text-lime">
             Most reliable
           </p>
@@ -42,17 +56,28 @@ export function MonthlyLeaderboard({
           ) : (
             <ol className="mt-3 space-y-2 text-sm">
               {mostReliable.map((r, i) => (
-                <li key={`${r.displayName}-${i}`} className="flex justify-between gap-2">
+                <li
+                  key={`${r.displayName}-${i}`}
+                  className="flex justify-between gap-2"
+                >
                   <span>
                     <span className="text-muted">{i + 1}.</span> {r.displayName}
                   </span>
-                  <span className="font-semibold text-lime">{r.showRatePct}%</span>
+                  <span className="font-semibold text-lime">
+                    {r.showRatePct}%
+                  </span>
                 </li>
               ))}
             </ol>
           )}
         </div>
-        <div className="rounded-brand border border-white/10 bg-slate-elevated/40 p-4">
+        <div
+          className={
+            compact
+              ? "rounded-brand border border-white/10 bg-slate-elevated/40 p-4"
+              : "p-4"
+          }
+        >
           <p className="text-xs uppercase tracking-wider text-coral">
             Top hosts
           </p>
@@ -61,7 +86,10 @@ export function MonthlyLeaderboard({
           ) : (
             <ol className="mt-3 space-y-2 text-sm">
               {topHosts.map((h, i) => (
-                <li key={`${h.displayName}-${i}`} className="flex justify-between gap-2">
+                <li
+                  key={`${h.displayName}-${i}`}
+                  className="flex justify-between gap-2"
+                >
                   <span>
                     <span className="text-muted">{i + 1}.</span> {h.displayName}
                   </span>

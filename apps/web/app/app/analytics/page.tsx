@@ -19,7 +19,8 @@ export default async function AnalyticsPage({ searchParams }: Props) {
       <div>
         <h1 className="font-display text-3xl tracking-wide">Analytics</h1>
         <p className="mt-1 text-sm text-muted">
-          Pro: trends + CSV export. Community: this-week teaser → upgrade.
+          One job per section — volume, totals, soft reliability, top players.
+          Pro unlocks charts + CSV; Community sees this-week counts.
         </p>
       </div>
 
@@ -33,6 +34,7 @@ export default async function AnalyticsPage({ searchParams }: Props) {
         extras={data.analyticsExtras}
         topPlayers={data.analyticsTopPlayers}
         billingHref={withGuildQuery("/app/billing", guildId)}
+        overviewHref={withGuildQuery("/app", guildId)}
         sourceLabel={data.source}
       />
     </div>

@@ -5,6 +5,7 @@ import {
   reliabilityEnabled,
 } from "@rallied/shared";
 import { getSession } from "@/lib/auth/session";
+import { randomIcalToken } from "@/lib/ical";
 import { getServiceSupabase } from "@/lib/supabase";
 
 type Body = {
@@ -21,10 +22,15 @@ type Body = {
   ghostless_role_id?: string | null;
   digest_channel_id?: string | null;
   lockout_days?: number;
+  /** Community+: null/empty clears; 1–100 sets Join min Ghostless %. */
   join_min_ghostless_pct?: number | null;
   join_lockout_enforced?: boolean;
   ghostless_role_threshold_pct?: number;
   ghostless_role_min_sessions?: number;
+  /** Pro: generate a new ical_token (invalidates old subscribe URLs). */
+  rotate_ical_token?: boolean;
+  /** Pro: clear ical_token (disables feed). */
+  clear_ical_token?: boolean;
 };
 
 function cleanSlug(raw: string | null | undefined): string | null {
@@ -276,15 +282,33 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  let icalRejected = false;
+  if (body.rotate_ical_token || body.clear_ical_token) {
+    if (!pro) {
+      icalRejected = true;
+    } else if (body.clear_ical_token) {
+      patch.ical_token = null;
+    } else {
+      patch.ical_token = randomIcalToken();
+    }
+  }
+
   if (Object.keys(patch).length <= 1) {
+    const proGate = vanityRejected || icalRejected;
     return NextResponse.json(
       {
-        error: vanityRejected ? "pro_required_for_vanity" : "nothing_to_update",
+        error: vanityRejected
+          ? "pro_required_for_vanity"
+          : icalRejected
+            ? "pro_required_for_ical"
+            : "nothing_to_update",
         hint: vanityRejected
           ? "hide_powered_by / public_accent require plan pro or founding_pro"
-          : undefined,
+          : icalRejected
+            ? "iCal subscribe token requires Pro or Founding Pro"
+            : undefined,
       },
-      { status: vanityRejected ? 403 : 400 },
+      { status: proGate ? 403 : 400 },
     );
   }
 

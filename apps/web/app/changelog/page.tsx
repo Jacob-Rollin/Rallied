@@ -16,6 +16,11 @@ const ENTRIES: {
 }[] = [
   {
     date: "2026-10-30",
+    title: "Pro iCal subscribe + web dispute resolve",
+    body: "Pro / Founding: Settings → Calendar subscribe generates a tokenized .ics URL for upcoming scheduled parties (our Worker only — no Google OAuth). Community+ admins Overturn / Uphold on /app/disputes (same semantics as /dispute resolve).",
+  },
+  {
+    date: "2026-10-30",
     title: "Starter caps = per Discord server",
     body: "Pricing and landing spell out that Starter limits (2 open parties + 5 creates/24h) are for this server — not per user. Short How Ghostless works blip (ready → grace → strike → lockout; % = showed/(showed+ghosted); admins dispute/clear) with a link to /guide. Upgrade embeds say “for this server.”",
   },

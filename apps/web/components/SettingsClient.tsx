@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   COMMUNITY_PRICE_USD,
   PLANS,
@@ -51,6 +51,7 @@ const DEFAULTS: Omit<
   discord_invite_url: null,
   hide_powered_by: false,
   public_accent: null,
+  ical_token: null,
 };
 
 export function SettingsClient({
@@ -104,9 +105,22 @@ export function SettingsClient({
   const [accent, setAccent] = useState(
     base.public_accent ?? (demoProUnlock ? "#B8F000" : ""),
   );
+  const [icalToken, setIcalToken] = useState(base.ical_token ?? null);
+  const [origin, setOrigin] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [saveErr, setSaveErr] = useState<string | null>(null);
+  const [icalBusy, setIcalBusy] = useState(false);
+  const [icalMsg, setIcalMsg] = useState<string | null>(null);
+  const [copyMsg, setCopyMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    setIcalToken(base.ical_token ?? null);
+  }, [base.ical_token]);
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   const previewPath = `/s/${slug || discordGuildId}`;
   const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
@@ -176,6 +190,64 @@ export function SettingsClient({
       setSaveErr(err instanceof Error ? err.message : "Save failed");
     } finally {
       setSaving(false);
+    }
+  }
+
+  function icalSubscribeUrl(token: string): string {
+    const baseOrigin = origin || (typeof window !== "undefined" ? window.location.origin : "");
+    return `${baseOrigin}/api/ical/${discordGuildId}?token=${encodeURIComponent(token)}`;
+  }
+
+  async function rotateOrClearIcal(action: "rotate" | "clear") {
+    if (!canWrite || !pro) return;
+    setIcalBusy(true);
+    setIcalMsg(null);
+    setSaveErr(null);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          discordGuildId,
+          rotate_ical_token: action === "rotate",
+          clear_ical_token: action === "clear",
+        }),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        hint?: string;
+        ical_token?: string | null;
+      };
+      if (!res.ok) {
+        setIcalMsg(
+          json.error
+            ? `${json.error}${json.hint ? ` — ${json.hint}` : ""}`
+            : `Failed (${res.status})`,
+        );
+        return;
+      }
+      setIcalToken(json.ical_token ?? null);
+      setIcalMsg(
+        action === "clear"
+          ? "Calendar feed disabled."
+          : "New subscribe URL ready — copy it below.",
+      );
+      router.refresh();
+    } catch (err) {
+      setIcalMsg(err instanceof Error ? err.message : "Failed");
+    } finally {
+      setIcalBusy(false);
+    }
+  }
+
+  async function copyIcalUrl() {
+    if (!icalToken) return;
+    const url = icalSubscribeUrl(icalToken);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopyMsg("Copied — paste into Apple / Google Calendar subscribe.");
+    } catch {
+      setCopyMsg(url);
     }
   }
 
@@ -580,6 +652,91 @@ export function SettingsClient({
             Developer Mode must be on in Discord to copy role and channel IDs.
           </p>
         </fieldset>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="font-display text-xl tracking-wide">
+          Calendar subscribe (Pro)
+        </h2>
+        {!pro ? (
+          <div className="rounded-brand border border-coral/35 bg-coral/10 px-4 py-3 text-sm text-white/85">
+            <p className="font-medium text-coral">Pro / Founding only</p>
+            <p className="mt-1 text-white/65">
+              Subscribe URL returns upcoming{" "}
+              <code className="text-coral">scheduled_start_at</code> parties as
+              a free <code className="text-white/80">.ics</code> feed from our
+              Worker — not Google Calendar API, no OAuth, no third-party SaaS.
+            </p>
+            <Link
+              href={billingHref}
+              className="mt-2 inline-block font-semibold text-coral hover:underline"
+            >
+              Upgrade to Pro →
+            </Link>
+          </div>
+        ) : (
+          <div className="max-w-xl space-y-3 text-sm">
+            <p className="text-muted">
+              Subscribe in Apple Calendar or Google Calendar with the URL below.
+              Their app polls our Worker (~every 15 min cache). Only parties with
+              a scheduled start in the next 60 days appear.
+            </p>
+            {icalToken ? (
+              <div className="space-y-2">
+                <code className="block break-all rounded-brand border border-white/10 bg-slate-elevated/50 px-3 py-2 text-xs text-white/85">
+                  {origin
+                    ? icalSubscribeUrl(icalToken)
+                    : `/api/ical/${discordGuildId}?token=…`}
+                </code>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void copyIcalUrl()}
+                    className="rounded-brand border border-lime/40 px-3 py-1.5 text-xs font-semibold text-lime transition hover:bg-lime/10"
+                  >
+                    Copy subscribe URL
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!canWrite || icalBusy}
+                    onClick={() => void rotateOrClearIcal("rotate")}
+                    className="rounded-brand border border-white/20 px-3 py-1.5 text-xs text-white/85 disabled:opacity-40"
+                  >
+                    Rotate token
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!canWrite || icalBusy}
+                    onClick={() => void rotateOrClearIcal("clear")}
+                    className="rounded-brand border border-coral/30 px-3 py-1.5 text-xs text-coral/90 disabled:opacity-40"
+                  >
+                    Disable feed
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                disabled={!canWrite || icalBusy}
+                onClick={() => void rotateOrClearIcal("rotate")}
+                className="rounded-brand bg-coral px-4 py-2 text-sm font-semibold text-slate disabled:opacity-40"
+              >
+                {icalBusy ? "Generating…" : "Generate subscribe URL"}
+              </button>
+            )}
+            {copyMsg ? (
+              <p className="text-xs text-lime break-all">{copyMsg}</p>
+            ) : null}
+            {icalMsg ? (
+              <p className="text-xs text-muted">{icalMsg}</p>
+            ) : null}
+            {!canWrite ? (
+              <p className="text-xs text-muted">
+                Live guild required to create or rotate the token.
+              </p>
+            ) : null}
+          </div>
+        )}
       </section>
 
       <div className="flex flex-wrap items-center gap-3">

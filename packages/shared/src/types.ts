@@ -68,6 +68,11 @@ export interface ServerSettings {
   hide_powered_by: boolean;
   /** Pro vanity: optional accent hex for public page chrome */
   public_accent: string | null;
+  /**
+   * Opaque token for Pro iCal subscribe URL (`/api/ical/<guild>?token=…`).
+   * Null = feed not enabled / rotated off. Never expose on public pages.
+   */
+  ical_token?: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -8,6 +8,10 @@ import {
   publicCardPath,
   type PublicServerBundle,
 } from "@/lib/public-data";
+import {
+  isUsableServerName,
+  resolveServerDisplayName,
+} from "@/lib/server-display-name";
 
 const RALLIED_SQUARE = "/brand/rallied-square-dark.jpg";
 
@@ -38,10 +42,19 @@ export function PublicServerView({ bundle, vanity }: Props) {
     vanity?.useGuildIcon !== undefined
       ? vanity.useGuildIcon
       : isProPlan(server.plan);
+  const serverLabel = resolveServerDisplayName({
+    dbName: server.name,
+    guildId: server.discord_guild_id,
+    fallback: "Discord server",
+  });
+  const hasRealName = isUsableServerName(
+    server.name,
+    server.discord_guild_id,
+  );
   const headerIcon =
     proVanity && server.icon_url ? server.icon_url : RALLIED_SQUARE;
   const headerIconAlt =
-    proVanity && server.icon_url ? `${server.name} icon` : "";
+    proVanity && server.icon_url ? `${serverLabel} icon` : "";
 
   const accentStyle = accent
     ? ({ ["--public-accent" as string]: accent } as React.CSSProperties)
@@ -56,7 +69,7 @@ export function PublicServerView({ bundle, vanity }: Props) {
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-4 px-4 py-4">
           <div>
             <h1 className="font-display text-2xl tracking-wide sm:text-3xl">
-              {server.name}
+              {serverLabel}
             </h1>
             <p className="mt-1 text-xs text-muted">
               {showPoweredBy ? (
@@ -71,6 +84,11 @@ export function PublicServerView({ bundle, vanity }: Props) {
                 <span className="text-lime/80">Founding / Pro · </span>
               )}
               this Discord server only
+              {!hasRealName ? (
+                <span className="ml-1 font-mono text-white/35">
+                  · {server.discord_guild_id}
+                </span>
+              ) : null}
             </p>
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}

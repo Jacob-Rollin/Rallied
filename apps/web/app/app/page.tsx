@@ -7,7 +7,12 @@ import { ReliabilityHealth } from "@/components/ReliabilityHealth";
 import { StandbyPromotions } from "@/components/StandbyPromotions";
 import { UpcomingScheduled } from "@/components/UpcomingScheduled";
 import { loadDashboard } from "@/lib/dashboard-data";
-import { resolveSelectedGuild, withGuildQuery } from "@/lib/guild-context";
+import {
+  displayNameForGuild,
+  resolveSelectedGuild,
+  withGuildQuery,
+} from "@/lib/guild-context";
+import { isUsableServerName } from "@/lib/server-display-name";
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -15,18 +20,32 @@ type Props = {
 
 export default async function OverviewPage({ searchParams }: Props) {
   const sp = await searchParams;
-  const { guildId, useMock } = await resolveSelectedGuild({ searchParams: sp });
+  const { guildId, useMock, oauthGuildName } = await resolveSelectedGuild({
+    searchParams: sp,
+  });
   const data = await loadDashboard(guildId, useMock);
   const plan = data.server?.plan;
   const reliabilityOn = reliabilityEnabled(plan);
+  const serverLabel = displayNameForGuild({
+    guildId,
+    dbName: data.server?.name,
+    oauthName: oauthGuildName,
+  });
+  const hasRealName =
+    isUsableServerName(data.server?.name, guildId) ||
+    isUsableServerName(oauthGuildName, guildId);
 
   return (
     <div className="space-y-10">
       <div>
         <h1 className="font-display text-3xl tracking-wide">Overview</h1>
         <p className="mt-1 text-sm text-muted">
-          {data.server?.name ?? "Selected server"} · Discord guild{" "}
-          <code className="text-coral/80">{guildId}</code>
+          {serverLabel}
+          {!hasRealName && guildId ? (
+            <span className="ml-2 font-mono text-xs text-white/35">
+              {guildId}
+            </span>
+          ) : null}
         </p>
       </div>
 

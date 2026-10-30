@@ -584,7 +584,7 @@ export default function GuidePage() {
               <strong className="font-semibold text-white">Plans</strong> — 14-day
               Community trial, then Starter free (2 open + 5 creates/24h for this
               server, no Ghostless). Community $4.99 · Pro $9.99 · Founding $8.99
-              locked (≤20 seats) — all per Discord server. Upgrade on{" "}
+              locked (≤10 seats) — all per Discord server. Upgrade on{" "}
               <Link href="/app/billing" className="text-coral hover:underline">
                 /app/billing
               </Link>{" "}

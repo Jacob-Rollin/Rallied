@@ -23,7 +23,7 @@ const ENTRIES: {
   {
     date: "2026-10-30",
     title: "Founding seats · pricing clarity",
-    body: `Founding Pro capped at ≤${PLANS.founding_pro.seatCap} seats (was 50). Prices stay Community $${COMMUNITY_PRICE_USD}/mo · Pro $${PRO_PRICE_USD}/mo · Founding $${FOUNDING_PRO_PRICE_USD}/mo locked — billed per Discord server. 14-day trial is Community features only (not Pro).`,
+    body: `Founding Pro capped at ≤${PLANS.founding_pro.seatCap} seats (was 20). Prices stay Community $${COMMUNITY_PRICE_USD}/mo · Pro $${PRO_PRICE_USD}/mo · Founding $${FOUNDING_PRO_PRICE_USD}/mo locked — billed per Discord server. 14-day trial is Community features only (not Pro).`,
   },
   {
     date: "2026-10-30",

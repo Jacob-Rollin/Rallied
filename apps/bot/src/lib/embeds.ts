@@ -517,7 +517,7 @@ export function vibeCheckMessage(opts: {
     embeds: [
       {
         description:
-          "Tap a quick result, or pick a vibe score 1–5. After grace, **Ghosted** issues a strike (this server). Ready Check already counted shows/ghosts when it ran. Dispute is for the flagged player.",
+          "Tap a quick result, or pick a vibe score 1–5. After grace, **Ghosted** issues a strike (this server) when Ready Check did not run. Ready Check owns shows/ghosts once it starts. Dispute is for the flagged player.",
         color: LIME,
       },
     ],

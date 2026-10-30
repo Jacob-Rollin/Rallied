@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BotEnv } from "../lib/env.js";
 import {
+  interactionGuildIdentity,
   actorUser,
   avatarUrl,
   displayName,
@@ -46,11 +47,11 @@ export async function handleStrikes(
   const { server, member: mod } = await ensureServerAndMember(
     sb,
     interaction.guild_id,
-    undefined,
+    interaction.guild?.name,
     user.id,
     displayName(interaction),
     avatarUrl(user),
-    null,
+    interactionGuildIdentity(interaction).iconUrl,
     env,
   );
 
@@ -64,11 +65,11 @@ export async function handleStrikes(
   const { member: target } = await ensureServerAndMember(
     sb,
     interaction.guild_id,
-    undefined,
+    interaction.guild?.name,
     targetId,
     "member",
     null,
-    null,
+    interactionGuildIdentity(interaction).iconUrl,
     env,
   );
 

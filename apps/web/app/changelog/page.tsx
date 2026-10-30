@@ -22,6 +22,11 @@ const ENTRIES: {
 }[] = [
   {
     date: "2026-10-30",
+    title: "Real Discord server names on /servers",
+    body: "Directory and public pages sync the real guild name (and icon when missing) via the bot token when the DB still has placeholders like Discord server / Selected server / snowflake ids. Bot /setup and LFG upserts persist the same. Pricing boxes show $X/mo with per Discord server on the supporting line.",
+  },
+  {
+    date: "2026-10-30",
     title: "Founding seats · pricing clarity",
     body: `Founding Pro capped at ≤${PLANS.founding_pro.seatCap} seats (was 20). Prices stay Community $${COMMUNITY_PRICE_USD}/mo · Pro $${PRO_PRICE_USD}/mo · Founding $${FOUNDING_PRO_PRICE_USD}/mo locked — billed per Discord server. 14-day trial is Community features only (not Pro).`,
   },

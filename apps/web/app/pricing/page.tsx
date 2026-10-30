@@ -223,7 +223,7 @@ export default function PricingPage() {
               >
                 {tier.price === 0 ? "$0" : `$${tier.price}`}
                 <span className="font-body text-sm font-normal text-white/55">
-                  /mo /server
+                  /mo
                 </span>
               </p>
               <p className="mt-1 text-xs text-white/55">

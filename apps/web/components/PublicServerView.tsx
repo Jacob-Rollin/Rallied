@@ -45,10 +45,9 @@ export function PublicServerView({ bundle, vanity }: Props) {
   const serverLabel = resolveServerDisplayName({
     dbName: server.name,
     guildId: server.discord_guild_id,
-    fallback: "Selected server",
   });
   const hasRealName = isUsableServerName(
-    server.name,
+    serverLabel || server.name,
     server.discord_guild_id,
   );
   const headerIcon =

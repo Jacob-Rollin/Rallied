@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BotEnv } from "../lib/env.js";
 import {
+  interactionGuildIdentity,
   actorUser,
   avatarUrl,
   displayName,
@@ -32,11 +33,11 @@ export async function handleLeaderboard(
   const { server } = await ensureServerAndMember(
     sb,
     interaction.guild_id,
-    undefined,
+    interaction.guild?.name,
     user.id,
     displayName(interaction),
     avatarUrl(user),
-    null,
+    interactionGuildIdentity(interaction).iconUrl,
     env,
   );
 

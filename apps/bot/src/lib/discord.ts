@@ -149,6 +149,54 @@ export function guildIconUrl(
   return `https://cdn.discordapp.com/icons/${guildId}/${iconHash}.${ext}?size=${size}`;
 }
 
+/** Best-effort name/icon from the interaction payload (often incomplete). */
+export function interactionGuildIdentity(interaction: Interaction): {
+  name: string | undefined;
+  iconUrl: string | null;
+} {
+  const guildId = interaction.guild_id;
+  if (!guildId) return { name: undefined, iconUrl: null };
+  return {
+    name: interaction.guild?.name,
+    iconUrl: guildIconUrl(guildId, interaction.guild?.icon),
+  };
+}
+
+export type FetchedGuildMeta = {
+  name: string | null;
+  iconUrl: string | null;
+};
+
+/**
+ * GET /guilds/{id} via bot token — real name + icon for DB upserts.
+ * Returns null when the token is missing or Discord rejects the call.
+ */
+export async function fetchGuildMeta(
+  token: string | undefined,
+  guildId: string,
+): Promise<FetchedGuildMeta | null> {
+  const id = guildId.trim();
+  if (!token || !id || !/^\d{17,20}$/.test(id)) return null;
+  try {
+    const res = await fetch(
+      `https://discord.com/api/v10/guilds/${encodeURIComponent(id)}`,
+      { headers: { Authorization: `Bot ${token}` } },
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      name?: string;
+      icon?: string | null;
+    };
+    const name = (data.name ?? "").trim() || null;
+    return {
+      name,
+      iconUrl: guildIconUrl(id, data.icon),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function ephemeral(content: string) {
   return {
     type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,

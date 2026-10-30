@@ -31,7 +31,7 @@ export type GuildResolveResult = {
 
 /**
  * Prefer OAuth session guild name, then a real Supabase `servers.name`.
- * Never treat snowflake / empty / "Discord server" as the primary label.
+ * Never treat snowflake / empty / "Discord server" / "Selected server" as the label.
  */
 export function displayNameForGuild(opts: {
   guildId: string;

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { BotEnv } from "../lib/env.js";
 import {
+  interactionGuildIdentity,
   actorUser,
   avatarUrl,
   displayName,
@@ -41,22 +42,22 @@ export async function handleGhostless(
   await ensureServerAndMember(
     sb,
     interaction.guild_id,
-    undefined,
+    interaction.guild?.name,
     user.id,
     displayName(interaction),
     avatarUrl(user),
-    null,
+    interactionGuildIdentity(interaction).iconUrl,
     env,
   );
 
   const { server, member: target } = await ensureServerAndMember(
     sb,
     interaction.guild_id,
-    undefined,
+    interaction.guild?.name,
     targetId,
     "member",
     null,
-    null,
+    interactionGuildIdentity(interaction).iconUrl,
     env,
   );
 

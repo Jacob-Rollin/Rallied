@@ -4,6 +4,7 @@ import {
   actorUser,
   displayName,
   ephemeral,
+  interactionGuildIdentity,
   InteractionResponseType,
   type Interaction,
 } from "../lib/discord.js";
@@ -212,10 +213,12 @@ export async function handleButton(
     const { server, member: rater } = await ensureServerAndMember(
       sb,
       interaction.guild_id,
-      undefined,
+      interaction.guild?.name,
       user.id,
       displayName(interaction),
       null,
+      interactionGuildIdentity(interaction).iconUrl,
+      env,
     );
 
     const { data: ratee } = await sb
@@ -244,10 +247,12 @@ export async function handleButton(
     const { server, member: rater } = await ensureServerAndMember(
       sb,
       interaction.guild_id,
-      undefined,
+      interaction.guild?.name,
       user.id,
       displayName(interaction),
       null,
+      interactionGuildIdentity(interaction).iconUrl,
+      env,
     );
 
     const showedUp = action === "showed" || action === "good";
@@ -290,10 +295,11 @@ async function startPartyVibePick(
   const { server, member: actor } = await ensureServerAndMember(
     sb,
     interaction.guild_id,
-    undefined,
+    interaction.guild?.name,
     actorDiscordId,
     displayName(interaction),
     null,
+    interactionGuildIdentity(interaction).iconUrl,
   );
 
   const { data: party } = await sb

@@ -27,7 +27,8 @@ import {
 } from "./mock-data";
 import { isDemoGuildId } from "./guild-params";
 import { buildMonthlyLeaderboard } from "./leaderboard";
-import { resolveServerDisplayName } from "./server-display-name";
+import { repairServerNameInDb } from "./auth/discord";
+import { isUsableServerName, resolveServerDisplayName } from "./server-display-name";
 import { getServiceSupabase } from "./supabase";
 
 export type PublicParty = LfgParty & {
@@ -161,8 +162,29 @@ function humanServerName(
   return resolveServerDisplayName({
     dbName: server.name,
     guildId: server.discord_guild_id,
-    fallback: "Selected server",
   });
+}
+
+/** When DB name/icon is placeholder, pull Discord guild meta and persist. */
+async function withRepairedServerName(server: Server): Promise<Server> {
+  if (
+    isUsableServerName(server.name, server.discord_guild_id) &&
+    server.icon_url
+  ) {
+    return server;
+  }
+  const repaired = await repairServerNameInDb({
+    serverId: server.id,
+    guildId: server.discord_guild_id,
+    currentName: server.name,
+    currentIconUrl: server.icon_url,
+  });
+  if (!repaired) return server;
+  return {
+    ...server,
+    name: repaired.name,
+    icon_url: repaired.iconUrl ?? server.icon_url,
+  };
 }
 
 function toDirectoryCard(
@@ -337,7 +359,7 @@ async function resolveLivePublicServer(
 
   if (!serverRow) return null;
 
-  const server: Server = {
+  let server: Server = {
     id: String(serverRow.id),
     discord_guild_id: String(serverRow.discord_guild_id),
     name: String(serverRow.name ?? ""),
@@ -363,6 +385,7 @@ async function resolveLivePublicServer(
     created_at: String(serverRow.created_at),
     updated_at: String(serverRow.updated_at),
   };
+  server = await withRepairedServerName(server);
 
   const settings: ServerSettings = settingsRow
     ? mapPublicSettings(settingsRow)
@@ -671,7 +694,7 @@ async function listLiveDirectoryServers(): Promise<DirectoryServerCard[]> {
   for (const row of data as Record<string, unknown>[]) {
     const serverRaw = row.servers as Record<string, unknown> | null;
     if (!serverRaw) continue;
-    const server: Server = {
+    let server: Server = {
       id: String(serverRaw.id),
       discord_guild_id: String(serverRaw.discord_guild_id),
       name: String(serverRaw.name ?? ""),
@@ -684,6 +707,7 @@ async function listLiveDirectoryServers(): Promise<DirectoryServerCard[]> {
       created_at: "",
       updated_at: "",
     };
+    server = await withRepairedServerName(server);
     const settings = mapPublicSettings({
       ...row,
       server_id: server.id,

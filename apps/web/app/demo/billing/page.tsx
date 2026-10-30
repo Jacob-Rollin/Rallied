@@ -71,7 +71,7 @@ export default async function DemoBillingPage() {
             ) : (
               <p className="mt-2 text-xs text-muted">
                 Real servers start with a 14-day Community trial, then Starter
-                caps or ${COMMUNITY_PRICE_USD}/mo /server.
+                caps or ${COMMUNITY_PRICE_USD}/mo per Discord server.
               </p>
             )}
           </div>
@@ -87,9 +87,10 @@ export default async function DemoBillingPage() {
           <p className="mt-1 text-2xl">
             ${COMMUNITY_PRICE_USD}
             <span className="font-body text-sm font-normal text-white/55">
-              /mo /server
+              /mo
             </span>
           </p>
+          <p className="mt-1 text-xs text-white/45">per Discord server</p>
           <p className="mt-1 text-xs font-medium text-lime">14-day free trial</p>
           <p className="mt-2 text-xs text-muted">Full LFG + Ghostless + strikes</p>
           <button
@@ -105,9 +106,10 @@ export default async function DemoBillingPage() {
           <p className="mt-1 text-2xl">
             ${PRO_PRICE_USD}
             <span className="font-body text-sm font-normal text-white/55">
-              /mo /server
+              /mo
             </span>
           </p>
+          <p className="mt-1 text-xs text-white/45">per Discord server</p>
           <p className="mt-1 text-xs font-medium text-white/55">
             No separate trial — Community trial first
           </p>

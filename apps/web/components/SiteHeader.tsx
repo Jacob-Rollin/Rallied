@@ -13,6 +13,7 @@ type Props = {
 type MeResponse = {
   authenticated: boolean;
   ops?: boolean;
+  user?: { username?: string; globalName?: string | null };
 };
 
 const NAV = [
@@ -27,6 +28,7 @@ export function SiteHeader({ variant = "solid" }: Props) {
   const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
   const inviteHref = clientId ? buildBotInviteUrl(clientId) : "#add-bot";
   const [menuOpen, setMenuOpen] = useState(false);
+  const [authed, setAuthed] = useState(false);
   const [showOps, setShowOps] = useState(false);
   const menuId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -36,9 +38,14 @@ export function SiteHeader({ variant = "solid" }: Props) {
     fetch("/api/auth/me")
       .then((r) => (r.ok ? r.json() : null))
       .then((data: MeResponse | null) => {
-        setShowOps(Boolean(data?.authenticated && data?.ops));
+        const loggedIn = Boolean(data?.authenticated);
+        setAuthed(loggedIn);
+        setShowOps(Boolean(loggedIn && data?.ops));
       })
-      .catch(() => setShowOps(false));
+      .catch(() => {
+        setAuthed(false);
+        setShowOps(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -104,42 +111,60 @@ export function SiteHeader({ variant = "solid" }: Props) {
         </nav>
 
         <div className="hidden items-center gap-2.5 md:flex">
-          {showOps ? (
+          {authed ? (
+            <>
+              <Link
+                href="/app"
+                className="whitespace-nowrap text-sm text-white/70 transition hover:text-coral"
+              >
+                Dashboard
+              </Link>
+              {showOps ? (
+                <Link
+                  href="/ops"
+                  className="whitespace-nowrap text-sm text-white/55 transition hover:text-coral"
+                >
+                  Ops
+                </Link>
+              ) : null}
+              <a
+                href="/api/auth/logout"
+                className="whitespace-nowrap text-sm text-white/55 transition hover:text-coral"
+              >
+                Log out
+              </a>
+            </>
+          ) : (
             <Link
-              href="/ops"
-              className="whitespace-nowrap text-sm text-white/55 transition hover:text-coral"
+              href="/login"
+              className="whitespace-nowrap rounded-brand border border-white/20 px-3 py-2 text-sm font-medium text-white/90 transition hover:border-coral/50 hover:text-white"
             >
-              Ops
+              Log in
             </Link>
-          ) : null}
-          <Link
-            href="/login"
-            className="whitespace-nowrap rounded-brand border border-white/20 px-3 py-2 text-sm font-medium text-white/90 transition hover:border-coral/50 hover:text-white"
-          >
-            Log in
-          </Link>
+          )}
           <AddToDiscordButton
             href={inviteHref}
             className="!whitespace-nowrap !px-4 !py-2 !text-sm"
           />
         </div>
 
-        {/* Mobile: Log in text + menu trigger only */}
+        {/* Mobile: account + menu */}
         <div className="flex items-center gap-1 md:hidden">
-          {showOps ? (
+          {authed ? (
             <Link
-              href="/ops"
-              className="whitespace-nowrap px-2.5 py-1.5 text-sm text-white/55 transition hover:text-coral"
+              href="/app"
+              className="whitespace-nowrap px-2.5 py-1.5 text-sm font-medium text-white/90 transition hover:text-coral"
             >
-              Ops
+              Dashboard
             </Link>
-          ) : null}
-          <Link
-            href="/login"
-            className="whitespace-nowrap px-2.5 py-1.5 text-sm font-medium text-white/90 transition hover:text-white"
-          >
-            Log in
-          </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="whitespace-nowrap px-2.5 py-1.5 text-sm font-medium text-white/90 transition hover:text-white"
+            >
+              Log in
+            </Link>
+          )}
           <button
             ref={buttonRef}
             type="button"
@@ -171,14 +196,31 @@ export function SiteHeader({ variant = "solid" }: Props) {
                 {item.label}
               </Link>
             ))}
-            {showOps ? (
-              <Link
-                href="/ops"
-                className="rounded-brand px-3 py-2.5 text-sm text-white/55 transition hover:bg-white/5 hover:text-coral"
-                onClick={() => setMenuOpen(false)}
-              >
-                Ops
-              </Link>
+            {authed ? (
+              <>
+                <Link
+                  href="/app"
+                  className="rounded-brand px-3 py-2.5 text-sm text-white/80 transition hover:bg-white/5 hover:text-coral"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                {showOps ? (
+                  <Link
+                    href="/ops"
+                    className="rounded-brand px-3 py-2.5 text-sm text-white/55 transition hover:bg-white/5 hover:text-coral"
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    Ops
+                  </Link>
+                ) : null}
+                <a
+                  href="/api/auth/logout"
+                  className="rounded-brand px-3 py-2.5 text-sm text-white/55 transition hover:bg-white/5 hover:text-coral"
+                >
+                  Log out
+                </a>
+              </>
             ) : null}
             <div className="mt-2 border-t border-white/10 pt-3">
               <AddToDiscordButton

@@ -514,7 +514,7 @@ export function SettingsClient({
               edit grace, strikes, and digest.
             </p>
             <Link
-              href="/pricing"
+              href={billingHref}
               className="mt-2 inline-block font-semibold text-coral hover:underline"
             >
               Upgrade to Community →

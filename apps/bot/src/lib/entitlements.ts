@@ -3,7 +3,7 @@ import {
   canCreateParty,
   effectivePlan,
   parseDogfoodGuildIds,
-  pricingPageUrl,
+  billingPageUrl,
   reliabilityEnabled,
   trialEndsAtFromNow,
   upgradeCopy,
@@ -174,7 +174,7 @@ export function upgradeEphemeral(opts: {
   resetHint?: string;
 }): InteractionResponse {
   const copy = upgradeCopy(opts.reason);
-  const url = pricingPageUrl(webBaseUrl(opts.env));
+  const url = billingPageUrl(webBaseUrl(opts.env));
   const description = opts.resetHint
     ? `${copy.body}\n\n${opts.resetHint}`
     : copy.body;

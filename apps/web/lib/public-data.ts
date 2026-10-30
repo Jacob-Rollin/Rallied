@@ -339,6 +339,15 @@ async function resolveLivePublicServer(
     priority_support: Boolean(serverRow.priority_support),
     stripe_customer_id:
       (serverRow.stripe_customer_id as string | null) ?? null,
+    stripe_subscription_id:
+      (serverRow.stripe_subscription_id as string | null) ?? null,
+    stripe_price_id: (serverRow.stripe_price_id as string | null) ?? null,
+    billing_interval:
+      serverRow.billing_interval === "year" ||
+      serverRow.billing_interval === "month"
+        ? serverRow.billing_interval
+        : null,
+    forever_pro: Boolean(serverRow.forever_pro),
     icon_url: (serverRow.icon_url as string | null) ?? null,
     created_at: String(serverRow.created_at),
     updated_at: String(serverRow.updated_at),

@@ -63,7 +63,7 @@ Settings toggles: `public_page_enabled`, `public_member_list`, vanity `slug` →
 | Pro | $9.99/mo | Analytics export, vanity, priority |
 | Founding Pro | $8.99/mo locked | Pro SKU · ≤50 seats · `004_pro_plan.sql` |
 
-Routes: `/pricing` · `/app/billing` · `/app/analytics` · Pro vanity on Settings + `/s/founding-beta`. Stripe = placeholders only (`STRIPE_*` in `.env.example`). Dogfood: `DOGFOOD_GUILD_IDS` (bot) skips Starter caps.
+Routes: `/pricing` · `/app/billing` · `/app/analytics` · Pro vanity on Settings + `/s/founding-beta`. Stripe Checkout + Portal + webhooks (`STRIPE_*` on web Worker; test mode first). Migration `012_stripe_billing.sql`. Dogfood: `DOGFOOD_GUILD_IDS` + Official forever Pro.
 
 ---
 

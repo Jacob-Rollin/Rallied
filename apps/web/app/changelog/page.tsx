@@ -1,6 +1,11 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { BRAND, COMMUNITY_PRICE_USD, PRO_PRICE_USD } from "@rallied/shared";
+import {
+  BRAND,
+  COMMUNITY_PRICE_USD,
+  PLANS,
+  PRO_PRICE_USD,
+} from "@rallied/shared";
 import { SiteFooter } from "../../components/SiteFooter";
 import { SiteHeader } from "../../components/SiteHeader";
 
@@ -14,6 +19,11 @@ const ENTRIES: {
   title: string;
   body: string;
 }[] = [
+  {
+    date: "2026-10-30",
+    title: "Stripe Checkout + billing (Path B)",
+    body: `/app/billing: Community $${COMMUNITY_PRICE_USD}/mo ($${PLANS.community.annualCents / 100}/yr), Pro $${PRO_PRICE_USD}/mo ($${PLANS.pro.annualCents / 100}/yr), Founding Pro $8.99 locked. Stripe Checkout + Customer Portal; webhooks update plan / trial / Stripe ids. Official Rallied forever Pro protected. Starter caps unchanged until paid. Run migration 012_stripe_billing.`,
+  },
   {
     date: "2026-10-30",
     title: "Premium admin Overview + Analytics polish",

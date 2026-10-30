@@ -41,3 +41,11 @@ binding = "ASSETS"
 # Optional bot_present detection:
 #   DISCORD_BOT_TOKEN              (SECRET — bot guild list)
 #   Without it, web uses `servers.discord_guild_id` via service role after bot upserts.
+#
+# Stripe billing (Phase B — test mode first):
+#   STRIPE_SECRET_KEY              (SECRET — sk_test_… then sk_live_…)
+#   STRIPE_WEBHOOK_SECRET          (SECRET — whsec_… for /api/stripe/webhook)
+#   STRIPE_PRICE_COMMUNITY_MONTHLY / _YEARLY
+#   STRIPE_PRICE_PRO_MONTHLY / _YEARLY
+#   STRIPE_PRICE_FOUNDING_PRO_MONTHLY (/ _YEARLY optional)
+#   Legacy aliases: STRIPE_PRICE_COMMUNITY, STRIPE_PRICE_PRO, STRIPE_PRICE_FOUNDING_PRO

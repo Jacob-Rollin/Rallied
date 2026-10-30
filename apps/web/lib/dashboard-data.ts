@@ -138,6 +138,7 @@ function normalizePlan(plan: string | null | undefined): PlanId {
   const p = (plan || "trial") as PlanId;
   const allowed: PlanId[] = [
     "trial",
+    "free",
     "community",
     "pro",
     "founding_pro",
@@ -145,11 +146,15 @@ function normalizePlan(plan: string | null | undefined): PlanId {
     "demo",
   ];
   if (allowed.includes(p)) return p;
-  if (plan === "free") return "community";
   return "trial";
 }
 
 function mapServerRow(row: Record<string, unknown>): Server {
+  const intervalRaw = row.billing_interval;
+  const billing_interval =
+    intervalRaw === "year" || intervalRaw === "month"
+      ? intervalRaw
+      : null;
   return {
     id: String(row.id),
     discord_guild_id: String(row.discord_guild_id),
@@ -160,6 +165,11 @@ function mapServerRow(row: Record<string, unknown>): Server {
     trial_ends_at: (row.trial_ends_at as string | null) ?? null,
     priority_support: Boolean(row.priority_support),
     stripe_customer_id: (row.stripe_customer_id as string | null) ?? null,
+    stripe_subscription_id:
+      (row.stripe_subscription_id as string | null) ?? null,
+    stripe_price_id: (row.stripe_price_id as string | null) ?? null,
+    billing_interval,
+    forever_pro: Boolean(row.forever_pro),
     icon_url: (row.icon_url as string | null) ?? null,
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),

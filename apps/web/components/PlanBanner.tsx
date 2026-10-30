@@ -56,16 +56,16 @@ export function PlanBanner({ plan, trialEndsAt, billingHref }: Props) {
         </p>
         <div className="mt-2 flex flex-wrap gap-3">
           <Link
-            href="/pricing"
+            href={billingHref}
             className="text-sm font-semibold text-coral hover:underline"
           >
             Upgrade to Community →
           </Link>
           <Link
-            href={billingHref}
+            href="/pricing"
             className="text-sm text-white/60 hover:text-white hover:underline"
           >
-            Billing
+            Compare plans
           </Link>
         </div>
       </div>

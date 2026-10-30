@@ -54,6 +54,16 @@ export interface ServerSettings {
   list_in_directory: boolean;
   /** Discord invite URL for Join on /servers (admin-set). */
   discord_invite_url: string | null;
+  /**
+   * Optional Join gate: reject when Ghostless show rate % is below this.
+   * null = off. Community+ only (Starter ignores).
+   */
+  join_min_ghostless_pct: number | null;
+  /**
+   * When true, Join rejects active lockouts (default true).
+   * Community+ only; Starter ignores.
+   */
+  join_lockout_enforced: boolean;
   /** Pro vanity: hide “Powered by Rallied” on public page */
   hide_powered_by: boolean;
   /** Pro vanity: optional accent hex for public page chrome */
@@ -63,11 +73,6 @@ export interface ServerSettings {
    * Null = feed not enabled / rotated off. Never expose on public pages.
    */
   ical_token?: string | null;
-  /**
-   * Optional Join gate: min Ghostless show-rate % (this server) to join.
-   * Null = off. Community+. Bot enforcement may land separately.
-   */
-  join_min_ghostless_pct?: number | null;
   created_at: string;
   updated_at: string;
 }

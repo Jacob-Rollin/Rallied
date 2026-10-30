@@ -17,7 +17,7 @@ const ENTRIES: {
   {
     date: "2026-10-30",
     title: "Pro iCal subscribe + web dispute resolve",
-    body: "Pro / Founding: Settings → Calendar subscribe generates a tokenized .ics URL for upcoming scheduled parties (our Worker only — no Google OAuth). Community+ admins Overturn / Uphold on /app/disputes (same semantics as /dispute resolve). Optional Join min Ghostless % field saves for the gate work.",
+    body: "Pro / Founding: Settings → Calendar subscribe generates a tokenized .ics URL for upcoming scheduled parties (our Worker only — no Google OAuth). Community+ admins Overturn / Uphold on /app/disputes (same semantics as /dispute resolve).",
   },
   {
     date: "2026-10-30",

@@ -150,6 +150,11 @@ function mapSettingsRow(row: Record<string, unknown>): ServerSettings {
     digest_channel_id: (row.digest_channel_id as string | null) ?? null,
     strike_threshold: Number(row.strike_threshold ?? 3),
     lockout_days: Number(row.lockout_days ?? 7),
+    join_min_ghostless_pct:
+      row.join_min_ghostless_pct == null
+        ? null
+        : Number(row.join_min_ghostless_pct),
+    join_lockout_enforced: row.join_lockout_enforced !== false,
     slug: (row.slug as string | null) ?? null,
     public_page_enabled: row.public_page_enabled !== false,
     public_member_list: Boolean(row.public_member_list),
@@ -158,10 +163,6 @@ function mapSettingsRow(row: Record<string, unknown>): ServerSettings {
     hide_powered_by: Boolean(row.hide_powered_by),
     public_accent: (row.public_accent as string | null) ?? null,
     ical_token: (row.ical_token as string | null | undefined) ?? null,
-    join_min_ghostless_pct:
-      row.join_min_ghostless_pct == null
-        ? null
-        : Number(row.join_min_ghostless_pct),
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
   };

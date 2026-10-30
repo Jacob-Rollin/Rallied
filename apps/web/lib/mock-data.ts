@@ -258,6 +258,8 @@ export const MOCK_SETTINGS: ServerSettings = {
   digest_channel_id: null,
   strike_threshold: 3,
   lockout_days: 7,
+  join_min_ghostless_pct: null,
+  join_lockout_enforced: true,
   slug: "demo-esports",
   public_page_enabled: true,
   public_member_list: false,
@@ -266,7 +268,6 @@ export const MOCK_SETTINGS: ServerSettings = {
   hide_powered_by: false,
   public_accent: null,
   ical_token: null,
-  join_min_ghostless_pct: null,
   created_at: "2026-10-01T00:00:00Z",
   updated_at: "2026-10-01T00:00:00Z",
 };
@@ -283,7 +284,6 @@ export const MOCK_FOUNDING_SETTINGS: ServerSettings = {
   hide_powered_by: true,
   public_accent: "#B8F000",
   ical_token: "demo-ical-token-founding",
-  join_min_ghostless_pct: null,
 };
 
 export const MOCK_DISPUTES: (Dispute & {

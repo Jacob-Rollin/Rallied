@@ -42,6 +42,8 @@ const DEFAULTS: Omit<
   digest_channel_id: null,
   strike_threshold: 3,
   lockout_days: 7,
+  join_min_ghostless_pct: null,
+  join_lockout_enforced: true,
   slug: null,
   public_page_enabled: true,
   public_member_list: false,
@@ -50,7 +52,6 @@ const DEFAULTS: Omit<
   hide_powered_by: false,
   public_accent: null,
   ical_token: null,
-  join_min_ghostless_pct: null,
 };
 
 export function SettingsClient({
@@ -101,6 +102,9 @@ export function SettingsClient({
       ? ""
       : String(base.join_min_ghostless_pct),
   );
+  const [joinLockoutEnforced, setJoinLockoutEnforced] = useState(
+    base.join_lockout_enforced !== false,
+  );
   const [icalToken, setIcalToken] = useState(base.ical_token ?? null);
   const [origin, setOrigin] = useState("");
   const [saving, setSaving] = useState(false);
@@ -146,9 +150,16 @@ export function SettingsClient({
         payload.lockout_days = lockoutDays;
         payload.ghostless_role_id = roleId || null;
         payload.digest_channel_id = digestChannel || null;
-        const joinRaw = joinMinGhostless.trim();
+        payload.join_lockout_enforced = joinLockoutEnforced;
+        const minRaw = joinMinGhostless.trim();
         payload.join_min_ghostless_pct =
-          joinRaw === "" ? null : Number(joinRaw);
+          minRaw === "" ? null : Math.min(100, Math.max(1, Number(minRaw) || 0));
+        if (
+          payload.join_min_ghostless_pct === 0 ||
+          !Number.isFinite(payload.join_min_ghostless_pct as number)
+        ) {
+          payload.join_min_ghostless_pct = null;
+        }
       }
       const res = await fetch("/api/settings", {
         method: "POST",
@@ -562,6 +573,40 @@ export function SettingsClient({
               className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white"
             />
           </div>
+          <label className="flex items-center gap-3 text-sm">
+            <input
+              type="checkbox"
+              checked={joinLockoutEnforced}
+              onChange={(e) => setJoinLockoutEnforced(e.target.checked)}
+              className="h-4 w-4 accent-coral"
+            />
+            <span>
+              <FieldInfo label="Enforce lockout on Join">
+                When on, locked-out members cannot Join (or Create). Off =
+                lockouts still exist but Join is not blocked. Starter ignores
+                this gate.
+              </FieldInfo>
+            </span>
+          </label>
+          <div className="block max-w-sm text-sm">
+            <div className="text-muted">
+              <FieldInfo label="Min Ghostless % to Join">
+                Optional. Reject Join when a member&apos;s show rate is below
+                this (e.g. 80). Leave blank to turn off. New players with no
+                history are allowed. Community+ only.
+              </FieldInfo>
+            </div>
+            <input
+              type="number"
+              min={1}
+              max={100}
+              placeholder="Off"
+              aria-label="Min Ghostless % to Join"
+              value={joinMinGhostless}
+              onChange={(e) => setJoinMinGhostless(e.target.value)}
+              className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white placeholder:text-muted/50"
+            />
+          </div>
           <div className="block max-w-md text-sm">
             <div className="text-muted">
               <FieldInfo label="Ghostless Discord role ID">
@@ -599,28 +644,6 @@ export function SettingsClient({
               aria-label="Weekly digest channel ID"
               value={digestChannel}
               onChange={(e) => setDigestChannel(e.target.value)}
-              className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white placeholder:text-muted/50"
-            />
-          </div>
-          <div className="block max-w-sm text-sm">
-            <div className="text-muted">
-              <FieldInfo label="Join min Ghostless %">
-                Optional Join gate. Players below this show-rate (this server)
-                cannot Join open parties. Leave blank to turn off. Bot
-                enforcement ships with the Standby / gate work — value saves
-                now as{" "}
-                <code className="text-coral">join_min_ghostless_pct</code>.
-              </FieldInfo>
-            </div>
-            <input
-              type="number"
-              min={0}
-              max={100}
-              step={1}
-              placeholder="Off"
-              aria-label="Join min Ghostless %"
-              value={joinMinGhostless}
-              onChange={(e) => setJoinMinGhostless(e.target.value)}
               className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white placeholder:text-muted/50"
             />
           </div>

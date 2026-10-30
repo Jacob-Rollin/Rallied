@@ -24,8 +24,9 @@ type Body = {
   lockout_days?: number;
   ghostless_role_threshold_pct?: number;
   ghostless_role_min_sessions?: number;
-  /** Community+: null/empty clears; 0–100 sets Join min Ghostless %. */
+  /** Community+: null/empty clears; 1–100 sets Join min Ghostless %. */
   join_min_ghostless_pct?: number | null;
+  join_lockout_enforced?: boolean;
   /** Pro: generate a new ical_token (invalidates old subscribe URLs). */
   rotate_ical_token?: boolean;
   /** Pro: clear ical_token (disables feed). */
@@ -203,7 +204,8 @@ export async function POST(req: NextRequest) {
     body.ghostless_role_min_sessions !== undefined ||
     body.ghostless_role_id !== undefined ||
     body.digest_channel_id !== undefined ||
-    body.join_min_ghostless_pct !== undefined;
+    body.join_min_ghostless_pct !== undefined ||
+    body.join_lockout_enforced !== undefined;
 
   if (reliabilityTouched && !reliabilityOn) {
     return NextResponse.json(
@@ -250,22 +252,19 @@ export async function POST(req: NextRequest) {
     patch.digest_channel_id =
       id == null || String(id).trim() === "" ? null : String(id).trim();
   }
+  if (body.join_lockout_enforced !== undefined) {
+    patch.join_lockout_enforced = Boolean(body.join_lockout_enforced);
+  }
   if (body.join_min_ghostless_pct !== undefined) {
-    if (body.join_min_ghostless_pct == null) {
+    if (
+      body.join_min_ghostless_pct == null ||
+      body.join_min_ghostless_pct === ("" as unknown)
+    ) {
       patch.join_min_ghostless_pct = null;
     } else {
       const n = Number(body.join_min_ghostless_pct);
-      if (!Number.isFinite(n) || n < 0 || n > 100) {
-        return NextResponse.json(
-          {
-            error: "invalid_join_min_ghostless_pct",
-            hint: "Use null (off) or 0–100.",
-          },
-          { status: 400 },
-        );
-      }
-      // 0 means off (same as null) so admins can clear from a number input.
-      patch.join_min_ghostless_pct = n === 0 ? null : Math.round(n * 100) / 100;
+      patch.join_min_ghostless_pct =
+        !Number.isFinite(n) || n <= 0 ? null : clampInt(n, 1, 100, 80);
     }
   }
 

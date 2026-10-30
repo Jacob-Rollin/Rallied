@@ -18,7 +18,7 @@ import { SiteHeader } from "../../components/SiteHeader";
 export const metadata: Metadata = {
   title: `Pricing — ${BRAND.name}`,
   description:
-    "Starter free under caps, Community $4.99/mo, Pro $9.99/mo, Founding Pro $8.99 locked. Path B: free matching + paid reliability.",
+    "Starter caps per Discord server (2 open parties + 5 creates/24h for this server). Community $4.99/mo, Pro $9.99/mo, Founding Pro $8.99 locked.",
 };
 
 const TIERS = [
@@ -27,7 +27,7 @@ const TIERS = [
     name: "Starter",
     price: 0,
     annual: null as number | null,
-    blurb: `LFG under caps (${STARTER_MAX_OPEN_PARTIES} open · ${STARTER_MAX_CREATES_PER_24H}/day). No Ghostless.`,
+    blurb: `${STARTER_MAX_OPEN_PARTIES} open parties + ${STARTER_MAX_CREATES_PER_24H} creates/24h for this server — not per user. Busy communities hit this fast. No Ghostless.`,
     trial: false,
     accent: false,
     badge: "Free forever" as string | null,
@@ -74,18 +74,18 @@ const MATRIX: {
 }[] = [
   {
     label: "Desk create / join / leave",
-    starter: "Under caps",
+    starter: "Under caps / server",
     community: "Unlimited",
     pro: "Unlimited",
   },
   {
-    label: "Open parties",
+    label: "Open parties (per server)",
     starter: String(STARTER_MAX_OPEN_PARTIES),
     community: "Unlimited",
     pro: "Unlimited",
   },
   {
-    label: "Creates / rolling 24h",
+    label: "Creates / 24h (per server)",
     starter: String(STARTER_MAX_CREATES_PER_24H),
     community: "Unlimited",
     pro: "Unlimited",
@@ -176,7 +176,14 @@ export default function PricingPage() {
           Free matching. Paid reliability.
         </h1>
         <p className="mt-3 max-w-xl text-white/75">
-          Per Discord server. Starter free under caps · Community{" "}
+          Billed and capped{" "}
+          <span className="text-white">per Discord server (guild)</span> — not
+          per user. Starter:{" "}
+          <span className="text-white">
+            {STARTER_MAX_OPEN_PARTIES} open parties +{" "}
+            {STARTER_MAX_CREATES_PER_24H} creates/24h for this server
+          </span>
+          . Busy communities hit that fast → Community. Community{" "}
           <span className="text-white">${COMMUNITY_PRICE_USD}/mo</span> ($
           {PLANS.community.annualCents / 100}/yr) · Pro{" "}
           <span className="text-white">${PRO_PRICE_USD}/mo</span> · Founding = Pro
@@ -185,8 +192,8 @@ export default function PricingPage() {
           (≤{PLANS.founding_pro.seatCap}).
         </p>
         <p className="mt-2 max-w-xl text-sm text-white/55">
-          14-day full trial (Community features) · then Starter caps if unpaid ·
-          first-month money-back if you pay early.
+          14-day full trial (Community features) · then Starter caps per server if
+          unpaid · first-month money-back if you pay early.
         </p>
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -251,6 +258,25 @@ export default function PricingPage() {
             </div>
           ))}
         </div>
+
+        <section className="mt-14 rounded-brand border border-lime/25 bg-lime/5 px-5 py-6 sm:px-6">
+          <h2 className="font-display text-2xl tracking-wide text-white">
+            How Ghostless works
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">
+            Ready Check → grace → strike on no-show → lockout after N strikes
+            (admin-set). Ghostless % = showed / (showed + ghosted). Admins can
+            dispute or clear. Community+ only — Starter keeps soft ready-check
+            without strikes.{" "}
+            <Link
+              href="/guide#ghostless"
+              className="font-medium text-lime transition hover:underline"
+            >
+              Full rules in the guide
+            </Link>
+            .
+          </p>
+        </section>
 
         <section className="mt-14">
           <h2 className="font-display text-2xl tracking-wide text-white">
@@ -335,7 +361,7 @@ export default function PricingPage() {
           </h2>
           <p className="max-w-lg text-sm text-white/70">
             Add the bot, walk the demo, or read the setup guide. Checkout wires
-            later — trial + Starter caps are live.
+            later — trial + Starter caps (per server) are live.
           </p>
           <div className="flex flex-wrap gap-3">
             <AddToDiscordButton href={inviteHref} />

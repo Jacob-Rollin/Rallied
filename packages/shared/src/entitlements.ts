@@ -168,17 +168,17 @@ export function upgradeCopy(reason: CapBlockReason | "reliability" | "public"): 
     case "open_parties":
       return {
         title: "Party limit on Free",
-        body: `Free allows **${STARTER_MAX_OPEN_PARTIES} open parties**. Community **$${price}/mo** = unlimited LFG + Ghostless.`,
+        body: `Free allows **${STARTER_MAX_OPEN_PARTIES} open parties for this server** (not per user). Busy communities hit this fast — Community **$${price}/mo** = unlimited LFG + Ghostless.`,
       };
     case "creates_24h":
       return {
         title: "Daily create limit on Free",
-        body: `Free allows **${STARTER_MAX_CREATES_PER_24H} party creates / 24h**. Community **$${price}/mo** = unlimited + Ghostless.`,
+        body: `Free allows **${STARTER_MAX_CREATES_PER_24H} party creates / 24h for this server**. Busy communities hit this fast — Community **$${price}/mo** = unlimited + Ghostless.`,
       };
     case "reliability":
       return {
         title: "Included in Community",
-        body: `Ghostless, strikes, and lockouts need Community (**$${price}/mo**). Free keeps LFG under caps.`,
+        body: `Ghostless, strikes, and lockouts need Community (**$${price}/mo**). Free keeps LFG under caps **per Discord server**.`,
       };
     case "public":
       return {
@@ -188,7 +188,7 @@ export function upgradeCopy(reason: CapBlockReason | "reliability" | "public"): 
     default:
       return {
         title: "Upgrade to Community",
-        body: `Unlock unlimited LFG + Ghostless for **$${price}/mo**.`,
+        body: `Unlock unlimited LFG + Ghostless for **$${price}/mo** (this server).`,
       };
   }
 }

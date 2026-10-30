@@ -210,7 +210,7 @@ export function upgradeEphemeral(opts: {
 
 /** Soft ready-check note when reliability is off. */
 export function freeReadyCheckNote(): string {
-  return "No-shows aren’t struck on Free. Upgrade to Community to enforce Ghostless + strikes.";
+  return "No-shows aren’t struck on Free (this server). Upgrade to Community to enforce Ghostless + strikes.";
 }
 
 export async function checkCreateCaps(opts: {

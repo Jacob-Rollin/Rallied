@@ -60,8 +60,13 @@ const LANDING_TIERS = [
     name: "Starter",
     price: 0,
     annual: null as number | null,
-    blurb: "LFG under caps. No Ghostless.",
-    features: ["2 open parties", "5 creates / day", "Soft ready-check"],
+    blurb:
+      "LFG under caps for this Discord server — not per user. No Ghostless.",
+    features: [
+      "2 open parties for this server",
+      "5 creates / 24h for this server",
+      "Soft ready-check",
+    ],
     founding: false as const,
   },
   {
@@ -230,8 +235,9 @@ export default function MarketingPage() {
             className="animate-rise mt-3 max-w-lg text-sm text-white/55"
             style={{ animationDelay: "260ms" }}
           >
-            14-day full trial, then Starter caps — Community ${COMMUNITY_PRICE_USD}
-            unlocks Ghostless. Invite needs Manage Server (or Admin).
+            14-day full trial, then Starter caps per Discord server — Community $
+            {COMMUNITY_PRICE_USD} unlocks Ghostless. Invite needs Manage Server
+            (or Admin).
           </p>
         </div>
       </section>
@@ -281,15 +287,17 @@ export default function MarketingPage() {
               </h2>
             </div>
             <p className="mt-3 text-sm leading-relaxed text-white/80 sm:text-base">
-              A per-server show-rate badge — not global karma. One ghost
-              doesn&apos;t auto-kill Ghostless; you earn it locally after enough
-              sessions at your server&apos;s threshold.
+              A per-server show-rate badge — not global karma. Flow: Ready Check
+              → grace → strike on no-show → lockout after N strikes (admin-set).
+              Ghostless % = showed / (showed + ghosted). Admins can dispute or
+              clear. One ghost doesn&apos;t auto-kill the badge; you earn it
+              locally after enough sessions at your server&apos;s threshold.
             </p>
             <a
               href="/guide#ghostless"
               className="mt-5 inline-flex text-sm font-medium text-lime transition hover:underline"
             >
-              See how Ghostless works
+              Full rules in the guide
             </a>
           </div>
           <div className="w-full max-w-sm shrink-0 sm:ml-auto">
@@ -301,9 +309,14 @@ export default function MarketingPage() {
       <section id="pricing" className="scroll-mt-16 mx-auto max-w-5xl px-4 py-16">
         <h2 className="font-display text-3xl tracking-wide">Pricing</h2>
         <p className="mt-2 max-w-lg text-white/75">
-          Starter free under caps · Community ${COMMUNITY_PRICE_USD}/mo · Pro $
-          {PRO_PRICE_USD}/mo · Founding ${FOUNDING_PRO_PRICE_USD}/mo locked (≤
-          {PLANS.founding_pro.seatCap}). 14-day trial · first-month money-back.
+          Caps are per Discord server (guild), not per user. Starter:{" "}
+          <span className="text-white/90">
+            2 open parties + 5 creates/24h for this server
+          </span>
+          . Busy communities hit that fast — upgrade to Community. Community $
+          {COMMUNITY_PRICE_USD}/mo · Pro ${PRO_PRICE_USD}/mo · Founding $
+          {FOUNDING_PRO_PRICE_USD}/mo locked (≤{PLANS.founding_pro.seatCap}).
+          14-day trial · first-month money-back.
         </p>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-5">
@@ -379,7 +392,8 @@ export default function MarketingPage() {
             </Link>
           </div>
           <p className="text-sm text-white/55">
-            Serious communities need Community. Install needs Manage Server.
+            Busy servers burn Starter caps quickly — Community is the reliability
+            plan. Install needs Manage Server.
           </p>
         </div>
       </section>

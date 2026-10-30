@@ -417,8 +417,9 @@ export function SettingsClient({
               Ghostless &amp; strikes need Community
             </p>
             <p className="mt-1 text-white/65">
-              Starter keeps LFG under caps. Upgrade to Community ($
-              {COMMUNITY_PRICE_USD}/mo) to edit grace, strikes, and digest.
+              Starter keeps LFG under caps for this server (2 open · 5
+              creates/24h). Upgrade to Community (${COMMUNITY_PRICE_USD}/mo) to
+              edit grace, strikes, and digest.
             </p>
             <Link
               href="/pricing"

@@ -8,6 +8,7 @@ import {
   getServiceRoleKey,
   getSupabaseUrl,
 } from "../runtime-env";
+import { isUsableServerName } from "../server-display-name";
 import { getDiscordClientId, getRedirectUri } from "./config";
 
 const API = "https://discord.com/api/v10";
@@ -120,8 +121,36 @@ export async function filterAdminGuilds(
 }
 
 /**
- * Patch `name` / `icon_url` on existing `servers` rows from OAuth guild data.
- * Fixes rows that still store the snowflake as `name` (early bot upsert).
+ * Fetch a guild's real name via the bot token (GET /guilds/{id}).
+ * Used when OAuth/session name is missing and `servers.name` is a placeholder.
+ */
+export async function fetchGuildNameFromDiscord(
+  guildId: string,
+): Promise<string | null> {
+  const id = guildId.trim();
+  if (!id || looksLikeNonGuildId(id)) return null;
+  const token = getRuntimeEnv("DISCORD_BOT_TOKEN");
+  if (!token) return null;
+  try {
+    const res = await fetch(`${API}/guilds/${encodeURIComponent(id)}`, {
+      headers: { Authorization: `Bot ${token}` },
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { name?: string };
+    const name = (data.name ?? "").trim();
+    return isUsableServerName(name, id) ? name : null;
+  } catch {
+    return null;
+  }
+}
+
+function looksLikeNonGuildId(id: string): boolean {
+  return id.startsWith("demo-guild") || !/^\d{17,20}$/.test(id);
+}
+
+/**
+ * Patch `name` / `icon_url` on existing `servers` rows from OAuth / Discord.
+ * Overwrites empty, snowflake, and "Discord server" placeholders.
  * Does not insert new servers — bot slash commands own that path.
  */
 export async function syncServerMetadataFromOAuth(
@@ -134,8 +163,12 @@ export async function syncServerMetadataFromOAuth(
   await Promise.all(
     guilds.map(async (g) => {
       const patch: { name?: string; icon_url?: string } = {};
-      const name = (g.name ?? "").trim();
-      if (name && name !== g.id) patch.name = name;
+      let name = (g.name ?? "").trim();
+      if (!isUsableServerName(name, g.id)) {
+        const fromApi = await fetchGuildNameFromDiscord(g.id);
+        if (fromApi) name = fromApi;
+      }
+      if (isUsableServerName(name, g.id)) patch.name = name;
       const icon = discordGuildIconUrl(g.id, g.icon);
       if (icon) patch.icon_url = icon;
       if (Object.keys(patch).length === 0) return;
@@ -159,6 +192,24 @@ export async function syncServerMetadataFromOAuth(
       }
     }),
   );
+}
+
+/**
+ * Ensure session guild entries carry real Discord names (not placeholders).
+ * Mutates + returns the list; best-effort Discord API fill when needed.
+ */
+export async function ensureGuildDisplayNames(
+  guilds: AdminGuild[],
+): Promise<AdminGuild[]> {
+  const out = await Promise.all(
+    guilds.map(async (g) => {
+      if (isUsableServerName(g.name, g.id)) return g;
+      const fromApi = await fetchGuildNameFromDiscord(g.id);
+      if (!fromApi) return g;
+      return { ...g, name: fromApi };
+    }),
+  );
+  return out;
 }
 
 /** @deprecated Prefer syncServerMetadataFromOAuth (also syncs name). */

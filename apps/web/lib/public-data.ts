@@ -161,7 +161,7 @@ function humanServerName(
   return resolveServerDisplayName({
     dbName: server.name,
     guildId: server.discord_guild_id,
-    fallback: "Discord server",
+    fallback: "Selected server",
   });
 }
 

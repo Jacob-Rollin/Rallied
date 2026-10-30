@@ -39,6 +39,8 @@ import {
   weekStartUtc,
   type ReliabilityHealth,
 } from "./reliability-health";
+import { fetchGuildNameFromDiscord } from "./auth/discord";
+import { isUsableServerName } from "./server-display-name";
 import { getServiceSupabase, hasServiceRole } from "./supabase";
 import { isDemoGuildId } from "./guild-params";
 
@@ -425,7 +427,24 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
     );
   }
 
-  const server = mapServerRow(serverRow as Record<string, unknown>);
+  let server = mapServerRow(serverRow as Record<string, unknown>);
+  // Repair placeholder / snowflake DB names from Discord on dashboard load.
+  if (!isUsableServerName(server.name, server.discord_guild_id)) {
+    const fromDiscord = await fetchGuildNameFromDiscord(server.discord_guild_id);
+    if (fromDiscord) {
+      server = { ...server, name: fromDiscord };
+      void sb
+        .from("servers")
+        .update({
+          name: fromDiscord,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", server.id)
+        .then(({ error }) => {
+          if (error) console.warn("server name repair failed", error.message);
+        });
+    }
+  }
   const serverId = server.id;
 
   const now = new Date();

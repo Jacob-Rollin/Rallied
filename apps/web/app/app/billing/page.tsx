@@ -50,10 +50,9 @@ export default async function BillingPage({ searchParams }: Props) {
         guildId,
         dbName: current.name,
         oauthName: oauthGuildName,
-        fallback: "Server",
       })
     : isUsableServerName(oauthGuildName, guildId)
-      ? oauthGuildName
+      ? String(oauthGuildName).trim()
       : null;
 
   return (

@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { fetchGuildNameFromDiscord } from "@/lib/auth/discord";
 import { getSession } from "@/lib/auth/session";
 import {
   GUILD_COOKIE,
@@ -6,7 +7,10 @@ import {
   isDemoGuildId,
   shouldUseMockDashboard,
 } from "@/lib/guild-params";
-import { resolveServerDisplayName } from "@/lib/server-display-name";
+import {
+  isUsableServerName,
+  resolveServerDisplayName,
+} from "@/lib/server-display-name";
 
 export {
   GUILD_COOKIE,
@@ -26,8 +30,8 @@ export type GuildResolveResult = {
 };
 
 /**
- * Prefer Supabase `servers.name`, then session OAuth guild name.
- * Never treat a snowflake / empty string as the primary human label.
+ * Prefer OAuth session guild name, then a real Supabase `servers.name`.
+ * Never treat snowflake / empty / "Discord server" as the primary label.
  */
 export function displayNameForGuild(opts: {
   guildId: string;
@@ -79,8 +83,19 @@ export async function resolveSelectedGuild(opts?: {
     isMockSession,
     forceMock,
   });
-  const oauthGuildName =
+  let oauthGuildName =
     guilds.find((g) => g.id === guildId)?.name?.trim() || null;
+
+  // SSR: if session name is missing/placeholder, pull real name from Discord.
+  if (
+    guildId &&
+    !useMock &&
+    !isMockSession &&
+    !isUsableServerName(oauthGuildName, guildId)
+  ) {
+    const fromApi = await fetchGuildNameFromDiscord(guildId);
+    if (fromApi) oauthGuildName = fromApi;
+  }
 
   return { guildId, forceMock, isMockSession, useMock, oauthGuildName };
 }

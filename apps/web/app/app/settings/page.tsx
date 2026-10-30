@@ -21,7 +21,6 @@ export default async function SettingsPage({ searchParams }: Props) {
     guildId,
     dbName: data.server?.name,
     oauthName: oauthGuildName,
-    fallback: "Server",
   });
 
   return (

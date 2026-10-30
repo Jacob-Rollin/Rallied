@@ -42,44 +42,42 @@ export default async function ServersDirectoryPage() {
             and add a Discord invite URL — then Save.
           </p>
         ) : (
-          <ul className="mt-10 grid gap-4 sm:grid-cols-2">
+          <ul className="mt-10 space-y-3">
             {servers.map((s) => (
               <li
                 key={s.pathKey}
-                className="flex flex-col gap-4 rounded-brand border border-white/12 bg-slate-elevated/30 p-5"
+                className="flex items-center gap-3 rounded-brand border border-white/12 bg-slate-elevated px-3 py-2.5 sm:gap-4 sm:px-4 sm:py-3"
               >
-                <div className="flex items-center gap-3">
-                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-brand border border-white/10 bg-slate">
-                    {s.iconUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={s.iconUrl}
-                        alt=""
-                        width={48}
-                        height={48}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="flex h-full w-full items-center justify-center font-display text-lg text-coral">
-                        {s.name.slice(0, 1).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate font-display text-lg tracking-wide text-white">
-                      {s.name}
-                    </p>
-                    {s.hasPublicGhostless ? (
-                      <p className="mt-0.5 text-xs text-lime/80">
-                        Public Ghostless page
-                      </p>
-                    ) : null}
-                  </div>
+                <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-brand border border-white/10 bg-slate sm:h-11 sm:w-11">
+                  {s.iconUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={s.iconUrl}
+                      alt=""
+                      width={44}
+                      height={44}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center font-display text-base text-coral sm:text-lg">
+                      {s.name.slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
                 </div>
-                <div className="mt-auto flex flex-wrap gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-display text-base tracking-wide text-white sm:text-lg">
+                    {s.name}
+                  </p>
+                  {s.hasPublicGhostless ? (
+                    <p className="mt-0.5 truncate text-xs text-lime/80">
+                      Public Ghostless page
+                    </p>
+                  ) : null}
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
                   <Link
                     href={`/s/${s.pathKey}`}
-                    className="rounded-brand border border-white/20 px-3 py-1.5 text-sm font-semibold text-white/90 transition hover:border-coral/50 hover:text-white"
+                    className="rounded-brand border border-white/20 px-2.5 py-1.5 text-sm font-semibold text-white/90 transition hover:border-coral/50 hover:text-white sm:px-3"
                   >
                     View
                   </Link>
@@ -88,7 +86,7 @@ export default async function ServersDirectoryPage() {
                       href={s.inviteUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="rounded-brand bg-coral px-3 py-1.5 text-sm font-semibold text-slate transition hover:brightness-110"
+                      className="rounded-brand bg-coral px-2.5 py-1.5 text-sm font-semibold text-slate transition hover:brightness-110 sm:px-3"
                     >
                       Join
                     </a>

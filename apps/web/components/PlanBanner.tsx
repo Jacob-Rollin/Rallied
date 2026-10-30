@@ -31,8 +31,9 @@ export function PlanBanner({ plan, trialEndsAt, billingHref }: Props) {
           {daysLeft != null ? ` · ${daysLeft} day${daysLeft === 1 ? "" : "s"} left` : ""}
         </p>
         <p className="mt-1 text-white/70">
-          Full Ghostless + unlimited LFG while the trial runs. After that you
-          drop to Starter caps unless you upgrade.
+          Full Ghostless + unlimited LFG while the trial runs. After that this
+          server drops to Starter caps (2 open · 5 creates/24h) unless you
+          upgrade.
         </p>
         <Link
           href={billingHref}
@@ -49,8 +50,9 @@ export function PlanBanner({ plan, trialEndsAt, billingHref }: Props) {
       <div className="rounded-brand border border-coral/40 bg-coral/10 px-4 py-3 text-sm text-white/90">
         <p className="font-medium text-coral">Starter plan</p>
         <p className="mt-1 text-white/70">
-          Matching under caps · Ghostless and strikes off. Community is $
-          {COMMUNITY_PRICE_USD}/mo for unlimited LFG + reliability.
+          Matching under caps for this server (2 open · 5 creates/24h) ·
+          Ghostless and strikes off. Busy communities hit this fast. Community
+          is ${COMMUNITY_PRICE_USD}/mo for unlimited LFG + reliability.
         </p>
         <div className="mt-2 flex flex-wrap gap-3">
           <Link

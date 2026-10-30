@@ -16,6 +16,11 @@ const ENTRIES: {
 }[] = [
   {
     date: "2026-10-30",
+    title: "Starter caps = per Discord server",
+    body: "Pricing and landing spell out that Starter limits (2 open parties + 5 creates/24h) are for this server — not per user. Short How Ghostless works blip (ready → grace → strike → lockout; % = showed/(showed+ghosted); admins dispute/clear) with a link to /guide. Upgrade embeds say “for this server.”",
+  },
+  {
+    date: "2026-10-30",
     title: "Bot invite permissions (re-auth)",
     body: "Add to Discord invite integer is 311671409680 (includes Manage Channels for temp voice, plus threads / roles / Connect / Move Members). Existing installs: re-authorize with that permissions value or fix the bot role — calculator alone does not update an installed bot.",
   },

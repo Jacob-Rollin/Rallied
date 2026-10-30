@@ -27,6 +27,8 @@ const NAV_ALL = [
 type MeResponse = {
   authenticated: boolean;
   mock?: boolean;
+  /** Allowlisted via OPS_DISCORD_IDS — same helper as /ops pages. */
+  ops?: boolean;
   user?: { id: string; username: string; globalName: string | null };
   guilds?: AdminGuild[];
 };
@@ -234,6 +236,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               >
                 Report
               </button>
+            ) : null}
+            {!loading && me?.ops ? (
+              <Link
+                href="/ops"
+                className="text-xs text-muted hover:text-coral"
+              >
+                Ops
+              </Link>
             ) : null}
             <a
               href="/api/auth/logout"

@@ -22,6 +22,11 @@ const ENTRIES: {
 }[] = [
   {
     date: "2026-10-30",
+    title: "Report bugs & suggestions",
+    body: "Anyone in a server with Rallied can use Discord /feedback (type + title + details). Admins and Rallied Mods can also tap Report in /app. The team triages in a private ops inbox — no public ticket board.",
+  },
+  {
+    date: "2026-10-30",
     title: "Community trial · cancel keeps access",
     body: `Community Checkout requires a card. First trial per Discord server is 14 days (charged after trial). Cancel during trial or after paying keeps access until trial/period end, then Starter. Uninstall does not grant another trial. Official / forever_pro never downgraded.`,
   },

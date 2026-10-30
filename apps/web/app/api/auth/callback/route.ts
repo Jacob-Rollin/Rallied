@@ -6,6 +6,7 @@ import {
   fetchOAuthUser,
   filterAccessibleGuilds,
 } from "@/lib/auth/discord";
+import { safePostLoginNext } from "@/lib/auth/safe-next";
 import { getSession } from "@/lib/auth/session";
 import { GUILD_COOKIE } from "@/lib/guild-params";
 import { getServiceRoleKey, getSupabaseUrl } from "@/lib/runtime-env";
@@ -64,21 +65,18 @@ export async function GET(req: NextRequest) {
     // Optional: upsert dashboard_users via service role when Supabase wired
     await upsertDashboardUser(user.id, user.username, user.global_name ?? null, avatarUrl(user));
 
-    const safeNext =
-      nextRaw &&
-      nextRaw.startsWith("/app") &&
-      !nextRaw.startsWith("//") &&
-      !nextRaw.includes("://")
-        ? nextRaw
-        : "/app";
+    const safeNext = safePostLoginNext(nextRaw) || "/app";
 
-    const withBot = adminGuilds.filter((g) => g.bot_present);
-    if (withBot.length === 0) {
-      const emptyUrl = new URL(safeNext, origin);
-      emptyUrl.searchParams.set("empty", "1");
-      return clearDemoGuildCookie(
-        NextResponse.redirect(emptyUrl.toString()),
-      );
+    // empty=1 is only meaningful for the per-server /app dashboard.
+    if (safeNext.startsWith("/app")) {
+      const withBot = adminGuilds.filter((g) => g.bot_present);
+      if (withBot.length === 0) {
+        const emptyUrl = new URL(safeNext, origin);
+        emptyUrl.searchParams.set("empty", "1");
+        return clearDemoGuildCookie(
+          NextResponse.redirect(emptyUrl.toString()),
+        );
+      }
     }
     return clearDemoGuildCookie(
       NextResponse.redirect(new URL(safeNext, origin).toString()),

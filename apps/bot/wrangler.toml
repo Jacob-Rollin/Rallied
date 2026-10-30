@@ -19,6 +19,8 @@ keep_vars = true
 # Optional (phone register): wrangler secret put REGISTER_COMMANDS_SECRET
 # Optional guild for /register-commands: wrangler secret put DISCORD_DEV_GUILD_ID
 #   (or set as a plain var in the CF dashboard — not committed here)
+# Optional staff inbox for /feedback embeds: wrangler secret put OPS_FEEDBACK_CHANNEL_ID
+#   (Discord channel snowflake; fail open when unset)
 
 # Expire stale open parties + finalize ready-check grace (every 5 minutes).
 [triggers]

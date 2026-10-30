@@ -5,6 +5,7 @@ import {
   mockAuthEnabled,
   oauthConfigProblems,
 } from "@/lib/auth/config";
+import { safePostLoginNext } from "@/lib/auth/safe-next";
 
 type Props = { searchParams: Promise<{ error?: string; next?: string }> };
 
@@ -28,20 +29,12 @@ function formatLoginError(error: string, liveProblems: string[]): string {
   return `Login error: ${error}`;
 }
 
-function safeAppNext(raw: string | undefined): string | undefined {
-  if (!raw) return undefined;
-  const path = raw.trim();
-  if (!path.startsWith("/app")) return undefined;
-  if (path.startsWith("//") || path.includes("://")) return undefined;
-  return path;
-}
-
 export default async function LoginPage({ searchParams }: Props) {
   const sp = await searchParams;
   const oauth = discordOAuthConfigured();
   const mock = mockAuthEnabled();
   const problems = !oauth ? oauthConfigProblems() : [];
-  const nextPath = safeAppNext(sp.next);
+  const nextPath = safePostLoginNext(sp.next);
   const discordHref = nextPath
     ? `/api/auth/discord?next=${encodeURIComponent(nextPath)}`
     : "/api/auth/discord";

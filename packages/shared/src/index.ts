@@ -1,5 +1,6 @@
 export * from "./constants";
 export * from "./entitlements";
+export * from "./feedback";
 export * from "./games";
 export * from "./leaderboard";
 export * from "./server-name";

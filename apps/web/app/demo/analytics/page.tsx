@@ -12,8 +12,8 @@ export default async function DemoAnalyticsPage() {
       <div>
         <h1 className="font-display text-3xl tracking-wide">Analytics</h1>
         <p className="mt-1 text-sm text-muted">
-          Pro: trends + CSV export. Community: this-week teaser → upgrade
-          preview.
+          One job per section — volume, totals, soft reliability, top players.
+          Demo Community teaser; Upgrade unlocks Pro preview.
         </p>
       </div>
 

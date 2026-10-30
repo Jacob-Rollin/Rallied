@@ -365,7 +365,7 @@ export async function applySubscriptionDeleted(
   return { ok: true, detail: "lapsed" };
 }
 
-/** Count Founding Pro seats (for ≤50 program). */
+/** Count Founding Pro seats (for ≤20 program). */
 export async function countFoundingSeats(
   sb: SupabaseClient,
 ): Promise<number> {

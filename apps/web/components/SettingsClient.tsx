@@ -766,8 +766,9 @@ export function SettingsClient({
       <section className="space-y-4">
         <h2 className="font-display text-xl tracking-wide">Billing snapshot</h2>
         <p className="text-sm text-muted">
-          Community ${COMMUNITY_PRICE_USD} · Pro ${PRO_PRICE_USD} · Founding Pro $
-          {PLANS.founding_pro.priceMonthly} locked.{" "}
+          Per Discord server: Community ${COMMUNITY_PRICE_USD} · Pro $
+          {PRO_PRICE_USD} · Founding Pro ${PLANS.founding_pro.priceMonthly}{" "}
+          locked (≤{PLANS.founding_pro.seatCap}).{" "}
           <Link href={billingHref} className="text-coral hover:underline">
             Open billing
           </Link>

@@ -235,9 +235,8 @@ export default function MarketingPage() {
             className="animate-rise mt-3 max-w-lg text-sm text-white/55"
             style={{ animationDelay: "260ms" }}
           >
-            14-day full trial, then Starter caps per Discord server — Community $
-            {COMMUNITY_PRICE_USD} unlocks Ghostless. Invite needs Manage Server
-            (or Admin).
+            14-day Community trial per Discord server — then Starter caps or
+            paid Ghostless. Invite needs Manage Server (or Admin).
           </p>
         </div>
       </section>
@@ -309,14 +308,9 @@ export default function MarketingPage() {
       <section id="pricing" className="scroll-mt-16 mx-auto max-w-5xl px-4 py-16">
         <h2 className="font-display text-3xl tracking-wide">Pricing</h2>
         <p className="mt-2 max-w-lg text-white/75">
-          Caps are per Discord server (guild), not per user. Starter:{" "}
-          <span className="text-white/90">
-            2 open parties + 5 creates/24h for this server
-          </span>
-          . Busy communities hit that fast — upgrade to Community. Community $
-          {COMMUNITY_PRICE_USD}/mo · Pro ${PRO_PRICE_USD}/mo · Founding $
-          {FOUNDING_PRO_PRICE_USD}/mo locked (≤{PLANS.founding_pro.seatCap}).
-          14-day trial · first-month money-back.
+          Per Discord server. 14-day Community trial, then Starter caps or paid —
+          Community ${COMMUNITY_PRICE_USD} · Pro ${PRO_PRICE_USD} · Founding $
+          {FOUNDING_PRO_PRICE_USD} locked (≤{PLANS.founding_pro.seatCap}).
         </p>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-5">
@@ -348,11 +342,13 @@ export default function MarketingPage() {
               >
                 {tier.price === 0 ? "$0" : `$${tier.price}`}
                 <span className="font-body text-sm font-normal text-white/55">
-                  /mo
+                  /mo /server
                 </span>
               </p>
               <p className="mt-1 text-xs text-white/55">
-                {tier.annual != null ? `$${tier.annual}/yr` : "Caps only"}
+                {tier.annual != null
+                  ? `$${tier.annual}/yr · per Discord server`
+                  : "Caps only · per Discord server"}
               </p>
               <p className="mt-3 text-sm leading-relaxed text-white/75">
                 {tier.blurb}

@@ -70,8 +70,8 @@ export default async function DemoBillingPage() {
               </p>
             ) : (
               <p className="mt-2 text-xs text-muted">
-                Real servers start with a 14-day Community trial, then{" "}
-                ${COMMUNITY_PRICE_USD}/mo.
+                Real servers start with a 14-day Community trial, then Starter
+                caps or ${COMMUNITY_PRICE_USD}/mo /server.
               </p>
             )}
           </div>
@@ -84,7 +84,12 @@ export default async function DemoBillingPage() {
       <section className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-brand border border-white/10 bg-slate-elevated/40 p-4">
           <p className="font-display text-lg tracking-wide">Community</p>
-          <p className="mt-1 text-2xl">${COMMUNITY_PRICE_USD}/mo</p>
+          <p className="mt-1 text-2xl">
+            ${COMMUNITY_PRICE_USD}
+            <span className="font-body text-sm font-normal text-white/55">
+              /mo /server
+            </span>
+          </p>
           <p className="mt-1 text-xs font-medium text-lime">14-day free trial</p>
           <p className="mt-2 text-xs text-muted">Full LFG + Ghostless + strikes</p>
           <button
@@ -97,13 +102,18 @@ export default async function DemoBillingPage() {
         </div>
         <div className="rounded-brand border border-coral/40 bg-coral/5 p-4">
           <p className="font-display text-lg tracking-wide">Upgrade to Pro</p>
-          <p className="mt-1 text-2xl">${PRO_PRICE_USD}/mo</p>
-          <p className="mt-1 text-xs font-medium text-lime/90">
-            Trial available on Community first
+          <p className="mt-1 text-2xl">
+            ${PRO_PRICE_USD}
+            <span className="font-body text-sm font-normal text-white/55">
+              /mo /server
+            </span>
+          </p>
+          <p className="mt-1 text-xs font-medium text-white/55">
+            No separate trial — Community trial first
           </p>
           <p className="mt-2 text-xs text-muted">
-            Analytics export, vanity, priority. Founding seats use $
-            {FOUNDING_PRO_PRICE_USD} lock instead.
+            Analytics export, vanity, iCal, priority. Founding seats use $
+            {FOUNDING_PRO_PRICE_USD} lock (≤{PLANS.founding_pro.seatCap}).
           </p>
           <button
             type="button"

@@ -45,7 +45,7 @@ const SKUS: Sku[] = [
     title: "Community",
     monthly: COMMUNITY_PRICE_USD,
     annual: PLANS.community.annualCents / 100,
-    blurb: "Unlimited LFG + Ghostless + strikes for this server.",
+    blurb: "Unlimited LFG + Ghostless + strikes for this server. Includes 14-day trial on new installs.",
     accent: "lime",
   },
   {
@@ -53,7 +53,7 @@ const SKUS: Sku[] = [
     title: "Pro",
     monthly: PRO_PRICE_USD,
     annual: PLANS.pro.annualCents / 100,
-    blurb: "Analytics export, vanity, priority support.",
+    blurb: "Analytics export, vanity, iCal subscribe, priority support.",
     accent: "coral",
   },
   {
@@ -329,7 +329,12 @@ export function BillingClient({
               className={`rounded-brand border p-4 ${border}`}
             >
               <p className="font-display text-lg tracking-wide">{sku.title}</p>
-              <p className="mt-1 text-2xl">{priceLabel}</p>
+              <p className="mt-1 text-2xl">
+                {priceLabel}
+                <span className="ml-1 font-body text-sm font-normal text-white/45">
+                  /server
+                </span>
+              </p>
               <p className="mt-2 text-xs text-muted">{sku.blurb}</p>
               <button
                 type="button"

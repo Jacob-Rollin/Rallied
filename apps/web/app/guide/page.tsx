@@ -19,7 +19,7 @@ import { SiteHeader } from "../../components/SiteHeader";
 export const metadata: Metadata = {
   title: `How it works — ${BRAND.name}`,
   description:
-    "Visual guide to Rallied LFG desk, temp voice, waitlist, filters, schedule, Ready Check, Vibe Check, Ghostless, and the admin web dashboard — matching live Discord bot behavior.",
+    "Visual guide to Rallied LFG desk, Standby, Ready Check, Vibe Check, Ghostless, leaderboard, join gates, and the admin web dashboard — matching live Discord bot behavior.",
 };
 
 const SECTIONS = [
@@ -29,8 +29,10 @@ const SECTIONS = [
   { id: "party", label: "Party card" },
   { id: "find", label: "Find" },
   { id: "ready", label: "Ready Check" },
+  { id: "standby", label: "Standby" },
   { id: "vibe", label: "Vibe Check" },
   { id: "ghostless", label: "Ghostless" },
+  { id: "leaderboard", label: "Leaderboard" },
   { id: "admin", label: "Admin web" },
 ] as const;
 
@@ -188,7 +190,7 @@ export default function GuidePage() {
           </ol>
           <p className="mt-4 text-xs text-white/45">
             Players use desk buttons after that — Create / Find / My parties /
-            How it works. Slash commands remain as backup.
+            How it works / Leaderboard. Slash commands remain as backup.
           </p>
         </section>
 
@@ -200,9 +202,10 @@ export default function GuidePage() {
             Pin the LFG desk
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">
-            After setup, the pinned desk is the home base. Four buttons: Create
-            party, Find party, My parties, How it works — no slash required for
-            players. Example channel name below is a suggestion only.
+            After setup, the pinned desk is the home base. Buttons: Create
+            party, Find party, My parties, How it works, and Leaderboard — no
+            slash required for players. Example channel name below is a
+            suggestion only.
           </p>
           <div className="mt-6 max-w-lg">
             <LfgDeskMock />
@@ -307,9 +310,32 @@ export default function GuidePage() {
           </p>
         </section>
 
-        <section id="vibe" className="scroll-mt-32">
+        <section id="standby" className="scroll-mt-32">
           <p className="font-display text-xs tracking-[0.14em] text-coral">
             05
+          </p>
+          <h2 className="mt-1 font-display text-3xl tracking-wide text-white">
+            Standby — waitlist after Ready fails
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">
+            When Ready Check ends and a seated player (not the host) missed
+            Ready, Rallied frees that seat and{" "}
+            <strong className="font-semibold text-white">
+              promotes the next waitlist player
+            </strong>{" "}
+            automatically — Standby. The promoted player gets a ping that
+            they&apos;re in. Same idea as Leave freeing a seat: waitlist moves
+            up so the party keeps filling instead of dying on a no-show.
+          </p>
+          <p className="mt-3 max-w-2xl text-xs text-white/45">
+            Waitlist still fills when Join hits a full party (Filled cards show
+            Waitlist). Leave or Standby both promote in order.
+          </p>
+        </section>
+
+        <section id="vibe" className="scroll-mt-32">
+          <p className="font-display text-xs tracking-[0.14em] text-coral">
+            06
           </p>
           <h2 className="mt-1 font-display text-3xl tracking-wide text-white">
             Post-session Vibe Check
@@ -331,7 +357,7 @@ export default function GuidePage() {
 
         <section id="ghostless" className="scroll-mt-32">
           <p className="font-display text-xs tracking-[0.14em] text-lime">
-            06
+            07
           </p>
           <div className="mt-1 flex flex-wrap items-center gap-3">
             <h2 className="font-display text-3xl tracking-wide text-white">
@@ -360,11 +386,57 @@ export default function GuidePage() {
           <div className="mt-6 max-w-md">
             <GhostlessGuideMock />
           </div>
+          <div className="mt-8 max-w-2xl space-y-3 rounded-brand border border-white/10 bg-slate-elevated/40 px-4 py-4 text-sm text-white/75 sm:px-5">
+            <p>
+              <strong className="font-semibold text-white">
+                Join gates (Settings)
+              </strong>{" "}
+              — Community+ admins set{" "}
+              <strong className="font-semibold text-white">
+                Min Ghostless % to Join
+              </strong>{" "}
+              (optional; blank = off) and{" "}
+              <strong className="font-semibold text-white">
+                Enforce lockout on Join
+              </strong>
+              . Locked-out members can&apos;t Join or Create when enforce is on.
+              Players with no Ghostless history yet are allowed through the min-%
+              gate. Starter ignores these gates.
+            </p>
+            <p>
+              Grace minutes, strike threshold → lockout, and lockout days live in
+              the same Reliability rules block on{" "}
+              <code className="text-white/85">/app/settings</code>.
+            </p>
+          </div>
+        </section>
+
+        <section id="leaderboard" className="scroll-mt-32">
+          <p className="font-display text-xs tracking-[0.14em] text-coral">
+            08
+          </p>
+          <h2 className="mt-1 font-display text-3xl tracking-wide text-white">
+            Monthly leaderboard
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">
+            Community+ shows{" "}
+            <strong className="font-semibold text-white">Most reliable</strong>{" "}
+            (Ghostless %) and{" "}
+            <strong className="font-semibold text-white">Top hosts</strong> for
+            this server this month — same board in Discord and on the admin
+            Overview. Use{" "}
+            <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
+              /leaderboard
+            </code>{" "}
+            or the desk{" "}
+            <strong className="font-semibold text-white">Leaderboard</strong>{" "}
+            button. Still this server only — no cross-server ranks.
+          </p>
         </section>
 
         <section id="admin" className="scroll-mt-32">
           <p className="font-display text-xs tracking-[0.14em] text-coral">
-            07
+            09
           </p>
           <h2 className="mt-1 font-display text-3xl tracking-wide text-white">
             Admin web dashboard
@@ -407,14 +479,18 @@ export default function GuidePage() {
                 3
               </span>
               <span>
-                <strong className="font-semibold text-white">What you see</strong>
-                : Overview (open parties / members / strikes), LFG parties,
-                People, Analytics, Settings, and Disputes — Community+ admins
-                Overturn / Uphold on the web (same as{" "}
-                <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
-                  /dispute resolve
-                </code>
-                ).
+                <strong className="font-semibold text-white">Overview</strong>:
+                open parties / members / strikes, plus Community+{" "}
+                <strong className="font-semibold text-white">
+                  This month
+                </strong>{" "}
+                (Most reliable + Top hosts),{" "}
+                <strong className="font-semibold text-white">
+                  Reliability health
+                </strong>{" "}
+                (7-day no-show / vibe response / open disputes — Pro adds
+                week-over-week when data exists), upcoming scheduled parties, and
+                Standby promotions this week.
               </span>
             </li>
             <li className="flex gap-3">
@@ -422,32 +498,57 @@ export default function GuidePage() {
                 4
               </span>
               <span>
+                <strong className="font-semibold text-white">Disputes</strong> —
+                Community+ admins{" "}
+                <strong className="font-semibold text-white">Overturn</strong>{" "}
+                (clears the linked strike) or{" "}
+                <strong className="font-semibold text-white">Uphold</strong> on{" "}
+                <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
+                  /app/disputes
+                </code>
+                . Same outcome as{" "}
+                <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
+                  /dispute resolve
+                </code>{" "}
+                in Discord. Players open disputes from the Vibe Check Dispute
+                button.
+              </span>
+            </li>
+            <li className="flex gap-3">
+              <span className="font-display text-xs tracking-wide text-coral">
+                5
+              </span>
+              <span>
                 <strong className="font-semibold text-white">Settings</strong>:
-                turn the public page on/off, set a vanity slug (
+                public page on/off, vanity slug (
                 <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
                   /s/your-slug
                 </code>
-                ), opt into{" "}
-                <strong className="font-semibold text-white">
-                  List in directory
-                </strong>{" "}
-                (
-                <Link href="/servers" className="text-coral hover:underline">
-                  /servers
-                </Link>
-                ) with a Discord invite URL, then{" "}
-                <strong className="font-semibold text-white">Save</strong>{" "}
-                (writes live). Pro / Founding unlock vanity (hide Powered by,
-                accent, Discord guild icon on the public page) and a{" "}
+                ), directory list + invite, Reliability rules (grace, strikes,
+                lockout, min Ghostless % to Join), then{" "}
+                <strong className="font-semibold text-white">Save</strong>. Pro /
+                Founding unlock vanity and{" "}
                 <strong className="font-semibold text-white">
                   Calendar subscribe
                 </strong>{" "}
-                URL — free{" "}
+                — a tokenized{" "}
                 <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
                   .ics
                 </code>{" "}
-                from our Worker for scheduled parties (Apple / Google Calendar
+                URL for upcoming scheduled parties (Apple / Google Calendar
                 subscribe; no Google OAuth).
+              </span>
+            </li>
+            <li className="flex gap-3">
+              <span className="font-display text-xs tracking-wide text-coral">
+                6
+              </span>
+              <span>
+                Also: LFG parties, People, Analytics (Pro export + trends), and{" "}
+                <Link href="/app/billing" className="text-coral hover:underline">
+                  Billing
+                </Link>
+                .
               </span>
             </li>
           </ol>
@@ -481,9 +582,9 @@ export default function GuidePage() {
             </p>
             <p>
               <strong className="font-semibold text-white">Plans</strong> — 14-day
-              trial, then Starter free (2 open + 5 creates/24h for this server,
-              no Ghostless). Community $4.99 · Pro $9.99 · Founding $8.99. Upgrade
-              on{" "}
+              Community trial, then Starter free (2 open + 5 creates/24h for this
+              server, no Ghostless). Community $4.99 · Pro $9.99 · Founding $8.99
+              locked (≤20 seats) — all per Discord server. Upgrade on{" "}
               <Link href="/app/billing" className="text-coral hover:underline">
                 /app/billing
               </Link>{" "}

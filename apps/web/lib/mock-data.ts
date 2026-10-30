@@ -258,6 +258,8 @@ export const MOCK_SETTINGS: ServerSettings = {
   digest_channel_id: null,
   strike_threshold: 3,
   lockout_days: 7,
+  join_min_ghostless_pct: null,
+  join_lockout_enforced: true,
   slug: "demo-esports",
   public_page_enabled: true,
   public_member_list: false,

@@ -361,6 +361,66 @@ export function lfgDeskPinHintMessage() {
   };
 }
 
+/** Per-server monthly Most reliable + Top hosts (Community+). */
+export function leaderboardEmbed(opts: {
+  serverName: string;
+  monthLabel: string;
+  mostReliable: {
+    displayName: string;
+    discordUserId?: string;
+    showRatePct: number;
+  }[];
+  topHosts: {
+    displayName: string;
+    discordUserId?: string;
+    partiesHosted: number;
+  }[];
+}): Embed {
+  const reliableLines =
+    opts.mostReliable.length === 0
+      ? "_No one with enough sessions yet._"
+      : opts.mostReliable
+          .map((r, i) => {
+            const who = r.discordUserId
+              ? `<@${r.discordUserId}>`
+              : r.displayName;
+            return `**${i + 1}.** ${who} — **${r.showRatePct}%**`;
+          })
+          .join("\n");
+
+  const hostLines =
+    opts.topHosts.length === 0
+      ? "_No parties hosted this month yet._"
+      : opts.topHosts
+          .map((h, i) => {
+            const who = h.discordUserId
+              ? `<@${h.discordUserId}>`
+              : h.displayName;
+            const n = h.partiesHosted;
+            return `**${i + 1}.** ${who} — **${n}** part${n === 1 ? "y" : "ies"}`;
+          })
+          .join("\n");
+
+  return {
+    title: `Leaderboard · ${opts.monthLabel}`,
+    description: `**${opts.serverName}** only — not a cross-server network.`,
+    color: LIME,
+    fields: [
+      {
+        name: "Most reliable (Ghostless %)",
+        value: reliableLines.slice(0, 1024),
+        inline: false,
+      },
+      {
+        name: "Top hosts (this month)",
+        value: hostLines.slice(0, 1024),
+        inline: false,
+      },
+    ],
+    footer: { text: "Rallied · Community+" },
+  };
+}
+
 export function ghostlessPlayerEmbed(opts: {
   displayName: string;
   mention: string;
@@ -674,6 +734,12 @@ export function lfgDeskMessage() {
           {
             type: 2,
             style: 2,
+            label: "Board",
+            custom_id: "lfg:desk:leaderboard",
+          },
+          {
+            type: 2,
+            style: 2,
             label: "How it works",
             custom_id: "lfg:desk:help",
           },
@@ -954,10 +1020,12 @@ export function lfgHowItWorksMessage() {
       "• **Voice** — tap **Join VC** on the card (bot needs **Manage Channels**).",
       "• **Schedule** — optional start (`in 30m` / UTC time); reminder ~10 minutes before.",
       "• **Ready Check** — on fill (or host tap): Ready / Waiting + grace; no-shows struck on Community+.",
+      "• **Standby** — ready-fail opens a seat → next waitlist promotes + ping (if any).",
       "• **Leave / Close** — Leave (or leave waitlist); hosts Confirm-close (voice deleted), then **Vibe Check**.",
       "• **Find** — browse / filter by game, mic, region.",
+      "• **Board / `/leaderboard`** — monthly Most reliable + Top hosts (this server).",
       "• **`/ghostless`** — this-server show rate (not a global grade).",
-      "Slash: `/lfg create` · `/lfg find` · `/vibe` · `/ghostless`",
+      "Slash: `/lfg create` · `/lfg find` · `/vibe` · `/ghostless` · `/leaderboard`",
     ].join("\n"),
     flags: 64,
   };

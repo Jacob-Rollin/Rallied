@@ -8,9 +8,13 @@ import {
 import { readyCheckComponents, readyCheckEmbed } from "../lib/embeds.js";
 import { formatError } from "../lib/errors.js";
 import {
+  countSeated,
   editChannelMessage,
   fetchGuildParty,
   loadPartyMembers,
+  postThreadMessage,
+  promoteFromWaitlist,
+  refreshPartyCard,
 } from "../lib/party-message.js";
 import {
   freeReadyCheckNote,
@@ -375,7 +379,7 @@ export async function finalizeReadyCheck(
     .eq("id", partyId)
     .is("ready_check_resolved_at", null)
     .select(
-      "id, game, server_id, grace_ends_at, ready_check_message_id, ready_check_channel_id, host_member_id",
+      "id, game, server_id, slots, status, grace_ends_at, ready_check_message_id, ready_check_channel_id, host_member_id, discord_channel_id, discord_thread_id, discord_message_id, discord_voice_channel_id, rank_text, mic, region, scheduled_start_at",
     )
     .maybeSingle();
 
@@ -391,17 +395,19 @@ export async function finalizeReadyCheck(
     .select("plan, trial_ends_at, discord_guild_id")
     .eq("id", party.server_id)
     .maybeSingle();
+  const guildId = (serverRow?.discord_guild_id as string | null) ?? null;
   const plan = resolveEffectivePlan(
     {
       plan: serverRow?.plan as string | undefined,
       trial_ends_at: (serverRow?.trial_ends_at as string | null) ?? null,
-      discord_guild_id: (serverRow?.discord_guild_id as string | null) ?? null,
+      discord_guild_id: guildId,
     },
     env,
   );
   const reliabilityOn = reliabilityEnabled(plan);
 
   let noShows = 0;
+  const noShowMemberIds: string[] = [];
 
   for (const m of roster) {
     if (m.ready) {
@@ -428,6 +434,7 @@ export async function finalizeReadyCheck(
     }
 
     noShows += 1;
+    noShowMemberIds.push(m.memberId);
     if (!reliabilityOn) continue;
 
     const { data: stats } = await sb
@@ -476,6 +483,91 @@ export async function finalizeReadyCheck(
     }
   }
 
+  // Standby: free seats from non-host no-shows → promote waitlist (soft-fail).
+  const promoted: {
+    memberId: string;
+    discordUserId: string;
+    displayName: string;
+  }[] = [];
+  try {
+    for (const memberId of noShowMemberIds) {
+      if (memberId === party.host_member_id) continue;
+      const { error: delErr } = await sb
+        .from("lfg_party_members")
+        .delete()
+        .eq("party_id", partyId)
+        .eq("member_id", memberId)
+        .in("role", ["member"]);
+      if (delErr) {
+        console.error("standby remove no-show", partyId, delErr.message);
+        continue;
+      }
+      const next = await promoteFromWaitlist(sb, partyId);
+      if (next) promoted.push(next);
+    }
+
+    if (noShowMemberIds.length > 0) {
+      const seated = await countSeated(sb, partyId);
+      const slots = Number(party.slots) || seated;
+      if (seated >= slots) {
+        await sb
+          .from("lfg_parties")
+          .update({ status: "filled" })
+          .eq("id", partyId)
+          .in("status", ["open", "filled"]);
+        party.status = "filled";
+      } else if (party.status === "filled" || seated < slots) {
+        await sb
+          .from("lfg_parties")
+          .update({ status: "open" })
+          .eq("id", partyId)
+          .in("status", ["open", "filled"]);
+        party.status = "open";
+      }
+    }
+
+    if (promoted.length > 0) {
+      const mentions = promoted
+        .map((p) => `<@${p.discordUserId}>`)
+        .join(" ");
+      const ping = `${mentions} — **Standby**: you're in for **${party.game}** (waitlist promote).`;
+      if (party.discord_thread_id) {
+        await postThreadMessage(env, party.discord_thread_id, ping);
+      } else if (party.ready_check_channel_id) {
+        await postChannelMessage(env, party.ready_check_channel_id, {
+          content: ping,
+        });
+      }
+    }
+
+    if (noShowMemberIds.length > 0 && guildId) {
+      await refreshPartyCard(
+        env,
+        sb,
+        {
+          id: party.id,
+          game: party.game,
+          rank_text: (party.rank_text as string) ?? "",
+          mic: (party.mic as string) ?? "",
+          region: (party.region as string) ?? "",
+          slots: Number(party.slots),
+          status: String(party.status) as "open" | "filled" | "closed",
+          host_member_id: party.host_member_id,
+          discord_message_id: party.discord_message_id as string | null,
+          discord_channel_id: party.discord_channel_id as string | null,
+          discord_thread_id: party.discord_thread_id as string | null,
+          discord_voice_channel_id:
+            (party.discord_voice_channel_id as string | null) ?? null,
+          scheduled_start_at:
+            (party.scheduled_start_at as string | null) ?? null,
+        },
+        { guildId },
+      );
+    }
+  } catch (err) {
+    console.error("standby promote soft-fail", partyId, err);
+  }
+
   const graceEndsUnix = party.grace_ends_at
     ? Math.floor(new Date(party.grace_ends_at).getTime() / 1000)
     : Math.floor(Date.now() / 1000);
@@ -489,15 +581,19 @@ export async function finalizeReadyCheck(
 
   if (party.ready_check_channel_id && party.ready_check_message_id) {
     let content: string;
+    const standbyNote =
+      promoted.length > 0
+        ? ` Standby promoted **${promoted.length}** from waitlist.`
+        : "";
     if (!reliabilityOn) {
       content =
         noShows > 0
-          ? `Ready check ended — **${noShows}** missed Ready. ${freeReadyCheckNote()}`
+          ? `Ready check ended — **${noShows}** missed Ready. ${freeReadyCheckNote()}${standbyNote}`
           : "Ready check ended — everyone was ready.";
     } else {
       content =
         noShows > 0
-          ? `Ready check ended — **${noShows}** no-show${noShows === 1 ? "" : "s"} struck (this server).`
+          ? `Ready check ended — **${noShows}** no-show${noShows === 1 ? "" : "s"} struck (this server).${standbyNote}`
           : "Ready check ended — everyone was ready.";
     }
     await editChannelMessage(

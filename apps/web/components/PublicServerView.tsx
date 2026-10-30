@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { isProPlan } from "@rallied/shared";
 import { GhostlessMark } from "@/components/GhostlessMark";
+import { MonthlyLeaderboard } from "@/components/MonthlyLeaderboard";
 import { PublicGhostlessCard } from "@/components/PublicGhostlessCard";
 import {
   discordPartyDeepLink,
@@ -29,6 +30,7 @@ export function PublicServerView({ bundle, vanity }: Props) {
     weekly,
     spotlight,
     settings,
+    monthlyLeaderboard,
   } = bundle;
   const showPoweredBy = vanity?.showPoweredBy ?? bundle.showPoweredBy;
   const accent = vanity?.accent !== undefined ? vanity.accent : bundle.accent;
@@ -159,6 +161,15 @@ export function PublicServerView({ bundle, vanity }: Props) {
             </ul>
           )}
         </section>
+
+        {monthlyLeaderboard ? (
+          <MonthlyLeaderboard
+            compact
+            monthLabel={monthlyLeaderboard.monthLabel}
+            mostReliable={monthlyLeaderboard.mostReliable}
+            topHosts={monthlyLeaderboard.topHosts}
+          />
+        ) : null}
 
         <section>
           <h2 className="flex items-center gap-2 font-display text-xl tracking-wide text-lime">

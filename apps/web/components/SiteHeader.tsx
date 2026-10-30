@@ -24,6 +24,12 @@ const NAV = [
   { href: "/demo", label: "Demo" },
 ] as const;
 
+/** Legal links — mobile menu secondary only (footer carries them on desktop). */
+const LEGAL_NAV = [
+  { href: "/privacy", label: "Privacy" },
+  { href: "/terms", label: "Terms" },
+] as const;
+
 export function SiteHeader({ variant = "solid" }: Props) {
   const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
   const inviteHref = clientId ? buildBotInviteUrl(clientId) : "#add-bot";
@@ -191,6 +197,17 @@ export function SiteHeader({ variant = "solid" }: Props) {
                 key={item.href}
                 href={item.href}
                 className="rounded-brand px-3 py-2.5 text-sm text-white/80 transition hover:bg-white/5 hover:text-white"
+                onClick={() => setMenuOpen(false)}
+              >
+                {item.label}
+              </Link>
+            ))}
+            <div className="my-1 border-t border-white/10" role="presentation" />
+            {LEGAL_NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="rounded-brand px-3 py-2.5 text-sm text-white/55 transition hover:bg-white/5 hover:text-white"
                 onClick={() => setMenuOpen(false)}
               >
                 {item.label}

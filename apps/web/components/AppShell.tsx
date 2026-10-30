@@ -268,8 +268,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </span>
             ) : null}
 
-            {/* Desktop: inline account actions */}
+            {/* Desktop: Ops first (allowlisted), then Report, Log out */}
             <div className="hidden items-center gap-3 sm:flex">
+              {!loading && me?.ops ? (
+                <Link
+                  href="/ops"
+                  className="text-xs text-muted hover:text-coral"
+                >
+                  Ops
+                </Link>
+              ) : null}
               {!loading && me?.authenticated ? (
                 <button
                   type="button"
@@ -279,14 +287,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   Report
                 </button>
               ) : null}
-              {!loading && me?.ops ? (
-                <Link
-                  href="/ops"
-                  className="text-xs text-muted hover:text-coral"
-                >
-                  Ops
-                </Link>
-              ) : null}
               <a
                 href="/api/auth/logout"
                 className="text-xs text-muted hover:text-coral"
@@ -295,7 +295,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </a>
             </div>
 
-            {/* Mobile: hamburger → Report / Ops / Log out */}
+            {/* Mobile: Ops → Report → Log out */}
             <div className="relative sm:hidden">
               <button
                 ref={menuButtonRef}
@@ -315,6 +315,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   className="absolute right-0 top-full z-30 mt-1.5 min-w-[9.5rem] border border-white/15 bg-slate-elevated py-1 shadow-lg"
                   role="menu"
                 >
+                  {!loading && me?.ops ? (
+                    <Link
+                      href="/ops"
+                      role="menuitem"
+                      className="block px-3 py-2 text-sm text-white/80 hover:bg-white/5 hover:text-coral"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      Ops
+                    </Link>
+                  ) : null}
                   {!loading && me?.authenticated ? (
                     <button
                       type="button"
@@ -327,16 +337,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     >
                       Report
                     </button>
-                  ) : null}
-                  {!loading && me?.ops ? (
-                    <Link
-                      href="/ops"
-                      role="menuitem"
-                      className="block px-3 py-2 text-sm text-white/80 hover:bg-white/5 hover:text-coral"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      Ops
-                    </Link>
                   ) : null}
                   <a
                     href="/api/auth/logout"

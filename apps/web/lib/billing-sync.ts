@@ -3,7 +3,7 @@
  * Forever-Pro / Official Rallied / founding_pro are never downgraded.
  * Cancel while active/trialing (cancel_at_period_end) keeps paid plan until
  * customer.subscription.deleted (period / trial end).
- * trial_consumed_at is never cleared (anti-farming).
+ * Guild trial_consumed_at and trial_consumers rows are never cleared (anti-farming).
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type Stripe from "stripe";
@@ -133,7 +133,7 @@ async function findServer(
   return null;
 }
 
-/** Set trial_consumed_at once; never clear. */
+/** Set servers.trial_consumed_at once; never clear. */
 function withTrialConsumed(
   patch: Record<string, unknown>,
   server: ServerBillingRow,
@@ -145,6 +145,55 @@ function withTrialConsumed(
       patch.trial_consumed_at = whenIso;
     }
   }
+}
+
+function discordUserIdFromMeta(
+  meta: Stripe.Metadata | null | undefined,
+): string | null {
+  const raw = String(meta?.discord_user_id ?? "").trim();
+  return raw.length > 0 ? raw : null;
+}
+
+/**
+ * Insert trial_consumers row once; never overwrite / clear.
+ * discord_user_id = Checkout session owner (billing initiator).
+ */
+export async function markTrialConsumer(
+  sb: SupabaseClient,
+  discordUserId: string | null | undefined,
+  firstGuildId: string | null | undefined,
+  whenIso: string,
+): Promise<void> {
+  const userId = String(discordUserId ?? "").trim();
+  if (!userId) return;
+  const { error } = await sb.from("trial_consumers").upsert(
+    {
+      discord_user_id: userId,
+      trial_consumed_at: whenIso,
+      first_guild_id: firstGuildId ? String(firstGuildId) : null,
+    },
+    { onConflict: "discord_user_id", ignoreDuplicates: true },
+  );
+  if (error) {
+    console.error("markTrialConsumer", error.message);
+  }
+}
+
+/** Lookup whether this Discord user already consumed a Community trial. */
+export async function loadUserTrialConsumedAt(
+  sb: SupabaseClient,
+  discordUserId: string,
+): Promise<string | null> {
+  const { data, error } = await sb
+    .from("trial_consumers")
+    .select("trial_consumed_at")
+    .eq("discord_user_id", discordUserId)
+    .maybeSingle();
+  if (error) {
+    console.error("loadUserTrialConsumedAt", error.message);
+    return null;
+  }
+  return (data?.trial_consumed_at as string | null) ?? null;
 }
 
 /**
@@ -259,6 +308,12 @@ export async function applyCheckoutCompleted(
   // Mark consumed when Checkout granted a trial — subscription.updated sets trial_ends_at.
   if (session.metadata?.rallied_trial === "1") {
     withTrialConsumed(patch, server, nowIso);
+    await markTrialConsumer(
+      sb,
+      discordUserIdFromMeta(session.metadata),
+      server.discord_guild_id,
+      nowIso,
+    );
   }
 
   const { error } = await sb.from("servers").update(patch).eq("id", server.id);
@@ -351,16 +406,19 @@ export async function applySubscriptionUpdated(
   };
   if (protectedForever) patch.forever_pro = true;
 
-  // Stripe trial started (or metadata said Checkout trial) → lock guild forever.
+  // Stripe trial started (or metadata said Checkout trial) → lock guild + user forever.
   if (
     sub.status === "trialing" ||
     sub.trial_start != null ||
     sub.metadata?.rallied_trial === "1"
   ) {
-    withTrialConsumed(
-      patch,
-      server,
-      stripeUnixIso(sub.trial_start) ?? nowIso,
+    const consumedAt = stripeUnixIso(sub.trial_start) ?? nowIso;
+    withTrialConsumed(patch, server, consumedAt);
+    await markTrialConsumer(
+      sb,
+      discordUserIdFromMeta(sub.metadata),
+      server.discord_guild_id,
+      consumedAt,
     );
   }
 
@@ -432,7 +490,7 @@ export async function applySubscriptionDeleted(
 
 /**
  * True if this Stripe customer already used a subscription trial
- * (secondary check — guild trial_consumed_at is source of truth).
+ * (secondary check — guild + user trial locks are source of truth).
  */
 export async function stripeCustomerHadTrial(
   stripe: Stripe,

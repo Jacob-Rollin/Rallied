@@ -24,6 +24,7 @@ type Props = {
   priceLockCents: number | null;
   trialEndsAt: string | null;
   trialConsumedAt: string | null;
+  userTrialConsumedAt: string | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   billingInterval: "month" | "year" | null;
@@ -48,7 +49,7 @@ const SKUS: Sku[] = [
     monthly: COMMUNITY_PRICE_USD,
     annual: PLANS.community.annualCents / 100,
     blurb:
-      "Unlimited LFG + Ghostless + strikes. First Checkout: 14-day trial (card required, charged after trial). One trial per Discord server.",
+      "Unlimited LFG + Ghostless + strikes. First Checkout: 14-day trial (card required, charged after trial). One trial per Discord server and per Discord user.",
     accent: "lime",
   },
   {
@@ -76,6 +77,7 @@ export function BillingClient({
   priceLockCents,
   trialEndsAt,
   trialConsumedAt,
+  userTrialConsumedAt,
   stripeCustomerId,
   stripeSubscriptionId,
   billingInterval,
@@ -95,6 +97,7 @@ export function BillingClient({
   const starter = isStarterPlan(plan);
   const communityTrialEligible = isCommunityTrialEligible({
     trial_consumed_at: trialConsumedAt,
+    user_trial_consumed_at: userTrialConsumedAt,
   });
   const lock =
     priceLockCents != null ? (priceLockCents / 100).toFixed(2) : null;
@@ -243,7 +246,7 @@ export function BillingClient({
                 server).
                 {communityTrialEligible
                   ? " Community Checkout includes a one-time 14-day trial (card required)."
-                  : " Trial already used for this Discord server — Community bills from day one."}
+                  : " Trial already used for this Discord server or your Discord account — Community bills from day one."}
               </p>
             ) : null}
             {pro && plan === "founding_pro" ? (
@@ -383,8 +386,8 @@ export function BillingClient({
         Per Discord server. Card required at Checkout. Cancel in{" "}
         <span className="text-white/70">Manage billing</span> keeps paid (or
         trial) access until the period / trial ends — then Starter. One Community
-        trial per server (uninstall does not reset it). Official Rallied /
-        forever_pro are never downgraded.
+        trial per server and per Discord user (uninstall / new server does not
+        reset it). Official Rallied / forever_pro are never downgraded.
       </p>
     </div>
   );

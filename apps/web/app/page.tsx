@@ -243,8 +243,8 @@ export default function MarketingPage() {
           >
             Start free on Starter ({STARTER_MAX_OPEN_PARTIES} open ·{" "}
             {STARTER_MAX_CREATES_PER_24H} creates/24h). Try Community with a card
-            at Checkout (14 days, once per server). Invite needs Manage Server
-            (or Admin).
+            at Checkout (14 days, once per server & Discord user). Invite needs
+            Manage Server (or Admin).
           </p>
         </div>
       </section>
@@ -317,9 +317,9 @@ export default function MarketingPage() {
         <h2 className="font-display text-3xl tracking-wide">Pricing</h2>
         <p className="mt-2 max-w-lg text-white/75">
           Per Discord server. Install starts on Starter; Community trial is
-          Checkout + card (once per server). Community ${COMMUNITY_PRICE_USD} ·
-          Pro ${PRO_PRICE_USD} · Founding ${FOUNDING_PRO_PRICE_USD} locked (≤
-          {PLANS.founding_pro.seatCap}).
+          Checkout + card (once per server & Discord user). Community $
+          {COMMUNITY_PRICE_USD} · Pro ${PRO_PRICE_USD} · Founding $
+          {FOUNDING_PRO_PRICE_USD} locked (≤{PLANS.founding_pro.seatCap}).
         </p>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-5">

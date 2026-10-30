@@ -106,6 +106,7 @@ export const MOCK_PARTIES: (LfgParty & { host_name: string; filled: number })[] 
     filled: 2,
     status: "open",
     expires_at: new Date(Date.now() + 2 * 3600_000).toISOString(),
+    scheduled_start_at: new Date(Date.now() + 3 * 3600_000).toISOString(),
     created_at: new Date(Date.now() - 20 * 60_000).toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -120,6 +121,7 @@ export const MOCK_PARTIES: (LfgParty & { host_name: string; filled: number })[] 
     filled: 5,
     status: "filled",
     expires_at: new Date(Date.now() + 3600_000).toISOString(),
+    scheduled_start_at: new Date(Date.now() + 26 * 3600_000).toISOString(),
     created_at: new Date(Date.now() - 45 * 60_000).toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -148,6 +150,7 @@ export const MOCK_PARTIES: (LfgParty & { host_name: string; filled: number })[] 
     filled: 4,
     status: "open",
     expires_at: new Date(Date.now() + 90 * 60_000).toISOString(),
+    scheduled_start_at: new Date(Date.now() + 72 * 3600_000).toISOString(),
     created_at: new Date(Date.now() - 8 * 60_000).toISOString(),
     updated_at: new Date().toISOString(),
   },
@@ -350,4 +353,5 @@ export const MOCK_ANALYTICS_EXTRAS = {
   /** Prior 7d baselines for WoW on soft metrics. */
   priorShowRatePct: 88.5,
   priorAvgVibe: 4.1,
+  priorReadyCheckCompletionPct: 81,
 };

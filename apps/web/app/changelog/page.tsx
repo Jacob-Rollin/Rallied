@@ -16,6 +16,11 @@ const ENTRIES: {
 }[] = [
   {
     date: "2026-10-30",
+    title: "Premium admin Overview + Analytics polish",
+    body: "/app Overview: This month strip (Most reliable + Top hosts), Reliability health (7d no-show / vibe response / open disputes — Community lite, Pro week-over-week when data exists), Upcoming scheduled (iCal hint in Settings), Standby waitlist promotions this week via server_events. Analytics: clearer sections, live prior-week trends + soft metrics when available. Demo/?mock=1 filled fixtures. Run Supabase migration 011_server_events.",
+  },
+  {
+    date: "2026-10-30",
     title: "Pro iCal subscribe + web dispute resolve",
     body: "Pro / Founding: Settings → Calendar subscribe generates a tokenized .ics URL for upcoming scheduled parties (our Worker only — no Google OAuth). Community+ admins Overturn / Uphold on /app/disputes (same semantics as /dispute resolve).",
   },

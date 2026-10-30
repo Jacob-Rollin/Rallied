@@ -21,6 +21,10 @@ import {
   reliabilityEnabled,
   resolveEffectivePlan,
 } from "../lib/entitlements.js";
+import {
+  logServerEvent,
+  SERVER_EVENT,
+} from "../lib/server-events.js";
 import { getServerSettings } from "../lib/settings.js";
 import { ensureServerAndMember } from "../lib/supabase.js";
 
@@ -483,6 +487,18 @@ export async function finalizeReadyCheck(
     }
   }
 
+  // Metrics: ready-check outcome (soft-fail if server_events missing).
+  await logServerEvent(sb, {
+    serverId: party.server_id,
+    eventType: SERVER_EVENT.READY_CHECK_RESOLVED,
+    partyId,
+    meta: {
+      noShows,
+      rosterSize: roster.length,
+      allReady: Boolean(opts?.allReady) || noShows === 0,
+    },
+  });
+
   // Standby: free seats from non-host no-shows → promote waitlist (soft-fail).
   const promoted: {
     memberId: string;
@@ -503,7 +519,16 @@ export async function finalizeReadyCheck(
         continue;
       }
       const next = await promoteFromWaitlist(sb, partyId);
-      if (next) promoted.push(next);
+      if (next) {
+        promoted.push(next);
+        await logServerEvent(sb, {
+          serverId: party.server_id,
+          eventType: SERVER_EVENT.WAITLIST_PROMOTE,
+          partyId,
+          memberId: next.memberId,
+          meta: { reason: "ready_fail_standby" },
+        });
+      }
     }
 
     if (noShowMemberIds.length > 0) {

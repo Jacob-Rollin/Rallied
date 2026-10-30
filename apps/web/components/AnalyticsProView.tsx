@@ -42,10 +42,15 @@ export function AnalyticsProView({
   const priorVibes = hasPrior ? sumTrend(priorTrend, "vibes") : null;
   const priorGhosts = hasPrior ? sumTrend(priorTrend, "ghosts") : null;
   const peakNote = buildWeekInsight(trend, priorTrend);
+  const hasSoft =
+    extras &&
+    (extras.showRatePct != null ||
+      extras.avgVibe != null ||
+      extras.readyCheckCompletionPct != null);
 
   return (
-    <div className="space-y-5">
-      <section className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-10">
+      <section className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
         <p className="text-sm text-lime">
           {serverName} · Pro trends ({sourceLabel})
         </p>
@@ -61,80 +66,128 @@ export function AnalyticsProView({
 
       {empty ? (
         <p className="text-sm text-muted">
-          No party or vibe activity in the last 7 days.
+          No party or vibe activity in the last 7 days. Live servers without a
+          service role key also show empty — check Runtime Secrets.
         </p>
       ) : (
         <>
-          <AnalyticsWeekBarChart
-            title="Parties this week"
-            trend={trend}
-            metric="parties"
-            barClassName="bg-lime"
-          />
-          <AnalyticsWeekBarChart
-            title="Vibes this week"
-            trend={trend}
-            metric="vibes"
-            barClassName="bg-lime"
-          />
-
-          {peakNote ? (
-            <p className="text-xs text-muted">{peakNote}</p>
-          ) : null}
-
-          <section className="grid gap-3 sm:grid-cols-3">
-            <AnalyticsKpiCard
-              label="Vibes (7d)"
-              value={vibes}
-              prior={priorVibes}
+          <section className="space-y-3">
+            <div>
+              <h2 className="font-display text-xl tracking-wide">
+                Volume this week
+              </h2>
+              <p className="mt-1 text-sm text-muted">
+                Parties and vibe checks by day (UTC).
+              </p>
+            </div>
+            <AnalyticsWeekBarChart
+              title="Parties"
+              trend={trend}
+              metric="parties"
+              barClassName="bg-lime"
             />
-            <AnalyticsKpiCard
-              label="Ghost flags (7d)"
-              value={ghosts}
-              prior={priorGhosts}
-              valueClassName="text-coral"
-              lowerIsBetter
+            <AnalyticsWeekBarChart
+              title="Vibes"
+              trend={trend}
+              metric="vibes"
+              barClassName="bg-coral"
             />
-            <AnalyticsKpiCard
-              label="Parties (7d)"
-              value={parties}
-              prior={priorParties}
-            />
+            {peakNote ? (
+              <p className="text-xs text-muted">{peakNote}</p>
+            ) : null}
           </section>
 
-          {extras &&
-          (extras.showRatePct != null || extras.avgVibe != null) ? (
-            <section className="grid gap-3 sm:grid-cols-2">
-              {extras.showRatePct != null ? (
-                <AnalyticsSoftMetric
-                  label="Ghostless / show rate (7d)"
-                  value={`${extras.showRatePct}%`}
-                  numericValue={extras.showRatePct}
-                  prior={extras.priorShowRatePct ?? null}
-                />
-              ) : null}
-              {extras.avgVibe != null ? (
-                <AnalyticsSoftMetric
-                  label="Avg vibe (7d)"
-                  value={String(extras.avgVibe)}
-                  numericValue={extras.avgVibe}
-                  prior={extras.priorAvgVibe ?? null}
-                  hint="Out of 5"
-                />
-              ) : null}
-            </section>
-          ) : null}
+          <section className="space-y-3">
+            <div>
+              <h2 className="font-display text-xl tracking-wide">
+                Week totals
+              </h2>
+              <p className="mt-1 text-sm text-muted">
+                Compared to the prior 7 days when data exists.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <AnalyticsKpiCard
+                label="Vibes (7d)"
+                value={vibes}
+                prior={priorVibes}
+              />
+              <AnalyticsKpiCard
+                label="Ghost flags (7d)"
+                value={ghosts}
+                prior={priorGhosts}
+                valueClassName="text-coral"
+                lowerIsBetter
+              />
+              <AnalyticsKpiCard
+                label="Parties (7d)"
+                value={parties}
+                prior={priorParties}
+              />
+            </div>
+          </section>
 
-          {topPlayers.length > 0 ? (
-            <section className="rounded-brand border border-white/10 bg-slate-elevated/40 px-4 py-3">
-              <h2 className="font-display text-lg tracking-wide">
+          <section className="space-y-3">
+            <div>
+              <h2 className="font-display text-xl tracking-wide">
+                Reliability soft metrics
+              </h2>
+              <p className="mt-1 text-sm text-muted">
+                From vibe checks and ready-check event log — empty until activity.
+              </p>
+            </div>
+            {hasSoft ? (
+              <div className="grid gap-3 sm:grid-cols-3">
+                {extras!.showRatePct != null ? (
+                  <AnalyticsSoftMetric
+                    label="Show rate (7d)"
+                    value={`${extras!.showRatePct}%`}
+                    numericValue={extras!.showRatePct}
+                    prior={extras!.priorShowRatePct ?? null}
+                  />
+                ) : null}
+                {extras!.avgVibe != null ? (
+                  <AnalyticsSoftMetric
+                    label="Avg vibe (7d)"
+                    value={String(extras!.avgVibe)}
+                    numericValue={extras!.avgVibe}
+                    prior={extras!.priorAvgVibe ?? null}
+                    hint="Out of 5"
+                  />
+                ) : null}
+                {extras!.readyCheckCompletionPct != null ? (
+                  <AnalyticsSoftMetric
+                    label="Ready completion (7d)"
+                    value={`${extras!.readyCheckCompletionPct}%`}
+                    numericValue={extras!.readyCheckCompletionPct}
+                    prior={extras!.priorReadyCheckCompletionPct ?? null}
+                    hint="All-ready ready checks"
+                  />
+                ) : null}
+              </div>
+            ) : (
+              <p className="text-sm text-muted">
+                No soft metrics yet — need vibe checks or ready-check events
+                (migration 011).
+              </p>
+            )}
+          </section>
+
+          <section className="space-y-3">
+            <div>
+              <h2 className="font-display text-xl tracking-wide">
                 Top this week
               </h2>
-              <ol className="mt-2 space-y-1.5">
+              <p className="mt-1 text-sm text-muted">
+                By Ghostless show rate, then avg vibe (lifetime board stats).
+              </p>
+            </div>
+            {topPlayers.length > 0 ? (
+              <ol className="divide-y divide-white/10 border-y border-white/10">
                 {topPlayers.map((p, i) => (
                   <li
                     key={`${p.name}-${i}`}
-                    className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-sm"
+                    className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-2.5 text-sm"
                   >
                     <span className="text-white/90">
                       <span className="tabular-nums text-muted">{i + 1}. </span>
@@ -156,8 +209,10 @@ export function AnalyticsProView({
                   </li>
                 ))}
               </ol>
-            </section>
-          ) : null}
+            ) : (
+              <p className="text-sm text-muted">No ranked players yet.</p>
+            )}
+          </section>
         </>
       )}
     </div>

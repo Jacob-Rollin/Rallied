@@ -14,6 +14,10 @@ export interface ServerSettingsRow {
   digest_channel_id: string | null;
   strike_threshold: number;
   lockout_days: number;
+  /** null = Join min Ghostless % gate off */
+  join_min_ghostless_pct?: number | null;
+  /** default true — Join rejects lockouts when reliability on */
+  join_lockout_enforced?: boolean;
   slug?: string | null;
   public_page_enabled?: boolean;
   public_member_list?: boolean;
@@ -29,6 +33,8 @@ const DEFAULTS: Omit<ServerSettingsRow, "server_id"> = {
   digest_channel_id: null,
   strike_threshold: DEFAULT_STRIKE_THRESHOLD,
   lockout_days: DEFAULT_LOCKOUT_DAYS,
+  join_min_ghostless_pct: null,
+  join_lockout_enforced: true,
   slug: null,
   public_page_enabled: true,
   public_member_list: false,

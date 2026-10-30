@@ -5,6 +5,7 @@ import { formatError } from "../lib/errors.js";
 import { handleButton } from "./buttons.js";
 import { handleDispute } from "./dispute.js";
 import { handleGhostless } from "./ghostless.js";
+import { handleLeaderboard } from "./leaderboard.js";
 import { handleCreateModalSubmit, handleLfg, handleSetup } from "./lfg.js";
 import { handleStrikes } from "./strikes.js";
 import { handleVibe } from "./vibe.js";
@@ -27,6 +28,8 @@ export async function routeCommand(
         return await handleStrikes(interaction, sb, env);
       case "ghostless":
         return await handleGhostless(interaction, sb, env);
+      case "leaderboard":
+        return await handleLeaderboard(interaction, sb, env);
       case "dispute":
         return await handleDispute(interaction, sb, env);
       default:

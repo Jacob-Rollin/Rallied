@@ -194,6 +194,11 @@ export const commandDefinitions = [
     ],
   },
   {
+    name: "leaderboard",
+    description:
+      "This server’s monthly Most reliable + Top hosts (Community+)",
+  },
+  {
     name: "dispute",
     description: "Open or resolve a no-show / strike dispute (this server)",
     options: [

@@ -82,6 +82,14 @@ export function SettingsClient({
   const [grace, setGrace] = useState(base.grace_minutes);
   const [threshold, setThreshold] = useState(base.strike_threshold);
   const [lockoutDays, setLockoutDays] = useState(base.lockout_days);
+  const [joinMinGhostless, setJoinMinGhostless] = useState(
+    base.join_min_ghostless_pct == null
+      ? ""
+      : String(base.join_min_ghostless_pct),
+  );
+  const [joinLockoutEnforced, setJoinLockoutEnforced] = useState(
+    base.join_lockout_enforced !== false,
+  );
   const [roleId, setRoleId] = useState(base.ghostless_role_id ?? "");
   const [digestChannel, setDigestChannel] = useState(
     base.digest_channel_id ?? "",
@@ -96,14 +104,6 @@ export function SettingsClient({
   const [hidePoweredBy, setHidePoweredBy] = useState(base.hide_powered_by);
   const [accent, setAccent] = useState(
     base.public_accent ?? (demoProUnlock ? "#B8F000" : ""),
-  );
-  const [joinMinGhostless, setJoinMinGhostless] = useState(
-    base.join_min_ghostless_pct == null
-      ? ""
-      : String(base.join_min_ghostless_pct),
-  );
-  const [joinLockoutEnforced, setJoinLockoutEnforced] = useState(
-    base.join_lockout_enforced !== false,
   );
   const [icalToken, setIcalToken] = useState(base.ical_token ?? null);
   const [origin, setOrigin] = useState("");
@@ -148,8 +148,6 @@ export function SettingsClient({
         payload.grace_minutes = grace;
         payload.strike_threshold = threshold;
         payload.lockout_days = lockoutDays;
-        payload.ghostless_role_id = roleId || null;
-        payload.digest_channel_id = digestChannel || null;
         payload.join_lockout_enforced = joinLockoutEnforced;
         const minRaw = joinMinGhostless.trim();
         payload.join_min_ghostless_pct =
@@ -160,6 +158,8 @@ export function SettingsClient({
         ) {
           payload.join_min_ghostless_pct = null;
         }
+        payload.ghostless_role_id = roleId || null;
+        payload.digest_channel_id = digestChannel || null;
       }
       const res = await fetch("/api/settings", {
         method: "POST",

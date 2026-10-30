@@ -116,6 +116,7 @@ export const SLASH_COMMANDS = {
   strikes: "strikes",
   ghostless: "ghostless",
   dispute: "dispute",
+  leaderboard: "leaderboard",
 } as const;
 
 /** Custom_id prefixes for message component interactions. */
@@ -137,6 +138,7 @@ export const BUTTON_IDS = {
   lfgDeskFind: "lfg:desk:find",
   lfgDeskMine: "lfg:desk:mine",
   lfgDeskHelp: "lfg:desk:help",
+  lfgDeskLeaderboard: "lfg:desk:leaderboard",
   lfgCreateGame: "lfg:creategame",
   lfgFindGame: "lfg:findgame",
   lfgCreateSubmit: "lfg:createsubmit",

@@ -29,6 +29,10 @@ import {
   lockoutFor,
   strikesFor,
 } from "./mock-data";
+import {
+  buildMonthlyLeaderboard,
+  type MonthlyLeaderboard,
+} from "./leaderboard";
 import { getServiceSupabase, hasServiceRole } from "./supabase";
 import { isDemoGuildId } from "./guild-params";
 
@@ -103,6 +107,8 @@ export type DashboardBundle = {
   analyticsExtras: AnalyticsExtras | null;
   /** Top members for Pro “Top this week” (by show rate, then vibe). */
   analyticsTopPlayers: AnalyticsTopPlayer[];
+  /** Per-server monthly Most reliable + Top hosts (Community+). */
+  monthlyLeaderboard: MonthlyLeaderboard | null;
   notice: string | null;
 };
 
@@ -234,6 +240,21 @@ function buildMockBundle(guildId: string): DashboardBundle {
     analyticsTrendPrior: MOCK_ANALYTICS_TREND_PRIOR,
     analyticsExtras: MOCK_ANALYTICS_EXTRAS,
     analyticsTopPlayers: topPlayersFromMembers(members),
+    monthlyLeaderboard: buildMonthlyLeaderboard({
+      members: members.map((m) => m.member),
+      ghostless: members
+        .filter((m) => m.ghostless)
+        .map((m) => ({
+          member_id: m.member.id,
+          shows: m.ghostless!.shows,
+          ghosts: m.ghostless!.ghosts,
+          show_rate_pct: m.ghostless!.show_rate_pct,
+        })),
+      parties: parties.map((p) => ({
+        host_member_id: p.host_member_id,
+        created_at: p.created_at,
+      })),
+    }),
     notice: "Demo / mock data — not a live guild.",
   };
 }
@@ -259,6 +280,7 @@ function emptyBundle(
     analyticsTrendPrior: [],
     analyticsExtras: null,
     analyticsTopPlayers: [],
+    monthlyLeaderboard: null,
     notice,
   };
 }
@@ -562,6 +584,21 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
     analyticsTrendPrior: [],
     analyticsExtras: null,
     analyticsTopPlayers: topPlayersFromMembers(members),
+    monthlyLeaderboard: buildMonthlyLeaderboard({
+      members: members.map((m) => m.member),
+      ghostless: members
+        .filter((m) => m.ghostless)
+        .map((m) => ({
+          member_id: m.member.id,
+          shows: m.ghostless!.shows,
+          ghosts: m.ghostless!.ghosts,
+          show_rate_pct: m.ghostless!.show_rate_pct,
+        })),
+      parties: parties.map((p) => ({
+        host_member_id: p.host_member_id,
+        created_at: p.created_at,
+      })),
+    }),
     notice: null,
   };
 }

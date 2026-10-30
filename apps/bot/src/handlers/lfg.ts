@@ -37,6 +37,10 @@ import {
 } from "../lib/entitlements.js";
 import { ghostlessCardLabel } from "../lib/ghostless.js";
 import {
+  evaluateJoinGates,
+  joinGateEphemeralMessage,
+} from "../lib/join-gates.js";
+import {
   countSeated,
   countWaitlist,
   fetchGuildParty,
@@ -50,6 +54,7 @@ import { parseScheduleStart } from "../lib/schedule.js";
 import { getServerSettings } from "../lib/settings.js";
 import { ensureServerAndMember } from "../lib/supabase.js";
 import { cleanupPartyVoice } from "../lib/voice.js";
+import { showLeaderboardForGuild } from "./leaderboard.js";
 import { startReadyCheck } from "./ready-check.js";
 
 function asCard(
@@ -145,19 +150,16 @@ export async function createParty(opts: {
   });
   if (capBlock) return capBlock;
 
-  const { data: lockouts } = await sb
-    .from("lockouts")
-    .select("until, reason")
-    .eq("server_id", server.id)
-    .eq("member_id", member.id)
-    .gt("until", new Date().toISOString())
-    .limit(1);
-
-  if (lockouts && lockouts.length > 0) {
-    return ephemeral(
-      `You're lockout'd from LFG in this server until ${lockouts[0].until}. Reason: ${lockouts[0].reason}`,
-    );
-  }
+  const createSettings = await getServerSettings(sb, server.id);
+  const createGate = await evaluateJoinGates({
+    sb,
+    serverId: server.id,
+    memberId: member.id,
+    plan,
+    settings: createSettings,
+  });
+  const createGateMsg = joinGateEphemeralMessage(createGate);
+  if (createGateMsg) return ephemeral(createGateMsg);
 
   const { data: existingHost } = await sb
     .from("lfg_parties")
@@ -595,6 +597,7 @@ export async function handleLfgDeskComponent(
   interaction: Interaction,
   sb: SupabaseClient,
   action: string,
+  env?: BotEnv,
 ): Promise<InteractionResponse | null> {
   const user = actorUser(interaction);
   if (!user || !interaction.guild_id) return ephemeral("Could not resolve user.");
@@ -626,6 +629,17 @@ export async function handleLfgDeskComponent(
       guildId: interaction.guild_id,
       discordUserId: user.id,
       displayName: displayName(interaction),
+    });
+  }
+
+  if (action === "leaderboard" && env) {
+    return showLeaderboardForGuild({
+      sb,
+      env,
+      guildId: interaction.guild_id,
+      discordUserId: user.id,
+      displayName: displayName(interaction),
+      avatarUrl: null,
     });
   }
 
@@ -847,19 +861,17 @@ export async function joinParty(opts: {
     opts.avatarUrl,
   );
 
-  const { data: lockouts } = await sb
-    .from("lockouts")
-    .select("until, reason")
-    .eq("server_id", server.id)
-    .eq("member_id", member.id)
-    .gt("until", new Date().toISOString())
-    .limit(1);
-
-  if (lockouts && lockouts.length > 0) {
-    return ephemeral(
-      `You're lockout'd from LFG until ${lockouts[0].until}. Reason: ${lockouts[0].reason}`,
-    );
-  }
+  const plan = resolveEffectivePlan(server, env, opts.guildId);
+  const settings = await getServerSettings(sb, server.id);
+  const gate = await evaluateJoinGates({
+    sb,
+    serverId: server.id,
+    memberId: member.id,
+    plan,
+    settings,
+  });
+  const gateMsg = joinGateEphemeralMessage(gate);
+  if (gateMsg) return ephemeral(gateMsg);
 
   const { party, error: loadErr } = await fetchGuildParty(sb, {
     partyId: opts.partyId,

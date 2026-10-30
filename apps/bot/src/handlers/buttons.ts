@@ -60,7 +60,12 @@ export async function handleButton(
 
   if (ns === "lfg") {
     if (action === "desk") {
-      const desk = await handleLfgDeskComponent(interaction, sb, partyId ?? "");
+      const desk = await handleLfgDeskComponent(
+        interaction,
+        sb,
+        partyId ?? "",
+        env,
+      );
       if (desk) return desk;
     }
 

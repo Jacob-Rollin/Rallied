@@ -58,8 +58,11 @@ export default async function LoginPage({ searchParams }: Props) {
       />
       <h1 className="font-display text-3xl tracking-wide">Admin login</h1>
       <p className="mt-2 text-sm text-muted">
-        Discord only — no email/password. You need Manage Server (or Admin) on a
-        guild where Rallied is installed. After authorize you land on{" "}
+        Discord only — no email/password. Owners need Manage Server (or Admin)
+        on a guild where Rallied is installed. On Community+, members with a{" "}
+        <strong className="font-semibold text-white/90">Rallied Mod</strong>{" "}
+        role can also log in (Overview…Analytics — not Billing or Settings
+        writes). After authorize you land on{" "}
         <code className="text-coral">/app</code> and pick your server from the
         switcher.
       </p>

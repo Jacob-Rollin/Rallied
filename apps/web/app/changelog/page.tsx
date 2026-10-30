@@ -32,13 +32,13 @@ const ENTRIES: {
   },
   {
     date: "2026-10-30",
-    title: "Real Discord server names on /servers",
-    body: "Directory and public pages sync the real guild name (and icon when missing) via the bot token when the DB still has placeholders like Discord server / Selected server / snowflake ids. Bot /setup and LFG upserts persist the same. Pricing boxes show $X/mo with per Discord server on the supporting line.",
+    title: "Server names on /servers",
+    body: "Directory and public /s pages show your Discord server’s real name and icon.",
   },
   {
     date: "2026-10-30",
     title: "Founding seats · pricing clarity",
-    body: `Founding Pro capped at ≤${PLANS.founding_pro.seatCap} seats (was 20). Prices stay Community $${COMMUNITY_PRICE_USD}/mo · Pro $${PRO_PRICE_USD}/mo · Founding $${FOUNDING_PRO_PRICE_USD}/mo locked — billed per Discord server. 14-day trial is Community features only (not Pro).`,
+    body: `Founding Pro capped at ≤${PLANS.founding_pro.seatCap} seats. Prices stay Community $${COMMUNITY_PRICE_USD}/mo · Pro $${PRO_PRICE_USD}/mo · Founding $${FOUNDING_PRO_PRICE_USD}/mo locked — billed per Discord server. 14-day trial is Community features only (not Pro).`,
   },
   {
     date: "2026-10-30",
@@ -57,8 +57,8 @@ const ENTRIES: {
   },
   {
     date: "2026-10-30",
-    title: "Standby, join gates, /leaderboard",
-    body: "Ready Check no-shows free seats and promote the waitlist (Standby). Settings: Min Ghostless % to Join + Enforce lockout on Join. /leaderboard (and desk button) shows Most reliable + Top hosts for this server.",
+    title: "Standby, join gates, Board",
+    body: "Ready Check no-shows free seats and promote the waitlist (Standby). Settings: Min Ghostless % to Join + Enforce lockout on Join. Desk Board (and /leaderboard) shows Most reliable + Top hosts for this server.",
   },
   {
     date: "2026-10-30",
@@ -83,7 +83,7 @@ const ENTRIES: {
   {
     date: "2026-10-29",
     title: "Path B plans",
-    body: `Starter free under caps after trial (no Ghostless / strikes). Community $${COMMUNITY_PRICE_USD}/mo · Pro $${PRO_PRICE_USD}/mo · Founding Pro $${FOUNDING_PRO_PRICE_USD} locked. 14-day Community trial first.`,
+    body: `Install starts on Starter (matching under caps; no Ghostless / strikes). Community trial via Checkout + card (14 days, once per server). Community $${COMMUNITY_PRICE_USD}/mo · Pro $${PRO_PRICE_USD}/mo · Founding Pro $${FOUNDING_PRO_PRICE_USD} locked.`,
   },
   {
     date: "2026-10-28",
@@ -98,7 +98,7 @@ const ENTRIES: {
   {
     date: "2026-10-28",
     title: "LFG desk in Discord",
-    body: "Pinned desk: Create / Find / Mine / How it works / Leaderboard. Party cards with Join, Leave, Close, Ready Check, and post-session Vibe Check.",
+    body: "Pinned desk: Create / Find / Mine / Board / How it works. Party cards with Join, Leave, Close, Ready Check, and post-session Vibe Check.",
   },
   {
     date: "2026-10-27",

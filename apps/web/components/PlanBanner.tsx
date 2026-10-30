@@ -13,7 +13,7 @@ type Props = {
 
 /** Overview banner for trial / Starter (free · lapsed) states. */
 export function PlanBanner({ plan, trialEndsAt, billingHref }: Props) {
-  const p = plan ?? "trial";
+  const p = plan ?? "free";
 
   if (p === "trial") {
     const ends = trialEndsAt ? new Date(trialEndsAt) : null;

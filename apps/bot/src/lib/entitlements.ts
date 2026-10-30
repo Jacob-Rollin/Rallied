@@ -198,9 +198,10 @@ export function upgradeEphemeral(opts: {
   env: BotEnv;
   reason: CapBlockReason | "reliability" | "public";
   resetHint?: string;
+  guildId?: string | null;
 }): InteractionResponse {
   const copy = upgradeCopy(opts.reason);
-  const url = billingPageUrl(webBaseUrl(opts.env));
+  const url = billingPageUrl(webBaseUrl(opts.env), opts.guildId);
   const description = opts.resetHint
     ? `${copy.body}\n\n${opts.resetHint}`
     : copy.body;
@@ -236,7 +237,7 @@ export function upgradeEphemeral(opts: {
 
 /** Soft ready-check note when reliability is off. */
 export function freeReadyCheckNote(): string {
-  return "No-shows aren’t struck on Free (this server). Upgrade to Community to enforce Ghostless + strikes.";
+  return "No-shows aren’t struck on Starter (this server). Upgrade to Community to enforce Ghostless + strikes.";
 }
 
 export async function checkCreateCaps(opts: {
@@ -244,6 +245,7 @@ export async function checkCreateCaps(opts: {
   env: BotEnv;
   serverId: string;
   plan: string;
+  guildId?: string | null;
 }): Promise<InteractionResponse | null> {
   const openCapCheck = await opts.sb
     .from("lfg_parties")
@@ -290,6 +292,7 @@ export async function checkCreateCaps(opts: {
     env: opts.env,
     reason: gate.reason,
     resetHint,
+    guildId: opts.guildId,
   });
 }
 

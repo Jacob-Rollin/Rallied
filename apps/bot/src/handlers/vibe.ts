@@ -93,10 +93,14 @@ export async function handleVibe(
 
   // If no showed_up flag, post interactive Vibe Check buttons instead
   if (showedOpt === undefined) {
+    const plan = env
+      ? resolveEffectivePlan(server, env, interaction.guild_id)
+      : ((server.plan as string | undefined) ?? "free");
     const payload = vibeCheckMessage({
       rateeMention: `<@${targetId}>`,
       partyId,
       rateeMemberId: ratee.id,
+      reliabilityEnabled: reliabilityEnabled(plan),
     });
     return {
       type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
@@ -232,7 +236,7 @@ export async function recordVibe(opts: {
         env,
         opts.guildId,
       )
-    : ((serverRow?.plan as string | undefined) ?? "trial");
+    : ((serverRow?.plan as string | undefined) ?? "free");
 
   const reliabilityOn = reliabilityEnabled(plan);
 
@@ -358,12 +362,16 @@ export async function recordVibe(opts: {
   }
 
   if (!reliabilityOn && env) {
-    const upgrade = upgradeEphemeral({ env, reason: "reliability" });
+    const upgrade = upgradeEphemeral({
+      env,
+      reason: "reliability",
+      guildId: opts.guildId,
+    });
     return {
       ...upgrade,
       data: {
         ...upgrade.data,
-        content: `Vibe Check noted for <@${opts.rateeDiscordId}> — Ghostless stats & strikes stay off on Free. ${freeReadyCheckNote()}`,
+        content: `Vibe Check noted for <@${opts.rateeDiscordId}> — Ghostless stats & strikes stay off on Starter. ${freeReadyCheckNote()}`,
       },
     };
   }

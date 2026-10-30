@@ -15,7 +15,7 @@ import {
 
 /** Reusable Discord-style chrome for the /guide page — labels match apps/bot embeds. */
 
-/** 1 — Pinned LFG desk (Create / Find / My parties / How it works). */
+/** 1 — Pinned LFG desk (Create / Find / My parties / Board / How it works). */
 export function LfgDeskMock() {
   return (
     <div>
@@ -39,6 +39,7 @@ export function LfgDeskMock() {
           <DiscBtn label="Create party" tone="green" />
           <DiscBtn label="Find party" tone="blurple" />
           <DiscBtn label="My parties" tone="gray" />
+          <DiscBtn label="Board" tone="gray" />
           <DiscBtn label="How it works" tone="gray" />
         </ButtonRow>
       </BotChrome>

@@ -190,7 +190,11 @@ export default function GuidePage() {
           </ol>
           <p className="mt-4 text-xs text-white/45">
             Players use desk buttons after that — Create / Find / My parties /
-            How it works / Leaderboard. Slash commands remain as backup.
+            Board / How it works. Slash commands (including{" "}
+            <code className="rounded bg-white/10 px-1 py-0.5 text-white/80">
+              /leaderboard
+            </code>
+            ) remain as backup.
           </p>
         </section>
 
@@ -203,9 +207,9 @@ export default function GuidePage() {
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">
             After setup, the pinned desk is the home base. Buttons: Create
-            party, Find party, My parties, How it works, and Leaderboard — no
-            slash required for players. Example channel name below is a
-            suggestion only.
+            party, Find party, My parties, Board, and How it works — no slash
+            required for players. Example channel name below is a suggestion
+            only.
           </p>
           <div className="mt-6 max-w-lg">
             <LfgDeskMock />
@@ -429,8 +433,8 @@ export default function GuidePage() {
               /leaderboard
             </code>{" "}
             or the desk{" "}
-            <strong className="font-semibold text-white">Leaderboard</strong>{" "}
-            button. Still this server only — no cross-server ranks.
+            <strong className="font-semibold text-white">Board</strong> button.
+            Still this server only — no cross-server ranks.
           </p>
         </section>
 

@@ -43,7 +43,11 @@ export async function handleLeaderboard(
 
   const plan = resolveEffectivePlan(server, env, interaction.guild_id);
   if (!reliabilityEnabled(plan)) {
-    return upgradeEphemeral({ env, reason: "reliability" });
+    return upgradeEphemeral({
+      env,
+      reason: "reliability",
+      guildId: interaction.guild_id,
+    });
   }
 
   const board = await loadServerLeaderboard(sb, server.id);
@@ -78,7 +82,11 @@ export async function showLeaderboardForGuild(opts: {
   );
   const plan = resolveEffectivePlan(server, opts.env, opts.guildId);
   if (!reliabilityEnabled(plan)) {
-    return upgradeEphemeral({ env: opts.env, reason: "reliability" });
+    return upgradeEphemeral({
+      env: opts.env,
+      reason: "reliability",
+      guildId: opts.guildId,
+    });
   }
   const board = await loadServerLeaderboard(opts.sb, server.id);
   return ephemeralEmbed(

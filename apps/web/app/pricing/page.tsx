@@ -30,7 +30,7 @@ const TIERS = [
     blurb: `${STARTER_MAX_OPEN_PARTIES} open parties + ${STARTER_MAX_CREATES_PER_24H} creates/24h for this server — not per user. Busy communities hit this fast. No Ghostless.`,
     trial: false,
     accent: false,
-    badge: "Free forever" as string | null,
+    badge: "Matching under caps" as string | null,
   },
   {
     id: "community" as const,
@@ -131,12 +131,6 @@ const MATRIX: {
     starter: "no",
     community: "yes",
     pro: "yes",
-  },
-  {
-    label: "Weekly digest",
-    starter: "no",
-    community: "Lite",
-    pro: "Full",
   },
   {
     label: "Analytics / CSV export",

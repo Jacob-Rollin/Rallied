@@ -30,7 +30,7 @@ export default async function DisputesPage({ searchParams }: Props) {
 
       <DisputesClient
         discordGuildId={data.server?.discord_guild_id ?? guildId}
-        plan={data.server?.plan ?? "trial"}
+        plan={data.server?.plan ?? "free"}
         source={data.source}
         open={open}
         closed={closed}

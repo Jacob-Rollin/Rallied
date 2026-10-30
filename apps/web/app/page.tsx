@@ -5,6 +5,8 @@ import {
   FOUNDING_PRO_PRICE_USD,
   PLANS,
   PRO_PRICE_USD,
+  STARTER_MAX_CREATES_PER_24H,
+  STARTER_MAX_OPEN_PARTIES,
   buildBotInviteUrl,
 } from "@rallied/shared";
 import { AddToDiscordButton } from "../components/AddToDiscordButton";
@@ -83,8 +85,12 @@ const LANDING_TIERS = [
     name: "Pro",
     price: PRO_PRICE_USD,
     annual: PLANS.pro.annualCents / 100,
-    blurb: "Export, vanity, priority support.",
-    features: ["Everything in Community", "CSV export + trends", "Vanity"],
+    blurb: "Export, vanity, iCal, priority support.",
+    features: [
+      "Everything in Community",
+      "CSV export + trends",
+      "Vanity + iCal",
+    ],
     founding: false as const,
   },
   {
@@ -235,8 +241,10 @@ export default function MarketingPage() {
             className="animate-rise mt-3 max-w-lg text-sm text-white/55"
             style={{ animationDelay: "260ms" }}
           >
-            14-day Community trial per Discord server — then Starter caps or
-            paid Ghostless. Invite needs Manage Server (or Admin).
+            Start free on Starter ({STARTER_MAX_OPEN_PARTIES} open ·{" "}
+            {STARTER_MAX_CREATES_PER_24H} creates/24h). Try Community with a card
+            at Checkout (14 days, once per server). Invite needs Manage Server
+            (or Admin).
           </p>
         </div>
       </section>
@@ -308,9 +316,10 @@ export default function MarketingPage() {
       <section id="pricing" className="scroll-mt-16 mx-auto max-w-5xl px-4 py-16">
         <h2 className="font-display text-3xl tracking-wide">Pricing</h2>
         <p className="mt-2 max-w-lg text-white/75">
-          Per Discord server. 14-day Community trial, then Starter caps or paid —
-          Community ${COMMUNITY_PRICE_USD} · Pro ${PRO_PRICE_USD} · Founding $
-          {FOUNDING_PRO_PRICE_USD} locked (≤{PLANS.founding_pro.seatCap}).
+          Per Discord server. Install starts on Starter; Community trial is
+          Checkout + card (once per server). Community ${COMMUNITY_PRICE_USD} ·
+          Pro ${PRO_PRICE_USD} · Founding ${FOUNDING_PRO_PRICE_USD} locked (≤
+          {PLANS.founding_pro.seatCap}).
         </p>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-5">

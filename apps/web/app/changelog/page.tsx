@@ -23,7 +23,7 @@ const ENTRIES: {
   {
     date: "2026-10-30",
     title: "Dashboard time ranges",
-    body: "Overview and Analytics share a UTC range control: This week (Mon–Sun), This month (default), Last 30 days, or All time. Filters leaderboard Top hosts, reliability health, standby, and charts — Ghostless Most reliable stays lifetime and is labeled. History is still kept while the bot is installed; ranges do not wipe data.",
+    body: "Overview and Analytics share a UTC range control: This week (Mon–Sun, default), This month, Last 30 days, or All time. Filters leaderboard Top hosts, reliability health, standby, and charts — Ghostless Most reliable stays lifetime and is labeled. History is still kept while the bot is installed; ranges do not wipe data.",
   },
   {
     date: "2026-10-30",

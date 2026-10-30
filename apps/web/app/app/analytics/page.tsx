@@ -27,6 +27,7 @@ export default async function AnalyticsPage({ searchParams }: Props) {
     oauthName: oauthGuildName,
   });
   const q = { guildId, range: rangeKey };
+  const rangeExtra = useMock ? { mock: "1" } : undefined;
 
   return (
     <div className="space-y-8">
@@ -42,6 +43,7 @@ export default async function AnalyticsPage({ searchParams }: Props) {
           pathname="/app/analytics"
           current={rangeKey}
           guildId={guildId}
+          extra={rangeExtra}
         />
       </div>
 

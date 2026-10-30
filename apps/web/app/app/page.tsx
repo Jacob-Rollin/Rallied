@@ -56,6 +56,7 @@ export default async function OverviewPage({ searchParams }: Props) {
           pathname="/app"
           current={rangeKey}
           guildId={guildId}
+          extra={useMock ? { mock: "1" } : undefined}
         />
       </div>
 

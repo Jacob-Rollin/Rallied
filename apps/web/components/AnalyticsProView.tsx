@@ -79,7 +79,8 @@ export function AnalyticsProView({
                 Volume · {rangeLabel}
               </h2>
               <p className="mt-1 text-sm text-muted">
-                Parties and vibe checks by day or week (UTC).
+                Parties and vibe checks by day or month (UTC). This week always
+                shows Mon–Sun; all-time uses the last 12 months.
               </p>
             </div>
             <AnalyticsWeekBarChart

@@ -1,5 +1,6 @@
 "use client";
 
+import { chartTickIndexes } from "@rallied/shared";
 import type { AnalyticsTrendPoint } from "@/lib/dashboard-data";
 import { formatPctDelta, pctChange } from "@/lib/analytics-stats";
 
@@ -58,14 +59,22 @@ export function AnalyticsWeekBarChart({
   barClassName?: string;
 }) {
   const max = Math.max(...trend.map((d) => d[metric]), 1);
+  const n = trend.length;
+  // Week (≤7): every weekday tick. Longer series (incl. 12 months): ≤6 axis labels.
+  const maxTicks = n <= 7 ? n : 6;
+  const ticks = chartTickIndexes(n, maxTicks);
+  // Ultra-tight bar chrome only for daily month/30d (dozens of columns).
+  const dense = n > 12;
 
   return (
     <section className="rounded-brand border border-white/10 bg-slate-elevated/40 p-4 sm:p-5">
       <h2 className="font-display text-lg tracking-wide">{title}</h2>
       <div
-        className="mt-4 flex h-[168px] items-end gap-1.5 sm:gap-2"
+        className={`mt-4 flex h-[168px] items-end ${
+          dense ? "gap-0.5 sm:gap-1" : "gap-1.5 sm:gap-2"
+        }`}
         role="img"
-        aria-label={`${title} bar chart, Monday through Sunday`}
+        aria-label={`${title} bar chart`}
       >
         {trend.map((d, i) => {
           const value = d[metric];
@@ -74,24 +83,36 @@ export function AnalyticsWeekBarChart({
               ? BAR_MIN
               : BAR_MIN + (value / max) * (BAR_MAX - BAR_MIN);
           const labelInside = value > 0 && height >= LABEL_INSIDE_MIN;
+          const showTick = ticks.has(i);
 
           return (
             <div
               key={`${metric}-${d.day}-${i}`}
-              className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1.5"
+              className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1"
               title={`${d.day}: ${value}`}
             >
               {!labelInside ? (
-                <span className="text-[10px] tabular-nums leading-none text-white/80 sm:text-[11px]">
-                  {value}
+                <span
+                  className={`tabular-nums leading-none text-white/80 ${
+                    dense
+                      ? "text-[9px] sm:text-[10px]"
+                      : "text-[10px] sm:text-[11px]"
+                  } ${value <= 0 && dense ? "opacity-40" : ""}`}
+                >
+                  {/* Hide zero value labels when dense — cuts clutter */}
+                  {dense && value <= 0 ? (
+                    <span className="inline-block h-[10px]" aria-hidden />
+                  ) : (
+                    value
+                  )}
                 </span>
               ) : (
                 <span className="h-[11px]" aria-hidden />
               )}
               <div
-                className={`relative w-full max-w-[36px] rounded-sm ${barClassName} ${
+                className={`relative w-full rounded-sm ${barClassName} ${
                   value <= 0 ? "opacity-25" : ""
-                }`}
+                } ${dense ? "max-w-none" : "max-w-[36px]"}`}
                 style={{ height: `${height}px` }}
               >
                 {labelInside ? (
@@ -100,8 +121,15 @@ export function AnalyticsWeekBarChart({
                   </span>
                 ) : null}
               </div>
-              <span className="text-[10px] uppercase tracking-wide text-muted sm:text-[11px]">
-                {d.day}
+              <span
+                className={`min-h-[1rem] text-center leading-none text-muted ${
+                  dense
+                    ? "text-[9px] tracking-tight sm:text-[10px]"
+                    : "text-[10px] uppercase tracking-wide sm:text-[11px]"
+                } ${showTick ? "" : "invisible"}`}
+                aria-hidden={!showTick}
+              >
+                {showTick ? d.day : "·"}
               </span>
             </div>
           );

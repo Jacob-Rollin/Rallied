@@ -481,8 +481,8 @@ export default function GuidePage() {
             </p>
             <p>
               <strong className="font-semibold text-white">Plans</strong> — 14-day
-              trial, then Starter free (2 open / 5 creates/day, no Ghostless).
-              Community $4.99 · Pro $9.99 · Founding $8.99. See{" "}
+              trial, then Starter free (2 open + 5 creates/24h for this server,
+              no Ghostless). Community $4.99 · Pro $9.99 · Founding $8.99. See{" "}
               <Link href="/pricing" className="text-coral hover:underline">
                 Pricing
               </Link>

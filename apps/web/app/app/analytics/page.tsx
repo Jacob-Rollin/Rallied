@@ -22,7 +22,6 @@ export default async function AnalyticsPage({ searchParams }: Props) {
     guildId,
     dbName: data.server?.name,
     oauthName: oauthGuildName,
-    fallback: "Server",
   });
 
   return (

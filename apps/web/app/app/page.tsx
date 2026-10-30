@@ -31,9 +31,7 @@ export default async function OverviewPage({ searchParams }: Props) {
     dbName: data.server?.name,
     oauthName: oauthGuildName,
   });
-  const hasRealName =
-    isUsableServerName(data.server?.name, guildId) ||
-    isUsableServerName(oauthGuildName, guildId);
+  const hasRealName = isUsableServerName(serverLabel, guildId);
 
   return (
     <div className="space-y-10">

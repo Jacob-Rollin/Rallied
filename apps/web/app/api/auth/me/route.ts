@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { mockAuthEnabled } from "@/lib/auth/config";
 import {
+  ensureGuildDisplayNames,
   getBotPresenceAndPlans,
   syncServerMetadataFromOAuth,
 } from "@/lib/auth/discord";
@@ -38,9 +39,11 @@ export async function GET() {
           botGuildIds === null ? g.bot_present : botGuildIds.has(g.id),
         plan: plans.get(g.id) ?? g.plan,
       }));
+      // Fill missing / placeholder guild names from Discord API when needed.
+      guilds = await ensureGuildDisplayNames(guilds);
       session.guilds = guilds;
       await session.save();
-      // Best-effort: repair servers.name when still a snowflake (or stale).
+      // Best-effort: overwrite servers.name when still snowflake / placeholder.
       void syncServerMetadataFromOAuth(guilds);
     } catch (err) {
       console.warn("guild refresh failed", err);

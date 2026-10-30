@@ -11,6 +11,7 @@ import {
   GUILD_QUERY,
   isDemoGuildId,
 } from "@/lib/guild-params";
+import { resolveServerDisplayName } from "@/lib/server-display-name";
 
 const NAV = [
   { href: "/app", label: "Overview" },
@@ -184,7 +185,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 >
                   {guilds.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name}
+                      {resolveServerDisplayName({
+                        oauthName: s.name,
+                        guildId: s.id,
+                      })}
                       {!s.bot_present ? " (add bot)" : ""}
                     </option>
                   ))}
@@ -228,7 +232,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   key={g.id}
                   className="rounded-brand border border-white/10 bg-slate-elevated/40 px-3 py-2"
                 >
-                  {g.name}
+                  {resolveServerDisplayName({
+                    oauthName: g.name,
+                    guildId: g.id,
+                  })}
                   <span className="ml-2 text-xs text-muted">
                     {g.bot_present ? "bot ready" : "bot not detected"}
                   </span>
@@ -272,7 +279,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               );
             })}
             <p className="mt-4 hidden text-xs text-muted lg:block">
-              Viewing <span className="text-white/80">{server?.name}</span>
+              Viewing{" "}
+              <span className="text-white/80">
+                {server
+                  ? resolveServerDisplayName({
+                      oauthName: server.name,
+                      guildId: server.id,
+                    })
+                  : "—"}
+              </span>
               <br />
               Plan: {server?.plan ?? "—"}
             </p>

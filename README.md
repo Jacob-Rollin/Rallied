@@ -2,7 +2,7 @@
 
 **Rallied** (rallied.gg) — Discord LFG + per-server **Vibe Check** / **Ghostless** + admin web (Discord OAuth).
 
-Strikes, lockouts, and Ghostless stay **this server only**. Path B plans: **Starter** (free under caps) · **Community $4.99** · **Pro $9.99** · **Founding Pro $8.99** locked (≤50). No cross-server grade DB.
+Strikes, lockouts, and Ghostless stay **this server only**. Path B plans: **Starter** (free under caps) · **Community $4.99** · **Pro $9.99** · **Founding Pro $8.99** locked (≤20). No cross-server grade DB.
 
 Copy this folder into a new GitHub repo when ready. Wire Cloudflare + Supabase + Discord via env — `npm run dev:web` works with **mock data / mock auth** when secrets are missing.
 
@@ -61,7 +61,7 @@ Settings toggles: `public_page_enabled`, `public_member_list`, vanity `slug` →
 | Trial | 14 days | Full Community features |
 | Community | $4.99/mo ($49/yr) | Unlimited LFG + Ghostless + strikes |
 | Pro | $9.99/mo | Analytics export, vanity, priority |
-| Founding Pro | $8.99/mo locked | Pro SKU · ≤50 seats · `004_pro_plan.sql` |
+| Founding Pro | $8.99/mo locked | Pro SKU · ≤20 seats · `004_pro_plan.sql` |
 
 Routes: `/pricing` · `/app/billing` · `/app/analytics` · Pro vanity on Settings + `/s/founding-beta`. Stripe Checkout + Portal + webhooks (`STRIPE_*` on web Worker; test mode first). Migration `012_stripe_billing.sql`. Dogfood: `DOGFOOD_GUILD_IDS` + Official forever Pro.
 

@@ -18,7 +18,7 @@ import { SiteHeader } from "../../components/SiteHeader";
 export const metadata: Metadata = {
   title: `Pricing — ${BRAND.name}`,
   description:
-    "Starter caps per Discord server (2 open parties + 5 creates/24h for this server). Community $4.99/mo, Pro $9.99/mo, Founding Pro $8.99 locked.",
+    "Per Discord server. Starter free under caps. Community $4.99/mo, Pro $9.99/mo, Founding Pro $8.99 locked (≤20).",
 };
 
 const TIERS = [
@@ -47,8 +47,8 @@ const TIERS = [
     name: "Pro",
     price: PRO_PRICE_USD,
     annual: PLANS.pro.annualCents / 100,
-    blurb: "Export, vanity branding, priority support.",
-    trial: true,
+    blurb: "Export, vanity branding, iCal subscribe, priority support.",
+    trial: false,
     accent: false,
     badge: null,
   },
@@ -139,6 +139,12 @@ const MATRIX: {
     pro: "Export + trends",
   },
   {
+    label: "Calendar subscribe (.ics)",
+    starter: "no",
+    community: "no",
+    pro: "yes",
+  },
+  {
     label: "Vanity (icon, accent, hide Po)",
     starter: "no",
     community: "no",
@@ -176,24 +182,10 @@ export default function PricingPage() {
           Free matching. Paid reliability.
         </h1>
         <p className="mt-3 max-w-xl text-white/75">
-          Billed and capped{" "}
-          <span className="text-white">per Discord server (guild)</span> — not
-          per user. Starter:{" "}
-          <span className="text-white">
-            {STARTER_MAX_OPEN_PARTIES} open parties +{" "}
-            {STARTER_MAX_CREATES_PER_24H} creates/24h for this server
-          </span>
-          . Busy communities hit that fast → Community. Community{" "}
-          <span className="text-white">${COMMUNITY_PRICE_USD}/mo</span> ($
-          {PLANS.community.annualCents / 100}/yr) · Pro{" "}
-          <span className="text-white">${PRO_PRICE_USD}/mo</span> · Founding = Pro
-          at{" "}
-          <span className="text-coral">${FOUNDING_PRO_PRICE_USD}/mo locked</span>{" "}
-          (≤{PLANS.founding_pro.seatCap}).
-        </p>
-        <p className="mt-2 max-w-xl text-sm text-white/55">
-          14-day full trial (Community features) · then Starter caps per server if
-          unpaid · first-month money-back if you pay early.
+          Billed per Discord server. 14-day Community trial, then Starter caps
+          or paid — Community ${COMMUNITY_PRICE_USD} · Pro ${PRO_PRICE_USD} ·
+          Founding ${FOUNDING_PRO_PRICE_USD} locked (≤{PLANS.founding_pro.seatCap}
+          ).
         </p>
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -231,21 +223,25 @@ export default function PricingPage() {
               >
                 {tier.price === 0 ? "$0" : `$${tier.price}`}
                 <span className="font-body text-sm font-normal text-white/55">
-                  /mo
+                  /mo /server
                 </span>
               </p>
               <p className="mt-1 text-xs text-white/55">
                 {tier.annual != null
-                  ? `$${tier.annual}/yr${tier.accent ? " locked" : ""}`
-                  : "No annual plan"}
+                  ? `$${tier.annual}/yr${tier.accent ? " locked" : ""} · per Discord server`
+                  : "No annual plan · per Discord server"}
               </p>
               {tier.trial ? (
                 <p className="mt-2 text-xs font-medium text-lime">
-                  Included in 14-day trial
+                  14-day free trial
                 </p>
               ) : tier.id === "free" ? (
                 <p className="mt-2 text-xs font-medium text-white/55">
                   After trial if unpaid
+                </p>
+              ) : tier.id === "pro" ? (
+                <p className="mt-2 text-xs font-medium text-white/55">
+                  Paid add-on after Community
                 </p>
               ) : (
                 <p className="mt-2 text-xs font-medium text-coral">
@@ -284,7 +280,7 @@ export default function PricingPage() {
           </h2>
           <p className="mt-1 text-sm text-white/55">
             Founding = full Pro column at the locked price. Trial = Community
-            column for 14 days.
+            column for 14 days (not Pro).
           </p>
 
           {/* Mobile: stacked cards */}
@@ -360,8 +356,11 @@ export default function PricingPage() {
             Ready to install
           </h2>
           <p className="max-w-lg text-sm text-white/70">
-            Add the bot, walk the demo, or read the setup guide. Checkout wires
-            later — trial + Starter caps (per server) are live.
+            Add the bot, walk the demo, or read the setup guide. Checkout is on{" "}
+            <Link href="/app/billing" className="text-coral hover:underline">
+              /app/billing
+            </Link>{" "}
+            after Log in — trial + Starter caps (per server) are live.
           </p>
           <div className="flex flex-wrap gap-3">
             <AddToDiscordButton href={inviteHref} />

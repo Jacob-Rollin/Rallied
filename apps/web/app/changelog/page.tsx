@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import {
   BRAND,
   COMMUNITY_PRICE_USD,
+  FOUNDING_PRO_PRICE_USD,
   PLANS,
   PRO_PRICE_USD,
 } from "@rallied/shared";
@@ -11,7 +12,7 @@ import { SiteHeader } from "../../components/SiteHeader";
 
 export const metadata: Metadata = {
   title: `Changelog — ${BRAND.name}`,
-  description: `Recent shipping for ${BRAND.name}: Path B pricing, LFG parity, directory, Ghostless, and public pages.`,
+  description: `What shipped for ${BRAND.name} customers: bot, admin dashboard, pricing, and Ghostless.`,
 };
 
 const ENTRIES: {
@@ -21,63 +22,73 @@ const ENTRIES: {
 }[] = [
   {
     date: "2026-10-30",
-    title: "Stripe Checkout + billing (Path B)",
-    body: `/app/billing: Community $${COMMUNITY_PRICE_USD}/mo ($${PLANS.community.annualCents / 100}/yr), Pro $${PRO_PRICE_USD}/mo ($${PLANS.pro.annualCents / 100}/yr), Founding Pro $8.99 locked. Stripe Checkout + Customer Portal; webhooks update plan / trial / Stripe ids. Official Rallied forever Pro protected. Starter caps unchanged until paid. Run migration 012_stripe_billing.`,
+    title: "Founding seats · pricing clarity",
+    body: `Founding Pro capped at ≤${PLANS.founding_pro.seatCap} seats (was 50). Prices stay Community $${COMMUNITY_PRICE_USD}/mo · Pro $${PRO_PRICE_USD}/mo · Founding $${FOUNDING_PRO_PRICE_USD}/mo locked — billed per Discord server. 14-day trial is Community features only (not Pro).`,
   },
   {
     date: "2026-10-30",
-    title: "Premium admin Overview + Analytics polish",
-    body: "/app Overview: This month strip (Most reliable + Top hosts), Reliability health (7d no-show / vibe response / open disputes — Community lite, Pro week-over-week when data exists), Upcoming scheduled (iCal hint in Settings), Standby waitlist promotions this week via server_events. Analytics: clearer sections, live prior-week trends + soft metrics when available. Demo/?mock=1 filled fixtures. Run Supabase migration 011_server_events.",
+    title: "Stripe billing on /app/billing",
+    body: `Subscribe or upgrade from Billing: Community $${COMMUNITY_PRICE_USD}/mo ($${PLANS.community.annualCents / 100}/yr), Pro $${PRO_PRICE_USD}/mo ($${PLANS.pro.annualCents / 100}/yr), Founding Pro $${FOUNDING_PRO_PRICE_USD} locked. Checkout + Customer Portal (Manage billing). Starter caps stay until you pay.`,
   },
   {
     date: "2026-10-30",
-    title: "Pro iCal subscribe + web dispute resolve",
-    body: "Pro / Founding: Settings → Calendar subscribe generates a tokenized .ics URL for upcoming scheduled parties (our Worker only — no Google OAuth). Community+ admins Overturn / Uphold on /app/disputes (same semantics as /dispute resolve).",
+    title: "Premium Overview strips",
+    body: "Admin Overview: This month (Most reliable + Top hosts), Reliability health (7-day no-show / vibe response / open disputes), upcoming scheduled parties, and Standby promotions this week. Analytics sections clearer with prior-week trends when available.",
+  },
+  {
+    date: "2026-10-30",
+    title: "Pro iCal + web disputes",
+    body: "Pro / Founding: Settings → Calendar subscribe — copy a .ics URL for upcoming scheduled parties (Apple / Google Calendar; no Google login). Community+ admins Overturn or Uphold disputes on /app/disputes (same as /dispute resolve in Discord).",
+  },
+  {
+    date: "2026-10-30",
+    title: "Standby, join gates, /leaderboard",
+    body: "Ready Check no-shows free seats and promote the waitlist (Standby). Settings: Min Ghostless % to Join + Enforce lockout on Join. /leaderboard (and desk button) shows Most reliable + Top hosts for this server.",
   },
   {
     date: "2026-10-30",
     title: "Starter caps = per Discord server",
-    body: "Pricing and landing spell out that Starter limits (2 open parties + 5 creates/24h) are for this server — not per user. Short How Ghostless works blip (ready → grace → strike → lockout; % = showed/(showed+ghosted); admins dispute/clear) with a link to /guide. Upgrade embeds say “for this server.”",
+    body: "Starter limits (2 open parties + 5 creates/24h) are for this server — not per user. Ghostless rules summary on Pricing with a link to the guide.",
   },
   {
     date: "2026-10-30",
-    title: "Bot invite permissions (re-auth)",
-    body: "Add to Discord invite integer is 311671409680 (includes Manage Channels for temp voice, plus threads / roles / Connect / Move Members). Existing installs: re-authorize with that permissions value or fix the bot role — calculator alone does not update an installed bot.",
+    title: "Bot invite permissions",
+    body: "Add to Discord invite includes Manage Channels (temp voice), threads, roles, Connect, and Move Members. Existing installs: re-authorize the bot if voice or threads fail.",
   },
   {
     date: "2026-10-29",
     title: "LFG parity — voice, waitlist, filters, schedule",
-    body: "Temp voice (Join VC; bot needs Manage Channels), waitlist when full, mic / rank / region on create + Find filters, optional scheduled start with ~T-10m reminder. Still this server only — no LFG Network.",
+    body: "Temp voice (Join VC), waitlist when full, mic / rank / region on create + Find filters, optional scheduled start with ~T-10m reminder. Still this server only.",
   },
   {
     date: "2026-10-29",
-    title: "Opt-in server directory + changelog",
-    body: "Public /servers lists communities that opt in (public page + invite). Listing is per-server reliability, not cross-server player grades. This page tracks shipping for Founding trust.",
+    title: "Server directory",
+    body: "Public /servers lists communities that opt in (public page + invite). Per-server reliability, not cross-server player grades.",
   },
   {
     date: "2026-10-29",
-    title: "Path B monetization",
-    body: `Starter free under caps (2 open parties, 5 creates/day after trial; no Ghostless / strikes). Community $${COMMUNITY_PRICE_USD}/mo · Pro $${PRO_PRICE_USD}/mo · Founding Pro $8.99 locked. 14-day full trial first.`,
+    title: "Path B plans",
+    body: `Starter free under caps after trial (no Ghostless / strikes). Community $${COMMUNITY_PRICE_USD}/mo · Pro $${PRO_PRICE_USD}/mo · Founding Pro $${FOUNDING_PRO_PRICE_USD} locked. 14-day Community trial first.`,
   },
   {
     date: "2026-10-28",
     title: "Ghostless mark + public cards",
-    body: "Solid white ghost + lime check lockup on public /s pages and player cards. Strikes stay admin-only, this server only.",
+    body: "Solid white ghost + lime check on public /s pages and player cards. Strikes stay admin-only, this server only.",
   },
   {
     date: "2026-10-28",
-    title: "Demo Pro vanity + Settings Save",
-    body: "Demo Settings can preview Pro vanity (hide Powered by / accent / Discord guild icon on /s). Live Settings Save writes slug, public toggles, directory list + invite URL.",
+    title: "Public page Settings",
+    body: "Settings Save writes slug, public toggles, directory list + invite. Pro vanity: hide Powered by, accent, Discord guild icon on /s.",
   },
   {
     date: "2026-10-28",
     title: "LFG desk in Discord",
-    body: "Pinned desk panel: Create / Find / Mine / How it works. Party cards with Join, Leave, Close, Ready Check, and post-session Vibe Check nudge.",
+    body: "Pinned desk: Create / Find / Mine / How it works / Leaderboard. Party cards with Join, Leave, Close, Ready Check, and post-session Vibe Check.",
   },
   {
     date: "2026-10-27",
     title: "Admin web + guide",
-    body: "Dashboard for People, Settings, disputes, analytics (Pro). Marketing /guide walks setup → desk → Ghostless → /app admin.",
+    body: "Dashboard for Overview, People, Settings, disputes, analytics. /guide walks setup → desk → Ghostless → /app admin.",
   },
 ];
 
@@ -94,7 +105,7 @@ export default function ChangelogPage() {
           Changelog
         </h1>
         <p className="mt-3 max-w-xl text-white/75">
-          Short, honest notes on what landed. Not a roadmap.
+          What customers see in Discord and on the admin site. Not a roadmap.
         </p>
 
         <ol className="mt-12 space-y-10">

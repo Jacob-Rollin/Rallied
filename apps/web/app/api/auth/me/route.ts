@@ -3,6 +3,7 @@ import { mockAuthEnabled } from "@/lib/auth/config";
 import {
   ensureGuildDisplayNames,
   getBotPresenceAndPlans,
+  refreshSessionGuildAccess,
   syncServerMetadataFromOAuth,
 } from "@/lib/auth/discord";
 import { getSession, mockSessionPayload } from "@/lib/auth/session";
@@ -26,8 +27,8 @@ export async function GET() {
 
   let guilds = session.guilds ?? [];
 
-  // Refresh bot_present + plan from Discord bot token / Supabase servers
-  // so inviting the bot shows up without forcing a re-login.
+  // Refresh bot_present + plan + mod access so invite / role / plan changes
+  // show up without forcing a full re-login (new mod guilds still need OAuth).
   if (!session.isMock && guilds.length > 0) {
     try {
       const { botGuildIds, plans } = await getBotPresenceAndPlans(
@@ -38,7 +39,9 @@ export async function GET() {
         bot_present:
           botGuildIds === null ? g.bot_present : botGuildIds.has(g.id),
         plan: plans.get(g.id) ?? g.plan,
+        access: g.access === "mod" ? "mod" : "owner",
       }));
+      guilds = await refreshSessionGuildAccess(guilds, session.user.id);
       // Fill missing / placeholder guild names from Discord API when needed.
       guilds = await ensureGuildDisplayNames(guilds);
       session.guilds = guilds;

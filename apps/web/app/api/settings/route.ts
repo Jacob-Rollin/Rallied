@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   directoryListingEnabled,
   isProPlan,
+  modDashboardEnabled,
   reliabilityEnabled,
 } from "@rallied/shared";
+import { normalizeRoleIdList } from "@/lib/auth/discord";
+import { requireOwnerGuild } from "@/lib/auth/guild-access";
 import { getSession } from "@/lib/auth/session";
 import { randomIcalToken } from "@/lib/ical";
 import { getServiceSupabase } from "@/lib/supabase";
@@ -21,6 +24,8 @@ type Body = {
   strike_threshold?: number;
   ghostless_role_id?: string | null;
   digest_channel_id?: string | null;
+  /** Community+: Discord role ids granting Rallied Mod dashboard access. */
+  mod_role_ids?: string[] | null;
   lockout_days?: number;
   /** Community+: null/empty clears; 1–100 sets Join min Ghostless %. */
   join_min_ghostless_pct?: number | null;
@@ -109,9 +114,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "missing_guild" }, { status: 400 });
   }
 
-  const allowed = (session.guilds ?? []).some((g) => g.id === discordGuildId);
-  if (!allowed) {
-    return NextResponse.json({ error: "guild_forbidden" }, { status: 403 });
+  // Settings mutations are owner-only (Rallied Mods cannot write).
+  if (!requireOwnerGuild(session, discordGuildId)) {
+    return NextResponse.json(
+      {
+        error: "owner_required",
+        hint: "Only server owners (Manage Server) can change Settings.",
+      },
+      { status: 403 },
+    );
   }
 
   const sb = getServiceSupabase();
@@ -266,6 +277,20 @@ export async function POST(req: NextRequest) {
     const id = body.digest_channel_id;
     patch.digest_channel_id =
       id == null || String(id).trim() === "" ? null : String(id).trim();
+  }
+  if (body.mod_role_ids !== undefined) {
+    if (!modDashboardEnabled(server.plan as string)) {
+      return NextResponse.json(
+        {
+          error: "community_required",
+          hint: "Rallied Mod roles require Community (or active trial / Pro).",
+        },
+        { status: 403 },
+      );
+    }
+    patch.mod_role_ids = normalizeRoleIdList(
+      Array.isArray(body.mod_role_ids) ? body.mod_role_ids : [],
+    );
   }
 
   let vanityRejected = false;

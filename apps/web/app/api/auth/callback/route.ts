@@ -4,7 +4,7 @@ import {
   exchangeCode,
   fetchOAuthGuilds,
   fetchOAuthUser,
-  filterAdminGuilds,
+  filterAccessibleGuilds,
 } from "@/lib/auth/discord";
 import { getSession } from "@/lib/auth/session";
 import { GUILD_COOKIE } from "@/lib/guild-params";
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
     const token = await exchangeCode(code);
     const user = await fetchOAuthUser(token.access_token);
     const guilds = await fetchOAuthGuilds(token.access_token);
-    const adminGuilds = await filterAdminGuilds(guilds);
+    const adminGuilds = await filterAccessibleGuilds(guilds, user.id);
 
     const nextRaw = session.oauthNext;
     session.user = {

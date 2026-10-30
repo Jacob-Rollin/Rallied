@@ -13,8 +13,8 @@ type Body = {
 
 /**
  * Session-gated dispute resolve (service role).
- * Mirrors Discord `/dispute resolve`: Community+ admins; Overturn clears strike.
- * No Stripe dependency.
+ * Mirrors Discord `/dispute resolve`: Community+ owners **or Rallied Mods**;
+ * Overturn clears strike. No Stripe dependency.
  */
 export async function POST(req: NextRequest) {
   const session = await getSession();

@@ -1,7 +1,10 @@
 import {
   DISCORD_OAUTH_SCOPES,
   discordGuildIconUrl,
+  hasCommunityAccess,
+  modDashboardEnabled,
   type AdminGuild,
+  type DashboardAccess,
 } from "@rallied/shared";
 import {
   getRuntimeEnv,
@@ -93,31 +96,351 @@ export function canManageGuild(guild: DiscordOAuthGuild): boolean {
 }
 
 /**
- * Filter to guilds the user can manage; mark bot_present + plan.
+ * Filter to guilds the user can open in /app:
+ * - Owner: Manage Guild / Administrator (bot optional — invite CTA when missing)
+ * - Mod: bot present + Community+ plan + member holds a role in server_settings.mod_role_ids
+ *
  * Bot presence (in order):
  * 1. DISCORD_BOT_TOKEN → GET /users/@me/guilds as the bot
  * 2. Else Supabase `servers.discord_guild_id` (bot upserts on first slash command)
  * 3. Else null → treat all manageable as present (local stub without env)
  */
+export async function filterAccessibleGuilds(
+  guilds: DiscordOAuthGuild[],
+  userId: string,
+): Promise<AdminGuild[]> {
+  const botGuildIds = await getBotGuildIds();
+  const ownerGuilds = guilds.filter(canManageGuild);
+  const ownerIds = new Set(ownerGuilds.map((g) => g.id));
+
+  const candidateIds = [
+    ...new Set([
+      ...ownerGuilds.map((g) => g.id),
+      ...guilds
+        .filter((g) => !ownerIds.has(g.id))
+        .filter((g) => (botGuildIds === null ? false : botGuildIds.has(g.id)))
+        .map((g) => g.id),
+    ]),
+  ];
+
+  const meta = await fetchGuildAccessMeta(candidateIds);
+  const out: AdminGuild[] = [];
+
+  for (const g of ownerGuilds) {
+    out.push({
+      id: g.id,
+      name: g.name,
+      icon: g.icon,
+      bot_present: botGuildIds === null ? true : botGuildIds.has(g.id),
+      plan: meta.get(g.id)?.plan,
+      access: "owner",
+    });
+  }
+
+  // Non-owner: Rallied Mod when Community+ + configured roles intersect member roles.
+  const modCandidates = guilds.filter(
+    (g) =>
+      !ownerIds.has(g.id) &&
+      botGuildIds !== null &&
+      botGuildIds.has(g.id),
+  );
+
+  await Promise.all(
+    modCandidates.map(async (g) => {
+      const row = meta.get(g.id);
+      const plan = row?.plan;
+      const modRoleIds = row?.mod_role_ids ?? [];
+      if (!modDashboardEnabled(plan) || modRoleIds.length === 0) return;
+
+      const memberRoles = await fetchMemberRoleIds(g.id, userId);
+      if (!memberRoles) return;
+      const hit = modRoleIds.some((id) => memberRoles.has(id));
+      if (!hit) return;
+
+      out.push({
+        id: g.id,
+        name: g.name,
+        icon: g.icon,
+        bot_present: true,
+        plan,
+        access: "mod",
+      });
+    }),
+  );
+
+  // Best-effort: persist Discord guild name + icon on existing servers rows.
+  void syncServerMetadataFromOAuth(out);
+
+  return out;
+}
+
+/** @deprecated Prefer filterAccessibleGuilds (includes Rallied Mod). */
 export async function filterAdminGuilds(
   guilds: DiscordOAuthGuild[],
+  userId?: string,
 ): Promise<AdminGuild[]> {
-  const manageable = guilds.filter(canManageGuild);
+  if (userId) return filterAccessibleGuilds(guilds, userId);
   const botGuildIds = await getBotGuildIds();
+  const manageable = guilds.filter(canManageGuild);
   const plans = await fetchPlansForGuilds(manageable.map((g) => g.id));
-
   const adminGuilds = manageable.map((g) => ({
     id: g.id,
     name: g.name,
     icon: g.icon,
     bot_present: botGuildIds === null ? true : botGuildIds.has(g.id),
     plan: plans.get(g.id),
+    access: "owner" as DashboardAccess,
   }));
-
-  // Best-effort: persist Discord guild name + icon on existing servers rows.
   void syncServerMetadataFromOAuth(adminGuilds);
-
   return adminGuilds;
+}
+
+export type DiscordGuildRole = {
+  id: string;
+  name: string;
+  color: number;
+  position: number;
+  managed: boolean;
+};
+
+/** Guild roles via bot token (for Settings multi-select). Excludes @everyone. */
+export async function fetchGuildRoles(
+  guildId: string,
+): Promise<DiscordGuildRole[] | null> {
+  const id = guildId.trim();
+  if (!id || looksLikeNonGuildId(id)) return null;
+  const token = getRuntimeEnv("DISCORD_BOT_TOKEN");
+  if (!token) return null;
+  try {
+    const res = await fetch(`${API}/guilds/${encodeURIComponent(id)}/roles`, {
+      headers: { Authorization: `Bot ${token}` },
+    });
+    if (!res.ok) {
+      console.warn("guild roles fetch failed", res.status);
+      return null;
+    }
+    const data = (await res.json()) as {
+      id: string;
+      name: string;
+      color?: number;
+      position?: number;
+      managed?: boolean;
+    }[];
+    return data
+      .filter((r) => r.id !== id) // @everyone id === guild id
+      .map((r) => ({
+        id: r.id,
+        name: r.name,
+        color: r.color ?? 0,
+        position: r.position ?? 0,
+        managed: Boolean(r.managed),
+      }))
+      .sort((a, b) => b.position - a.position);
+  } catch (err) {
+    console.warn("guild roles error", err);
+    return null;
+  }
+}
+
+/** Member role ids via bot token. Null when unavailable / not in guild. */
+export async function fetchMemberRoleIds(
+  guildId: string,
+  userId: string,
+): Promise<Set<string> | null> {
+  const gid = guildId.trim();
+  const uid = userId.trim();
+  if (!gid || !uid || looksLikeNonGuildId(gid)) return null;
+  const token = getRuntimeEnv("DISCORD_BOT_TOKEN");
+  if (!token) return null;
+  try {
+    const res = await fetch(
+      `${API}/guilds/${encodeURIComponent(gid)}/members/${encodeURIComponent(uid)}`,
+      { headers: { Authorization: `Bot ${token}` } },
+    );
+    if (res.status === 404) return new Set();
+    if (!res.ok) {
+      console.warn("guild member fetch failed", res.status);
+      return null;
+    }
+    const data = (await res.json()) as { roles?: string[] };
+    return new Set(data.roles ?? []);
+  } catch (err) {
+    console.warn("guild member error", err);
+    return null;
+  }
+}
+
+/**
+ * Re-verify mod access for session guilds (roles / plan may change).
+ * Owners stay owners. Mods who lost the role or Community+ are dropped.
+ */
+export async function refreshSessionGuildAccess(
+  guilds: AdminGuild[],
+  userId: string,
+): Promise<AdminGuild[]> {
+  if (guilds.length === 0) return guilds;
+  const meta = await fetchGuildAccessMeta(guilds.map((g) => g.id));
+  const out: AdminGuild[] = [];
+
+  for (const g of guilds) {
+    const row = meta.get(g.id);
+    const plan = row?.plan ?? g.plan;
+    if (g.access !== "mod") {
+      out.push({ ...g, plan, access: "owner" });
+      continue;
+    }
+    const modRoleIds = row?.mod_role_ids ?? [];
+    if (!modDashboardEnabled(plan) || modRoleIds.length === 0) continue;
+    if (!g.bot_present) continue;
+    const memberRoles = await fetchMemberRoleIds(g.id, userId);
+    if (!memberRoles) {
+      // Keep briefly if Discord unavailable — avoid kicking mid-session.
+      out.push({ ...g, plan, access: "mod" });
+      continue;
+    }
+    if (!modRoleIds.some((id) => memberRoles.has(id))) continue;
+    out.push({ ...g, plan, access: "mod" });
+  }
+
+  return out;
+}
+
+type GuildAccessMeta = {
+  plan: AdminGuild["plan"];
+  mod_role_ids: string[];
+};
+
+async function fetchGuildAccessMeta(
+  guildIds: string[],
+): Promise<Map<string, GuildAccessMeta>> {
+  const map = new Map<string, GuildAccessMeta>();
+  if (guildIds.length === 0) return map;
+  const url = getSupabaseUrl();
+  const key =
+    getServiceRoleKey() || getRuntimeEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  if (!url || !key) return map;
+  try {
+    const q = encodeURIComponent(`in.(${guildIds.join(",")})`);
+    const res = await fetch(
+      `${url}/rest/v1/servers?select=discord_guild_id,plan,server_settings(mod_role_ids)&discord_guild_id=${q}`,
+      {
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+        },
+      },
+    );
+    if (!res.ok) {
+      // Fallback without embed if PostgREST relationship missing.
+      const plans = await fetchPlansForGuilds(guildIds);
+      for (const [id, plan] of plans) {
+        map.set(id, { plan, mod_role_ids: [] });
+      }
+      const roles = await fetchModRoleIdsForGuilds(guildIds);
+      for (const [id, mod_role_ids] of roles) {
+        const prev = map.get(id) ?? { plan: undefined, mod_role_ids: [] };
+        map.set(id, { ...prev, mod_role_ids });
+      }
+      return map;
+    }
+    const rows = (await res.json()) as {
+      discord_guild_id: string;
+      plan: AdminGuild["plan"];
+      server_settings?:
+        | { mod_role_ids?: string[] | null }
+        | { mod_role_ids?: string[] | null }[]
+        | null;
+    }[];
+    for (const r of rows) {
+      const settings = Array.isArray(r.server_settings)
+        ? r.server_settings[0]
+        : r.server_settings;
+      map.set(r.discord_guild_id, {
+        plan: r.plan,
+        mod_role_ids: normalizeRoleIdList(settings?.mod_role_ids),
+      });
+    }
+  } catch {
+    /* ignore */
+  }
+  return map;
+}
+
+async function fetchModRoleIdsForGuilds(
+  guildIds: string[],
+): Promise<Map<string, string[]>> {
+  const map = new Map<string, string[]>();
+  if (guildIds.length === 0) return map;
+  const url = getSupabaseUrl();
+  const key =
+    getServiceRoleKey() || getRuntimeEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  if (!url || !key) return map;
+  try {
+    const q = encodeURIComponent(`in.(${guildIds.join(",")})`);
+    // Join via servers → server_settings using discord_guild_id filter on servers first.
+    const serversRes = await fetch(
+      `${url}/rest/v1/servers?select=id,discord_guild_id&discord_guild_id=${q}`,
+      {
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+        },
+      },
+    );
+    if (!serversRes.ok) return map;
+    const servers = (await serversRes.json()) as {
+      id: string;
+      discord_guild_id: string;
+    }[];
+    if (servers.length === 0) return map;
+    const idByServer = new Map(servers.map((s) => [s.id, s.discord_guild_id]));
+    const serverIds = servers.map((s) => s.id);
+    const sq = encodeURIComponent(`in.(${serverIds.join(",")})`);
+    const settingsRes = await fetch(
+      `${url}/rest/v1/server_settings?select=server_id,mod_role_ids&server_id=${sq}`,
+      {
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+        },
+      },
+    );
+    if (!settingsRes.ok) return map;
+    const rows = (await settingsRes.json()) as {
+      server_id: string;
+      mod_role_ids?: string[] | null;
+    }[];
+    for (const r of rows) {
+      const guildId = idByServer.get(r.server_id);
+      if (!guildId) continue;
+      map.set(guildId, normalizeRoleIdList(r.mod_role_ids));
+    }
+  } catch {
+    /* ignore */
+  }
+  return map;
+}
+
+export function normalizeRoleIdList(
+  raw: string[] | null | undefined,
+): string[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of raw) {
+    const id = String(item ?? "").trim();
+    if (!id || !/^\d{17,20}$/.test(id) || seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
+}
+
+/** True when Community+ (or demo) — used by Settings UI / copy. */
+export function guildSupportsModRoles(
+  plan: string | null | undefined,
+): boolean {
+  return hasCommunityAccess(plan);
 }
 
 export type DiscordGuildMeta = {

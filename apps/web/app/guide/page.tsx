@@ -444,8 +444,19 @@ export default function GuidePage() {
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">
             After the bot is in your server, open the site and{" "}
             <strong className="font-semibold text-white">Log in</strong> with
-            Discord OAuth. You need Manage Server (or Admin) on that guild —
-            same bar as the invite.
+            Discord OAuth.{" "}
+            <strong className="font-semibold text-white">Owners</strong> need
+            Manage Server (or Admin) — full{" "}
+            <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
+              /app
+            </code>{" "}
+            including Settings + Billing. On{" "}
+            <strong className="font-semibold text-white">Community+</strong>{" "}
+            (trial, Community, Pro, Founding), owners can also grant{" "}
+            <strong className="font-semibold text-white">Rallied Mod</strong>{" "}
+            Discord role(s) in Settings so mods open Overview / LFG / People /
+            Disputes / Analytics (not Billing or Settings writes). Starter: no
+            Mod access.
           </p>
 
           <ol className="mt-6 max-w-2xl list-none space-y-4 text-sm leading-relaxed text-white/75">
@@ -470,8 +481,10 @@ export default function GuidePage() {
                 <strong className="font-semibold text-white">
                   Pick your server
                 </strong>{" "}
-                from the switcher — no guild id typing. Only servers you can
-                manage (with the bot present) show as ready.
+                from the switcher — no guild id typing. Owners see guilds they
+                manage; Rallied Mods see Community+ guilds where they hold a
+                configured Mod role (bot present). After an owner assigns your
+                role, Log in again if the server is missing.
               </span>
             </li>
             <li className="flex gap-3">
@@ -499,7 +512,7 @@ export default function GuidePage() {
               </span>
               <span>
                 <strong className="font-semibold text-white">Disputes</strong> —
-                Community+ admins{" "}
+                Community+ owners and Rallied Mods{" "}
                 <strong className="font-semibold text-white">Overturn</strong>{" "}
                 (clears the linked strike) or{" "}
                 <strong className="font-semibold text-white">Uphold</strong> on{" "}
@@ -519,13 +532,17 @@ export default function GuidePage() {
                 5
               </span>
               <span>
-                <strong className="font-semibold text-white">Settings</strong>:
-                public page on/off, vanity slug (
+                <strong className="font-semibold text-white">Settings</strong>{" "}
+                (owners only): public page on/off, vanity slug (
                 <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
                   /s/your-slug
                 </code>
                 ), directory list + invite, Reliability rules (grace, strikes,
-                lockout, min Ghostless % to Join), then{" "}
+                lockout, min Ghostless % to Join),{" "}
+                <strong className="font-semibold text-white">
+                  Rallied Mod roles
+                </strong>{" "}
+                multi-select, then{" "}
                 <strong className="font-semibold text-white">Save</strong>. Pro /
                 Founding unlock vanity and{" "}
                 <strong className="font-semibold text-white">
@@ -536,7 +553,8 @@ export default function GuidePage() {
                   .ics
                 </code>{" "}
                 URL for upcoming scheduled parties (Apple / Google Calendar
-                subscribe; no Google OAuth).
+                subscribe; no Google OAuth). Mods do not see Settings or Billing
+                in the nav.
               </span>
             </li>
             <li className="flex gap-3">
@@ -544,7 +562,8 @@ export default function GuidePage() {
                 6
               </span>
               <span>
-                Also: LFG parties, People, Analytics (Pro export + trends), and{" "}
+                Also: LFG parties, People, Analytics (Pro export + trends).{" "}
+                Owners open{" "}
                 <Link href="/app/billing" className="text-coral hover:underline">
                   Billing
                 </Link>

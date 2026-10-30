@@ -22,6 +22,11 @@ const ENTRIES: {
 }[] = [
   {
     date: "2026-10-30",
+    title: "Rallied Mod dashboard access",
+    body: "Community+ (trial / Community / Pro / Founding): owners pick Discord role(s) in Settings → Rallied Mod roles. Members with those roles Log in to Overview, LFG, People, Disputes (Overturn/Uphold), and Analytics — not Settings writes or Billing. Starter: no Mod access (upgrade CTA). Owners with Manage Server still get the full /app.",
+  },
+  {
+    date: "2026-10-30",
     title: "Real Discord server names on /servers",
     body: "Directory and public pages sync the real guild name (and icon when missing) via the bot token when the DB still has placeholders like Discord server / Selected server / snowflake ids. Bot /setup and LFG upserts persist the same. Pricing boxes show $X/mo with per Discord server on the supporting line.",
   },

@@ -47,6 +47,11 @@ export interface ServerSettings {
   ghostless_role_threshold_pct: number;
   ghostless_role_min_sessions: number;
   digest_channel_id: string | null;
+  /**
+   * Discord role ids that grant Rallied Mod dashboard access.
+   * Community+ only; empty = no mod login path. Owners always full access.
+   */
+  mod_role_ids: string[];
   strike_threshold: number;
   lockout_days: number;
   /** Vanity path for /s/[slug]; null → use discord_guild_id */
@@ -213,11 +218,19 @@ export interface PlayerCardData {
   activeLockout: Lockout | null;
 }
 
-/** Guild the signed-in admin can manage in the dashboard. */
+/** Dashboard access level for a selected guild. */
+export type DashboardAccess = "owner" | "mod";
+
+/** Guild the signed-in user can open in the dashboard (owner or Rallied Mod). */
 export interface AdminGuild {
   id: string;
   name: string;
   icon: string | null;
   bot_present: boolean;
   plan?: PlanId;
+  /**
+   * owner = Manage Guild / Administrator (full /app including Settings + Billing).
+   * mod = holds a configured Rallied Mod Discord role on Community+ (no Billing / Settings write).
+   */
+  access?: DashboardAccess;
 }

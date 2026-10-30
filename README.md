@@ -73,7 +73,7 @@ Routes: `/pricing` · `/app/billing` · `/app/analytics` · Pro vanity on Settin
 | --- | --- |
 | Scopes | `identify`, `guilds` — **no** email/password accounts |
 | Session | `iron-session` encrypted cookie (`SESSION_SECRET`) |
-| Access | Guilds where user has **Manage Guild** or **Administrator** **and** bot is present |
+| Access | **Owner**: Manage Guild / Administrator (+ bot for live data). **Rallied Mod** (Community+): Discord role in `server_settings.mod_role_ids` + bot present — Overview/LFG/People/Disputes/Analytics only (no Settings write / Billing). Starter: no Mod access. |
 | Routes | `/api/auth/discord` → Discord → `/api/auth/callback` → `/app` |
 | Empty | Authenticated but no bot guilds → Add to Discord CTA |
 

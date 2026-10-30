@@ -65,6 +65,23 @@ export const MOCK_SERVERS: Server[] = [
     created_at: "2026-10-05T00:00:00Z",
     updated_at: "2026-10-05T00:00:00Z",
   },
+  {
+    id: "11111111-1111-1111-1111-111111111114",
+    discord_guild_id: "demo-guild-mod",
+    name: "Mod Preview Lounge",
+    plan: "community",
+    price_lock_cents: PLANS.community.priceCents,
+    trial_ends_at: null,
+    priority_support: false,
+    stripe_customer_id: null,
+    stripe_subscription_id: null,
+    stripe_price_id: null,
+    billing_interval: null,
+    forever_pro: false,
+    icon_url: DEMO_GUILD_ICON_URL,
+    created_at: "2026-10-12T00:00:00Z",
+    updated_at: "2026-10-12T00:00:00Z",
+  },
 ];
 
 export const MOCK_MEMBERS: Member[] = [
@@ -271,6 +288,7 @@ export const MOCK_SETTINGS: ServerSettings = {
   ghostless_role_threshold_pct: 90,
   ghostless_role_min_sessions: 10,
   digest_channel_id: null,
+  mod_role_ids: ["demo-role-mod"],
   strike_threshold: 3,
   lockout_days: 7,
   join_min_ghostless_pct: null,

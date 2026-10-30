@@ -127,6 +127,12 @@ const MATRIX: {
     pro: "Full",
   },
   {
+    label: "Rallied Mod dashboard roles",
+    starter: "no",
+    community: "yes",
+    pro: "yes",
+  },
+  {
     label: "Weekly digest",
     starter: "no",
     community: "Lite",

@@ -179,6 +179,10 @@ function mapServerRow(row: Record<string, unknown>): Server {
 }
 
 function mapSettingsRow(row: Record<string, unknown>): ServerSettings {
+  const rawMod = row.mod_role_ids;
+  const mod_role_ids = Array.isArray(rawMod)
+    ? rawMod.map((id) => String(id)).filter(Boolean)
+    : [];
   return {
     server_id: String(row.server_id),
     grace_minutes: Number(row.grace_minutes ?? 5),
@@ -188,6 +192,7 @@ function mapSettingsRow(row: Record<string, unknown>): ServerSettings {
     ),
     ghostless_role_min_sessions: Number(row.ghostless_role_min_sessions ?? 10),
     digest_channel_id: (row.digest_channel_id as string | null) ?? null,
+    mod_role_ids,
     strike_threshold: Number(row.strike_threshold ?? 3),
     lockout_days: Number(row.lockout_days ?? 7),
     join_min_ghostless_pct:

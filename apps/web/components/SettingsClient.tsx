@@ -10,11 +10,19 @@ import {
   buildBotInviteUrl,
   isProPlan,
   isStarterPlan,
+  modDashboardEnabled,
   reliabilityEnabled,
   type PlanId,
   type ServerSettings,
 } from "@rallied/shared";
 import { FieldInfo } from "@/components/FieldInfo";
+
+type DiscordRoleOption = {
+  id: string;
+  name: string;
+  color: number;
+  managed: boolean;
+};
 
 type Props = {
   serverName: string;
@@ -40,6 +48,7 @@ const DEFAULTS: Omit<
   ghostless_role_threshold_pct: 90,
   ghostless_role_min_sessions: 10,
   digest_channel_id: null,
+  mod_role_ids: [],
   strike_threshold: 3,
   lockout_days: 7,
   join_min_ghostless_pct: null,
@@ -53,6 +62,12 @@ const DEFAULTS: Omit<
   public_accent: null,
   ical_token: null,
 };
+
+const DEMO_ROLE_OPTIONS: DiscordRoleOption[] = [
+  { id: "demo-role-mod", name: "Rallied Mod", color: 0xb8f000, managed: false },
+  { id: "demo-role-admin", name: "Admin", color: 0xe85d4c, managed: false },
+  { id: "demo-role-member", name: "Member", color: 0x5865f2, managed: false },
+];
 
 export function SettingsClient({
   serverName,
@@ -78,6 +93,8 @@ export function SettingsClient({
   const reliabilityOn =
     reliabilityEnabled(plan) || (demoProUnlock && demoProPreview);
   const starterLocked = isStarterPlan(plan) && !demoProUnlock;
+  const modRolesOn =
+    modDashboardEnabled(plan) || (demoProUnlock && demoProPreview);
 
   const [grace, setGrace] = useState(base.grace_minutes);
   const [threshold, setThreshold] = useState(base.strike_threshold);
@@ -91,6 +108,12 @@ export function SettingsClient({
     base.join_lockout_enforced !== false,
   );
   const [roleId, setRoleId] = useState(base.ghostless_role_id ?? "");
+  const [modRoleIds, setModRoleIds] = useState<string[]>(
+    base.mod_role_ids ?? [],
+  );
+  const [discordRoles, setDiscordRoles] = useState<DiscordRoleOption[]>([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
+  const [rolesErr, setRolesErr] = useState<string | null>(null);
   const [digestChannel, setDigestChannel] = useState(
     base.digest_channel_id ?? "",
   );
@@ -119,8 +142,57 @@ export function SettingsClient({
   }, [base.ical_token]);
 
   useEffect(() => {
+    setModRoleIds(base.mod_role_ids ?? []);
+  }, [base.mod_role_ids]);
+
+  useEffect(() => {
     setOrigin(window.location.origin);
   }, []);
+
+  useEffect(() => {
+    if (!modRolesOn) {
+      setDiscordRoles([]);
+      setRolesErr(null);
+      return;
+    }
+    if (!canWrite) {
+      setDiscordRoles(DEMO_ROLE_OPTIONS);
+      setRolesErr(null);
+      return;
+    }
+    let cancelled = false;
+    setRolesLoading(true);
+    setRolesErr(null);
+    fetch(`/api/discord/roles?guildId=${encodeURIComponent(discordGuildId)}`)
+      .then(async (res) => {
+        const json = (await res.json().catch(() => ({}))) as {
+          roles?: DiscordRoleOption[];
+          error?: string;
+          hint?: string;
+        };
+        if (cancelled) return;
+        if (!res.ok) {
+          setDiscordRoles([]);
+          setRolesErr(
+            json.error
+              ? `${json.error}${json.hint ? ` — ${json.hint}` : ""}`
+              : `Could not load roles (${res.status})`,
+          );
+          return;
+        }
+        setDiscordRoles(json.roles ?? []);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setRolesErr(err instanceof Error ? err.message : "Could not load roles");
+      })
+      .finally(() => {
+        if (!cancelled) setRolesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [canWrite, discordGuildId, modRolesOn]);
 
   const previewPath = `/s/${slug || discordGuildId}`;
   const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
@@ -160,6 +232,9 @@ export function SettingsClient({
         }
         payload.ghostless_role_id = roleId || null;
         payload.digest_channel_id = digestChannel || null;
+      }
+      if (modRolesOn) {
+        payload.mod_role_ids = modRoleIds;
       }
       const res = await fetch("/api/settings", {
         method: "POST",
@@ -652,6 +727,94 @@ export function SettingsClient({
             Developer Mode must be on in Discord to copy role and channel IDs.
           </p>
         </fieldset>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="font-display text-xl tracking-wide">Rallied Mod access</h2>
+        <div className="block max-w-md text-sm">
+          <div className="text-muted">
+            <FieldInfo label="Rallied Mod roles">
+              Community+ only. Members with any selected Discord role can open{" "}
+              <strong className="font-semibold text-white/90">
+                Overview, LFG, People, Disputes, Analytics
+              </strong>{" "}
+              after Log in (bot must be present). They cannot change Settings or
+              Billing — owners keep Manage Server for that. Starter: upgrade to
+              Community. Re-login after granting a role.
+            </FieldInfo>
+          </div>
+          {!modRolesOn ? (
+            <div className="mt-2 rounded-brand border border-coral/35 bg-coral/10 px-3 py-2 text-xs text-white/80">
+              Rallied Mod roles need Community (or trial / Pro).{" "}
+              <Link
+                href={billingHref}
+                className="font-semibold text-coral hover:underline"
+              >
+                Upgrade →
+              </Link>
+            </div>
+          ) : (
+            <div className="mt-2 max-h-48 space-y-1.5 overflow-y-auto rounded-brand border border-white/10 bg-slate-elevated/40 p-2">
+              {rolesLoading ? (
+                <p className="px-1 py-1 text-xs text-muted">
+                  Loading Discord roles…
+                </p>
+              ) : null}
+              {rolesErr ? (
+                <p className="px-1 py-1 text-xs text-coral">{rolesErr}</p>
+              ) : null}
+              {!rolesLoading && !rolesErr && discordRoles.length === 0 ? (
+                <p className="px-1 py-1 text-xs text-muted">
+                  No roles returned. Ensure the bot is in this server.
+                </p>
+              ) : null}
+              {discordRoles.map((role) => {
+                const checked = modRoleIds.includes(role.id);
+                return (
+                  <label
+                    key={role.id}
+                    className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm hover:bg-white/5"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={!canWrite && !demoProUnlock}
+                      onChange={(e) => {
+                        setModRoleIds((prev) =>
+                          e.target.checked
+                            ? [...prev, role.id]
+                            : prev.filter((id) => id !== role.id),
+                        );
+                      }}
+                      className="h-4 w-4 accent-coral disabled:cursor-not-allowed"
+                    />
+                    <span
+                      className="size-2.5 shrink-0 rounded-sm"
+                      style={{
+                        backgroundColor: role.color
+                          ? `#${role.color.toString(16).padStart(6, "0")}`
+                          : "#94a3b8",
+                      }}
+                      aria-hidden
+                    />
+                    <span className="truncate text-white/85">{role.name}</span>
+                    {role.managed ? (
+                      <span className="text-[10px] uppercase tracking-wide text-muted">
+                        bot
+                      </span>
+                    ) : null}
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          {modRolesOn && modRoleIds.length > 0 ? (
+            <p className="mt-1.5 text-xs text-muted">
+              {modRoleIds.length} role{modRoleIds.length === 1 ? "" : "s"}{" "}
+              selected for Rallied Mod access.
+            </p>
+          ) : null}
+        </div>
       </section>
 
       <section className="space-y-4">

@@ -61,6 +61,14 @@ export function hasCommunityAccess(plan: string | null | undefined): boolean {
 }
 
 /**
+ * Rallied Mod dashboard roles (Settings → mod_role_ids) — Community+ only.
+ * Starter / free / lapsed: no mod login even if roles were previously saved.
+ */
+export function modDashboardEnabled(plan: string | null | undefined): boolean {
+  return hasCommunityAccess(plan);
+}
+
+/**
  * Resolve effective plan for gates.
  * Dogfood allowlist → founding_pro (skip caps).
  * Expired trial → free (caller should persist via lapseExpiredTrial).

@@ -102,6 +102,7 @@ function defaultPublicSettings(server: Server): ServerSettings {
     ghostless_role_threshold_pct: 90,
     ghostless_role_min_sessions: 10,
     digest_channel_id: null,
+    mod_role_ids: [],
     strike_threshold: 3,
     lockout_days: 7,
     join_min_ghostless_pct: null,
@@ -129,6 +130,8 @@ function mapPublicSettings(row: Record<string, unknown>): ServerSettings {
     ),
     ghostless_role_min_sessions: Number(row.ghostless_role_min_sessions ?? 10),
     digest_channel_id: (row.digest_channel_id as string | null) ?? null,
+    // Admin-only — never expose Mod role ids on public pages
+    mod_role_ids: [],
     strike_threshold: Number(row.strike_threshold ?? 3),
     lockout_days: Number(row.lockout_days ?? 7),
     // Admin-only gates — never expose real values on public pages

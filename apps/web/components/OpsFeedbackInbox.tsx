@@ -48,9 +48,6 @@ export function OpsFeedbackInbox({ reports }: Props) {
             done / wontfix.
           </p>
         </div>
-        <Link href="/app" className="text-sm text-muted hover:text-coral">
-          ← /app
-        </Link>
       </header>
 
       <div className="mt-6 flex flex-wrap gap-3 border-b border-white/10 pb-4">

@@ -221,7 +221,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 border-b border-white/10 bg-slate/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-2.5 sm:gap-3 sm:py-3">
-          <Link href="/" className="flex-none">
+          <Link
+            href={navHref("/app")}
+            className="flex-none"
+            aria-label="Rallied dashboard"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/brand/rallied-wm-transparent-dark.png"

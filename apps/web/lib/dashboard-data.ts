@@ -8,11 +8,20 @@ import type {
   Lockout,
   Member,
   PlanId,
+  ResolvedDashboardRange,
   Server,
   ServerSettings,
   Strike,
 } from "@rallied/shared";
-import { monthStartUtc } from "@rallied/shared";
+import {
+  DEFAULT_DASHBOARD_RANGE,
+  resolveDashboardRange,
+  utcDayKey,
+  utcMonthDayLabel,
+  utcWeekdayLabel,
+  weekStartUtc,
+  type DashboardRangeKey,
+} from "@rallied/shared";
 import {
   MOCK_ANALYTICS_EXTRAS,
   MOCK_ANALYTICS_TREND,
@@ -37,7 +46,6 @@ import {
 import {
   buildReliabilityHealth,
   MOCK_RELIABILITY_HEALTH,
-  weekStartUtc,
   type ReliabilityHealth,
 } from "./reliability-health";
 import { fetchGuildMetaFromDiscord } from "./auth/discord";
@@ -114,6 +122,8 @@ export type DashboardBundle = {
   guildId: string;
   /** False when live path wanted but SUPABASE_SERVICE_ROLE_KEY missing */
   liveAvailable: boolean;
+  /** Active dashboard time range (UI filter only). */
+  range: ResolvedDashboardRange;
   server: Server | null;
   settings: ServerSettings | null;
   parties: DashboardParty[];
@@ -123,12 +133,12 @@ export type DashboardBundle = {
   activeStrikeCount: number;
   disputes: DashboardDispute[];
   analyticsTrend: AnalyticsTrendPoint[];
-  /** Prior 7 days when available (mock / later live). */
+  /** Prior window when available (mock / live WoW). */
   analyticsTrendPrior: AnalyticsTrendPoint[];
   analyticsExtras: AnalyticsExtras | null;
-  /** Top members for Pro “Top this week” (by show rate, then vibe). */
+  /** Top members by Ghostless show rate (lifetime board stats). */
   analyticsTopPlayers: AnalyticsTopPlayer[];
-  /** Per-server monthly Most reliable + Top hosts (Community+). */
+  /** Per-server Most reliable (lifetime) + Top hosts (range-scoped). */
   monthlyLeaderboard: MonthlyLeaderboard | null;
   /** Overview reliability health (Community lite / Pro trends). */
   reliabilityHealth: ReliabilityHealth | null;
@@ -275,7 +285,81 @@ function upcomingFromParties(
     }));
 }
 
-function buildMockBundle(guildId: string): DashboardBundle {
+function mockTrendForRange(
+  range: ResolvedDashboardRange,
+): { trend: AnalyticsTrendPoint[]; prior: AnalyticsTrendPoint[] } {
+  if (range.key === "week") {
+    return {
+      trend: MOCK_ANALYTICS_TREND,
+      prior: MOCK_ANALYTICS_TREND_PRIOR,
+    };
+  }
+  // Stretch the weekly mock across longer windows for demo.
+  const base = MOCK_ANALYTICS_TREND;
+  const priorBase = MOCK_ANALYTICS_TREND_PRIOR;
+  if (range.chartMode === "week") {
+    const trend: AnalyticsTrendPoint[] = [];
+    const prior: AnalyticsTrendPoint[] = [];
+    for (let w = 11; w >= 0; w--) {
+      const d = weekStartUtc(range.end);
+      d.setUTCDate(d.getUTCDate() - 7 * w);
+      const b = base[w % base.length]!;
+      trend.push({
+        day: `W${12 - w}`,
+        parties: b.parties + (w % 3),
+        vibes: b.vibes + (w % 5),
+        ghosts: b.ghosts,
+      });
+      if (w >= 6) {
+        const pb = priorBase[w % priorBase.length]!;
+        prior.push({
+          day: `W${12 - w}`,
+          parties: pb.parties,
+          vibes: pb.vibes,
+          ghosts: pb.ghosts,
+        });
+      }
+    }
+    return { trend, prior };
+  }
+  const days =
+    range.start == null
+      ? 30
+      : Math.max(
+          1,
+          Math.ceil((range.end.getTime() - range.start.getTime()) / 86400_000) +
+            1,
+        );
+  const capped = Math.min(days, 31);
+  const trend: AnalyticsTrendPoint[] = [];
+  const prior: AnalyticsTrendPoint[] = [];
+  for (let i = capped - 1; i >= 0; i--) {
+    const d = new Date(range.end);
+    d.setUTCHours(0, 0, 0, 0);
+    d.setUTCDate(d.getUTCDate() - i);
+    const b = base[i % base.length]!;
+    trend.push({
+      day: capped <= 7 ? utcWeekdayLabel(d) : utcMonthDayLabel(d),
+      parties: b.parties,
+      vibes: b.vibes,
+      ghosts: b.ghosts,
+    });
+    const pb = priorBase[i % priorBase.length]!;
+    prior.push({
+      day: capped <= 7 ? utcWeekdayLabel(d) : utcMonthDayLabel(d),
+      parties: pb.parties,
+      vibes: pb.vibes,
+      ghosts: pb.ghosts,
+    });
+  }
+  return { trend, prior };
+}
+
+function buildMockBundle(
+  guildId: string,
+  rangeKey: DashboardRangeKey = DEFAULT_DASHBOARD_RANGE,
+): DashboardBundle {
+  const range = resolveDashboardRange(rangeKey);
   const server = mockServerForGuild(guildId);
   const contentId =
     server.id === MOCK_SERVERS[2].id ? MOCK_SERVERS[0].id : server.id;
@@ -308,11 +392,15 @@ function buildMockBundle(guildId: string): DashboardBundle {
   const activeStrikeCount = MOCK_STRIKES.filter(
     (s) => s.server_id === contentId && s.active,
   ).length;
+  const { trend, prior } = mockTrendForRange(range);
+  const reliabilityScale =
+    range.key === "week" ? 1 : range.key === "month" ? 1.4 : range.key === "30d" ? 1.6 : 2.2;
 
   return {
     source: "mock",
     guildId,
     liveAvailable: hasServiceRole(),
+    range,
     server,
     settings: mockSettingsForServer(server),
     parties,
@@ -321,8 +409,8 @@ function buildMockBundle(guildId: string): DashboardBundle {
     memberCount: members.length,
     activeStrikeCount,
     disputes,
-    analyticsTrend: MOCK_ANALYTICS_TREND,
-    analyticsTrendPrior: MOCK_ANALYTICS_TREND_PRIOR,
+    analyticsTrend: trend,
+    analyticsTrendPrior: prior,
     analyticsExtras: MOCK_ANALYTICS_EXTRAS,
     analyticsTopPlayers: topPlayersFromMembers(members),
     monthlyLeaderboard: buildMonthlyLeaderboard({
@@ -339,10 +427,16 @@ function buildMockBundle(guildId: string): DashboardBundle {
         host_member_id: p.host_member_id,
         created_at: p.created_at,
       })),
+      since: range.start,
+      periodLabel: range.heading,
     }),
     reliabilityHealth: {
       ...MOCK_RELIABILITY_HEALTH,
       openDisputes: disputes.filter((d) => d.status === "open").length,
+      standbyPromotionsThisWeek: Math.round(
+        (MOCK_RELIABILITY_HEALTH.standbyPromotionsThisWeek ?? 0) *
+          reliabilityScale,
+      ),
     },
     upcomingScheduled: upcomingFromParties(parties),
     notice: "Demo / mock data — not a live guild.",
@@ -353,11 +447,13 @@ function emptyBundle(
   guildId: string,
   notice: string,
   server: Server | null = null,
+  rangeKey: DashboardRangeKey = DEFAULT_DASHBOARD_RANGE,
 ): DashboardBundle {
   return {
     source: "empty",
     guildId,
     liveAvailable: hasServiceRole(),
+    range: resolveDashboardRange(rangeKey),
     server,
     settings: null,
     parties: [],
@@ -377,21 +473,49 @@ function emptyBundle(
   };
 }
 
-function emptyDayBuckets(daysBackStart: number, daysBackEnd: number) {
+/** Daily buckets from `start` (inclusive UTC day) through `end` (inclusive UTC day). */
+function dayBucketsBetween(start: Date, end: Date) {
   const dayBuckets = new Map<string, AnalyticsTrendPoint>();
-  for (let i = daysBackStart; i >= daysBackEnd; i--) {
-    const d = new Date();
-    d.setUTCHours(0, 0, 0, 0);
-    d.setUTCDate(d.getUTCDate() - i);
-    const key = d.toISOString().slice(0, 10);
+  const cursor = new Date(start);
+  cursor.setUTCHours(0, 0, 0, 0);
+  const endDay = new Date(end);
+  endDay.setUTCHours(0, 0, 0, 0);
+  const spanDays =
+    Math.round((endDay.getTime() - cursor.getTime()) / 86400_000) + 1;
+  const useWeekday = spanDays <= 7;
+  while (cursor.getTime() <= endDay.getTime()) {
+    const key = utcDayKey(cursor);
     dayBuckets.set(key, {
-      day: weekdayLabel(d),
+      day: useWeekday ? utcWeekdayLabel(cursor) : utcMonthDayLabel(cursor),
+      parties: 0,
+      vibes: 0,
+      ghosts: 0,
+    });
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return dayBuckets;
+}
+
+/** Weekly buckets for the last `weeks` UTC weeks ending at the week of `end`. */
+function weekBucketsEndingAt(end: Date, weeks: number) {
+  const buckets = new Map<string, AnalyticsTrendPoint>();
+  const thisWeek = weekStartUtc(end);
+  for (let i = weeks - 1; i >= 0; i--) {
+    const start = new Date(thisWeek);
+    start.setUTCDate(start.getUTCDate() - 7 * i);
+    const key = utcDayKey(start);
+    buckets.set(key, {
+      day: `${start.getUTCMonth() + 1}/${start.getUTCDate()}`,
       parties: 0,
       vibes: 0,
       ghosts: 0,
     });
   }
-  return dayBuckets;
+  return buckets;
+}
+
+function weekBucketKey(iso: string): string {
+  return utcDayKey(weekStartUtc(new Date(iso)));
 }
 
 function parseEventMeta(raw: unknown): { noShows?: number; rosterSize?: number } {
@@ -403,16 +527,18 @@ function parseEventMeta(raw: unknown): { noShows?: number; rosterSize?: number }
   };
 }
 
-function weekdayLabel(d: Date): string {
-  return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()]!;
-}
-
-async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
+async function loadLiveBundle(
+  guildId: string,
+  rangeKey: DashboardRangeKey = DEFAULT_DASHBOARD_RANGE,
+): Promise<DashboardBundle> {
+  const range = resolveDashboardRange(rangeKey);
   const sb = getServiceSupabase();
   if (!sb) {
     return emptyBundle(
       guildId,
       "Add SUPABASE_SERVICE_ROLE_KEY as a Runtime Secret on the web Worker (not Build-only, not the bot). Name it exactly SUPABASE_SERVICE_ROLE_KEY, then redeploy once — later deploys keep it.",
+      null,
+      rangeKey,
     );
   }
 
@@ -424,13 +550,20 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
 
   if (serverErr) {
     console.warn("dashboard server lookup", serverErr.message);
-    return emptyBundle(guildId, `Could not load server: ${serverErr.message}`);
+    return emptyBundle(
+      guildId,
+      `Could not load server: ${serverErr.message}`,
+      null,
+      rangeKey,
+    );
   }
 
   if (!serverRow) {
     return emptyBundle(
       guildId,
       "No Rallied server row for this guild yet. Invite the bot and run a slash command (e.g. /lfg create) so it upserts into Supabase.",
+      null,
+      rangeKey,
     );
   }
 
@@ -468,12 +601,72 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
   }
   const serverId = server.id;
 
-  const now = new Date();
-  const weekAgo = new Date(now.getTime() - 7 * 86400_000).toISOString();
-  const twoWeeksAgo = new Date(now.getTime() - 14 * 86400_000).toISOString();
-  const weekStart = weekStartUtc(now).toISOString();
-  const monthStart = monthStartUtc(now).toISOString();
+  const now = range.end;
   const nowIso = now.toISOString();
+  const rangeStartIso = range.start?.toISOString() ?? null;
+  const priorStartIso = range.priorStart?.toISOString() ?? null;
+  const priorEndIso = range.priorEnd?.toISOString() ?? null;
+  // Chart / analytics fetch lower bound: range start, or 12-week chart window for all-time.
+  const chartFetchStart =
+    range.start ??
+    (() => {
+      const d = weekStartUtc(now);
+      d.setUTCDate(d.getUTCDate() - 7 * 11);
+      return d;
+    })();
+  const chartFetchStartIso = chartFetchStart.toISOString();
+  const eventsFetchStartIso = priorStartIso ?? chartFetchStartIso;
+
+  let hostPartiesQuery = sb
+    .from("lfg_parties")
+    .select("host_member_id, created_at")
+    .eq("server_id", serverId);
+  if (rangeStartIso) {
+    hostPartiesQuery = hostPartiesQuery.gte("created_at", rangeStartIso);
+  } else {
+    hostPartiesQuery = hostPartiesQuery.limit(2000);
+  }
+
+  let rangePartiesQuery = sb
+    .from("lfg_parties")
+    .select("id, created_at")
+    .eq("server_id", serverId)
+    .gte("created_at", chartFetchStartIso);
+  let priorPartiesQuery =
+    priorStartIso && priorEndIso
+      ? sb
+          .from("lfg_parties")
+          .select("id, created_at")
+          .eq("server_id", serverId)
+          .gte("created_at", priorStartIso)
+          .lt("created_at", priorEndIso)
+      : Promise.resolve({ data: [] as { id: string; created_at: string }[] });
+
+  let readyResolvedQuery = sb
+    .from("lfg_parties")
+    .select("id, ready_check_resolved_at")
+    .eq("server_id", serverId)
+    .gte("ready_check_resolved_at", rangeStartIso ?? chartFetchStartIso)
+    .not("ready_check_resolved_at", "is", null);
+  let priorReadyQuery =
+    priorStartIso && priorEndIso
+      ? sb
+          .from("lfg_parties")
+          .select("id, ready_check_resolved_at")
+          .eq("server_id", serverId)
+          .gte("ready_check_resolved_at", priorStartIso)
+          .lt("ready_check_resolved_at", priorEndIso)
+          .not("ready_check_resolved_at", "is", null)
+      : Promise.resolve({ data: [] as { id: string }[] });
+
+  let noShowStrikesQuery = sb
+    .from("strikes")
+    .select("id, reason, created_at")
+    .eq("server_id", serverId)
+    .ilike("reason", "Ready-check no-show%");
+  if (rangeStartIso) {
+    noShowStrikesQuery = noShowStrikesQuery.gte("created_at", rangeStartIso);
+  }
 
   const [
     settingsRes,
@@ -501,11 +694,7 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
       .order("created_at", { ascending: false })
       .limit(100),
     // Top hosts: include soft-closed parties (deleted_at set on Close/expire).
-    sb
-      .from("lfg_parties")
-      .select("host_member_id, created_at")
-      .eq("server_id", serverId)
-      .gte("created_at", monthStart),
+    hostPartiesQuery,
     sb
       .from("members")
       .select("*")
@@ -525,17 +714,8 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
       .eq("server_id", serverId)
       .order("created_at", { ascending: false })
       .limit(100),
-    sb
-      .from("lfg_parties")
-      .select("id, created_at")
-      .eq("server_id", serverId)
-      .gte("created_at", weekAgo),
-    sb
-      .from("lfg_parties")
-      .select("id, created_at")
-      .eq("server_id", serverId)
-      .gte("created_at", twoWeeksAgo)
-      .lt("created_at", weekAgo),
+    rangePartiesQuery,
+    priorPartiesQuery,
     sb
       .from("lfg_parties")
       .select(
@@ -548,32 +728,16 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
       .in("status", ["open", "filled"])
       .order("scheduled_start_at", { ascending: true })
       .limit(5),
-    sb
-      .from("lfg_parties")
-      .select("id, ready_check_resolved_at")
-      .eq("server_id", serverId)
-      .gte("ready_check_resolved_at", weekAgo)
-      .not("ready_check_resolved_at", "is", null),
-    sb
-      .from("lfg_parties")
-      .select("id, ready_check_resolved_at")
-      .eq("server_id", serverId)
-      .gte("ready_check_resolved_at", twoWeeksAgo)
-      .lt("ready_check_resolved_at", weekAgo)
-      .not("ready_check_resolved_at", "is", null),
+    readyResolvedQuery,
+    priorReadyQuery,
     sb
       .from("server_events")
       .select("event_type, party_id, member_id, meta, created_at")
       .eq("server_id", serverId)
-      .gte("created_at", twoWeeksAgo)
+      .gte("created_at", eventsFetchStartIso)
       .order("created_at", { ascending: false })
-      .limit(500),
-    sb
-      .from("strikes")
-      .select("id, reason, created_at")
-      .eq("server_id", serverId)
-      .gte("created_at", weekAgo)
-      .ilike("reason", "Ready-check no-show%"),
+      .limit(1000),
+    noShowStrikesQuery,
   ]);
 
   // Soft-fail if server_events migration not applied yet
@@ -607,6 +771,7 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
     ]),
   ];
 
+  const vibeCurrentStart = rangeStartIso ?? chartFetchStartIso;
   const [partyMembersRes, weekVibesRes, priorVibesRes, readyPartyMembersRes] =
     await Promise.all([
       partyIdList.length > 0
@@ -624,17 +789,17 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
               "id, created_at, ghosted, party_id, rater_id, vibe_score, showed_up",
             )
             .in("party_id", vibePartyIds)
-            .gte("created_at", weekAgo)
+            .gte("created_at", vibeCurrentStart)
         : Promise.resolve({ data: [] as Record<string, unknown>[] }),
-      vibePartyIds.length > 0
+      vibePartyIds.length > 0 && priorStartIso && priorEndIso
         ? sb
             .from("vibe_checks")
             .select(
               "id, created_at, ghosted, party_id, rater_id, vibe_score, showed_up",
             )
             .in("party_id", vibePartyIds)
-            .gte("created_at", twoWeeksAgo)
-            .lt("created_at", weekAgo)
+            .gte("created_at", priorStartIso)
+            .lt("created_at", priorEndIso)
         : Promise.resolve({ data: [] as Record<string, unknown>[] }),
       readyPartyIds.length > 0 || priorReadyPartyIds.length > 0
         ? sb
@@ -791,7 +956,7 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
     };
   });
 
-  // Analytics: bucket last 7 days + prior 7 days (UTC)
+  // Analytics: bucket by selected range (UTC day or week)
   const weekPartyRows = (weekPartiesRes.data ?? []) as {
     id: string;
     created_at: string;
@@ -801,19 +966,43 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
     created_at: string;
   }[];
 
-  const dayBuckets = emptyDayBuckets(6, 0);
-  const priorDayBuckets = emptyDayBuckets(13, 7);
+  const dayBuckets =
+    range.chartMode === "week"
+      ? weekBucketsEndingAt(now, 12)
+      : dayBucketsBetween(range.start ?? chartFetchStart, now);
+  const priorDayBuckets =
+    range.priorStart && range.priorEnd
+      ? dayBucketsBetween(range.priorStart, new Date(range.priorEnd.getTime() - 1))
+      : new Map<string, AnalyticsTrendPoint>();
 
-  for (const p of weekPartyRows) {
-    const key = p.created_at.slice(0, 10);
-    const b = dayBuckets.get(key);
+  function bumpParty(
+    buckets: Map<string, AnalyticsTrendPoint>,
+    createdAt: string,
+  ) {
+    const key =
+      range.chartMode === "week"
+        ? weekBucketKey(createdAt)
+        : createdAt.slice(0, 10);
+    const b = buckets.get(key);
     if (b) b.parties += 1;
   }
-  for (const p of priorWeekPartyRows) {
-    const key = p.created_at.slice(0, 10);
-    const b = priorDayBuckets.get(key);
-    if (b) b.parties += 1;
+  function bumpVibe(
+    buckets: Map<string, AnalyticsTrendPoint>,
+    createdAt: string,
+    ghosted?: boolean,
+  ) {
+    const key =
+      range.chartMode === "week"
+        ? weekBucketKey(createdAt)
+        : createdAt.slice(0, 10);
+    const b = buckets.get(key);
+    if (!b) return;
+    b.vibes += 1;
+    if (ghosted) b.ghosts += 1;
   }
+
+  for (const p of weekPartyRows) bumpParty(dayBuckets, p.created_at);
+  for (const p of priorWeekPartyRows) bumpParty(priorDayBuckets, p.created_at);
 
   const weekVibeRows = (weekVibesRes.data ?? []) as {
     created_at: string;
@@ -832,20 +1021,9 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
     rater_id?: string;
   }[];
 
-  for (const v of weekVibeRows) {
-    const key = String(v.created_at).slice(0, 10);
-    const b = dayBuckets.get(key);
-    if (!b) continue;
-    b.vibes += 1;
-    if (v.ghosted) b.ghosts += 1;
-  }
-  for (const v of priorVibeRows) {
-    const key = String(v.created_at).slice(0, 10);
-    const b = priorDayBuckets.get(key);
-    if (!b) continue;
-    b.vibes += 1;
-    if (v.ghosted) b.ghosts += 1;
-  }
+  for (const v of weekVibeRows) bumpVibe(dayBuckets, String(v.created_at), v.ghosted);
+  for (const v of priorVibeRows)
+    bumpVibe(priorDayBuckets, String(v.created_at), v.ghosted);
 
   const activeStrikeCount = [...strikesByMember.values()].reduce(
     (n, list) => n + list.length,
@@ -899,19 +1077,22 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
       }[])
     : [];
 
+  const rangeStartCmp = rangeStartIso ?? chartFetchStartIso;
   const readyEvents7d = eventRows
     .filter(
       (e) =>
         e.event_type === "ready_check_resolved" &&
-        e.created_at >= weekAgo,
+        e.created_at >= rangeStartCmp,
     )
     .map((e) => ({ meta: parseEventMeta(e.meta), created_at: e.created_at }));
   const readyEventsPrior = eventRows
     .filter(
       (e) =>
         e.event_type === "ready_check_resolved" &&
-        e.created_at >= twoWeeksAgo &&
-        e.created_at < weekAgo,
+        priorStartIso != null &&
+        priorEndIso != null &&
+        e.created_at >= priorStartIso &&
+        e.created_at < priorEndIso,
     )
     .map((e) => ({ meta: parseEventMeta(e.meta), created_at: e.created_at }));
 
@@ -958,7 +1139,8 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
   const standbyPromotionsThisWeek = eventsAvailable
     ? eventRows.filter(
         (e) =>
-          e.event_type === "waitlist_promote" && e.created_at >= weekStart,
+          e.event_type === "waitlist_promote" &&
+          e.created_at >= rangeStartCmp,
       ).length
     : null;
 
@@ -972,6 +1154,22 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
     noShowStrikeCount7d: (noShowStrikesRes.data ?? []).length,
     readyChecksResolved7d: readyPartyIds.length,
   });
+  // Soften empty hints that still say "7 days" when range differs.
+  if (range.key !== "week") {
+    const win = range.label.toLowerCase();
+    if (reliabilityHealth.emptyHints.noShow?.includes("last 7 days")) {
+      reliabilityHealth.emptyHints.noShow =
+        reliabilityHealth.emptyHints.noShow.replace("last 7 days", win);
+    }
+    if (reliabilityHealth.emptyHints.vibe?.includes("last 7 days")) {
+      reliabilityHealth.emptyHints.vibe =
+        reliabilityHealth.emptyHints.vibe.replace("last 7 days", win);
+    }
+    if (reliabilityHealth.emptyHints.standby?.includes("this week")) {
+      reliabilityHealth.emptyHints.standby =
+        reliabilityHealth.emptyHints.standby.replace(/this week/g, win);
+    }
+  }
 
   const upcomingFill = new Map<string, number>();
   const upcomingIds = ((upcomingRes.data ?? []) as { id: string }[]).map(
@@ -1015,6 +1213,7 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
     source: "live",
     guildId,
     liveAvailable: true,
+    range,
     server,
     settings,
     parties,
@@ -1045,6 +1244,8 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
         created_at: String(p.created_at),
       })),
       now,
+      since: range.start,
+      periodLabel: range.heading,
     }),
     reliabilityHealth,
     upcomingScheduled,
@@ -1056,13 +1257,15 @@ async function loadLiveBundle(guildId: string): Promise<DashboardBundle> {
  * Load dashboard bundle for a Discord guild id.
  * @param useMock — mock session / ?mock=1 / explicit demo only.
  * Stale demo-guild-* under a live OAuth session must NOT load MOCK_SERVERS.
+ * @param rangeKey — `?range=` UI filter (default this month). Does not purge data.
  */
 export async function loadDashboard(
   guildId: string,
   useMock: boolean,
+  rangeKey: DashboardRangeKey = DEFAULT_DASHBOARD_RANGE,
 ): Promise<DashboardBundle> {
   if (useMock) {
-    return buildMockBundle(guildId || "demo-guild-1");
+    return buildMockBundle(guildId || "demo-guild-1", rangeKey);
   }
   if (!guildId.trim() || isDemoGuildId(guildId)) {
     return emptyBundle(
@@ -1070,16 +1273,20 @@ export async function loadDashboard(
       !guildId.trim()
         ? "Select a server from the switcher. If none appear, Add to Discord then Log in again."
         : "Stale demo guild selection ignored — pick a live server from the switcher (or open /demo for the sandbox).",
+      null,
+      rangeKey,
     );
   }
   try {
-    return await loadLiveBundle(guildId);
+    return await loadLiveBundle(guildId, rangeKey);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("loadDashboard live failed", msg, err);
     return emptyBundle(
       guildId,
       `Dashboard error: ${msg}. Check SUPABASE_SERVICE_ROLE_KEY / SESSION_SECRET on the web Worker (not silent mock).`,
+      null,
+      rangeKey,
     );
   }
 }

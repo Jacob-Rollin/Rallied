@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { reliabilityEnabled } from "@rallied/shared";
+import { DashboardRangeControl } from "@/components/DashboardRangeControl";
 import { DataSourceBanner } from "@/components/DataSourceBanner";
 import { MonthlyLeaderboard } from "@/components/MonthlyLeaderboard";
 import { PlanBanner } from "@/components/PlanBanner";
@@ -9,8 +10,9 @@ import { UpcomingScheduled } from "@/components/UpcomingScheduled";
 import { loadDashboard } from "@/lib/dashboard-data";
 import {
   displayNameForGuild,
+  rangeFromSearchParams,
   resolveSelectedGuild,
-  withGuildQuery,
+  withDashboardQuery,
 } from "@/lib/guild-context";
 import { isUsableServerName } from "@/lib/server-display-name";
 
@@ -23,7 +25,9 @@ export default async function OverviewPage({ searchParams }: Props) {
   const { guildId, useMock, oauthGuildName } = await resolveSelectedGuild({
     searchParams: sp,
   });
-  const data = await loadDashboard(guildId, useMock);
+  const rangeKey = rangeFromSearchParams(sp);
+  const data = await loadDashboard(guildId, useMock, rangeKey);
+  const rangeLabel = data.range.heading;
   const plan = data.server?.plan;
   const reliabilityOn = reliabilityEnabled(plan);
   const serverLabel = displayNameForGuild({
@@ -32,19 +36,27 @@ export default async function OverviewPage({ searchParams }: Props) {
     oauthName: oauthGuildName,
   });
   const hasRealName = isUsableServerName(serverLabel, guildId);
+  const q = { guildId, range: rangeKey };
 
   return (
     <div className="space-y-10">
-      <div>
-        <h1 className="font-display text-3xl tracking-wide">Overview</h1>
-        <p className="mt-1 text-sm text-muted">
-          {serverLabel}
-          {!hasRealName && guildId ? (
-            <span className="ml-2 font-mono text-xs text-white/35">
-              {guildId}
-            </span>
-          ) : null}
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="font-display text-3xl tracking-wide">Overview</h1>
+          <p className="mt-1 text-sm text-muted">
+            {serverLabel}
+            {!hasRealName && guildId ? (
+              <span className="ml-2 font-mono text-xs text-white/35">
+                {guildId}
+              </span>
+            ) : null}
+          </p>
+        </div>
+        <DashboardRangeControl
+          pathname="/app"
+          current={rangeKey}
+          guildId={guildId}
+        />
       </div>
 
       <DataSourceBanner source={data.source} notice={data.notice} />
@@ -52,7 +64,7 @@ export default async function OverviewPage({ searchParams }: Props) {
       <PlanBanner
         plan={data.server?.plan}
         trialEndsAt={data.server?.trial_ends_at}
-        billingHref={withGuildQuery("/app/billing", guildId)}
+        billingHref={withDashboardQuery("/app/billing", q)}
       />
 
       <section className="space-y-3">
@@ -62,17 +74,17 @@ export default async function OverviewPage({ searchParams }: Props) {
             {
               label: "Open parties",
               value: data.openPartyCount,
-              href: withGuildQuery("/app/lfg", guildId),
+              href: withDashboardQuery("/app/lfg", q),
             },
             {
               label: "Members",
               value: data.memberCount,
-              href: withGuildQuery("/app/people", guildId),
+              href: withDashboardQuery("/app/people", q),
             },
             {
               label: "Active strikes",
               value: data.activeStrikeCount,
-              href: withGuildQuery("/app/people", guildId),
+              href: withDashboardQuery("/app/people", q),
             },
           ].map((kpi) => (
             <Link
@@ -100,6 +112,9 @@ export default async function OverviewPage({ searchParams }: Props) {
           monthLabel={data.monthlyLeaderboard.monthLabel}
           mostReliable={data.monthlyLeaderboard.mostReliable}
           topHosts={data.monthlyLeaderboard.topHosts}
+          mostReliableIsLifetime={
+            data.monthlyLeaderboard.mostReliableIsLifetime
+          }
         />
       ) : null}
 
@@ -107,20 +122,24 @@ export default async function OverviewPage({ searchParams }: Props) {
         <ReliabilityHealth
           health={data.reliabilityHealth}
           plan={plan}
-          disputesHref={withGuildQuery("/app/disputes", guildId)}
-          billingHref={withGuildQuery("/app/billing", guildId)}
+          disputesHref={withDashboardQuery("/app/disputes", q)}
+          billingHref={withDashboardQuery("/app/billing", q)}
+          rangeLabel={rangeLabel}
         />
       ) : null}
 
       <UpcomingScheduled
         parties={data.upcomingScheduled}
         plan={plan}
-        settingsHref={withGuildQuery("/app/settings", guildId)}
+        settingsHref={withDashboardQuery("/app/settings", q)}
         source={data.source}
       />
 
       {reliabilityOn ? (
-        <StandbyPromotions health={data.reliabilityHealth} />
+        <StandbyPromotions
+          health={data.reliabilityHealth}
+          rangeLabel={rangeLabel}
+        />
       ) : null}
     </div>
   );

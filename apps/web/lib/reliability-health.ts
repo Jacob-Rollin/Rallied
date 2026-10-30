@@ -68,15 +68,8 @@ function vibePct(v: { raters: number; seated: number } | null): number | null {
   return Math.round((Math.min(v.raters, v.seated) / v.seated) * 1000) / 10;
 }
 
-/** UTC Monday 00:00 of the current week. */
-export function weekStartUtc(now = new Date()): Date {
-  const d = new Date(now);
-  d.setUTCHours(0, 0, 0, 0);
-  const day = d.getUTCDay(); // 0 Sun … 6 Sat
-  const diff = day === 0 ? 6 : day - 1;
-  d.setUTCDate(d.getUTCDate() - diff);
-  return d;
-}
+/** Re-export — canonical helper lives in `@rallied/shared`. */
+export { weekStartUtc } from "@rallied/shared";
 
 export function buildReliabilityHealth(
   input: ReliabilityInputs,

@@ -9,11 +9,14 @@ type EntryHost = {
 };
 
 type Props = {
+  /** Period heading (e.g. "This month", "October 2026", "This week"). */
   monthLabel: string;
   mostReliable: EntryReliable[];
   topHosts: EntryHost[];
   /** Compact for public /s; roomier for /app */
   compact?: boolean;
+  /** Most reliable uses lifetime Ghostless % (not period-sliced). */
+  mostReliableIsLifetime?: boolean;
 };
 
 export function MonthlyLeaderboard({
@@ -21,12 +24,13 @@ export function MonthlyLeaderboard({
   mostReliable,
   topHosts,
   compact = false,
+  mostReliableIsLifetime = true,
 }: Props) {
   return (
     <section className={compact ? "space-y-3" : "space-y-4"}>
       <div>
         <h2 className="font-display text-xl tracking-wide">
-          {compact ? `Leaderboard · ${monthLabel}` : `This month · ${monthLabel}`}
+          {compact ? `Leaderboard · ${monthLabel}` : `${monthLabel}`}
         </h2>
         <p className="mt-1 text-sm text-muted">
           {compact
@@ -51,6 +55,11 @@ export function MonthlyLeaderboard({
           <p className="text-xs uppercase tracking-wider text-lime">
             Most reliable
           </p>
+          {mostReliableIsLifetime ? (
+            <p className="mt-1 text-[11px] text-white/40">
+              Ghostless % · lifetime
+            </p>
+          ) : null}
           {mostReliable.length === 0 ? (
             <p className="mt-3 text-sm text-muted">No ranked players yet.</p>
           ) : (
@@ -81,8 +90,9 @@ export function MonthlyLeaderboard({
           <p className="text-xs uppercase tracking-wider text-coral">
             Top hosts
           </p>
+          <p className="mt-1 text-[11px] text-white/40">{monthLabel}</p>
           {topHosts.length === 0 ? (
-            <p className="mt-3 text-sm text-muted">No hosts this month yet.</p>
+            <p className="mt-3 text-sm text-muted">No hosts in this range yet.</p>
           ) : (
             <ol className="mt-3 space-y-2 text-sm">
               {topHosts.map((h, i) => (

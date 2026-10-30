@@ -2,9 +2,14 @@ import type { ReliabilityHealth } from "@/lib/reliability-health";
 
 type Props = {
   health: ReliabilityHealth | null;
+  /** Active dashboard range label. */
+  rangeLabel?: string;
 };
 
-export function StandbyPromotions({ health }: Props) {
+export function StandbyPromotions({
+  health,
+  rangeLabel = "This week",
+}: Props) {
   const count = health?.standbyPromotionsThisWeek ?? null;
   const hint = health?.emptyHints.standby ?? null;
 
@@ -12,10 +17,10 @@ export function StandbyPromotions({ health }: Props) {
     <section className="space-y-2">
       <div>
         <h2 className="font-display text-xl tracking-wide">
-          Standby this week
+          Standby · {rangeLabel}
         </h2>
         <p className="mt-1 text-sm text-muted">
-          Waitlist promotions after ready-check no-shows (UTC week).
+          Waitlist promotions after ready-check no-shows (UTC).
         </p>
       </div>
       {count != null && count > 0 ? (
@@ -26,8 +31,7 @@ export function StandbyPromotions({ health }: Props) {
             {count == null ? "—" : "0"}
           </p>
           <p className="mt-1 text-sm text-muted">
-            {hint ??
-              "No standby promotions logged this week."}
+            {hint ?? `No standby promotions logged · ${rangeLabel}.`}
           </p>
         </div>
       )}

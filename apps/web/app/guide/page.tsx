@@ -432,17 +432,18 @@ export default function GuidePage() {
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">
             Community+ shows{" "}
             <strong className="font-semibold text-white">Most reliable</strong>{" "}
-            (Ghostless %) and{" "}
+            (Ghostless %, lifetime) and{" "}
             <strong className="font-semibold text-white">Top hosts</strong> for
-            this server this month — same board in Discord and on the admin
-            Overview. Use{" "}
+            this server — Discord{" "}
             <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
               /leaderboard
             </code>{" "}
-            or the desk{" "}
-            <strong className="font-semibold text-white">Board</strong> button.
-            Closed parties still count toward Top hosts for the month. Still this
-            server only — no cross-server ranks.
+            and desk{" "}
+            <strong className="font-semibold text-white">Board</strong> stay on
+            the UTC calendar month; the admin Overview can switch ranges (This
+            week Mon–Sun UTC, This month, Last 30 days, All time). Closed
+            parties still count toward Top hosts. Still this server only — no
+            cross-server ranks.
           </p>
         </section>
 
@@ -505,17 +506,19 @@ export default function GuidePage() {
               </span>
               <span>
                 <strong className="font-semibold text-white">Overview</strong>:
-                open parties / members / strikes, plus Community+{" "}
-                <strong className="font-semibold text-white">
-                  This month
-                </strong>{" "}
-                (Most reliable + Top hosts),{" "}
+                open parties / members / strikes, plus Community+ leaderboard
+                (Most reliable lifetime Ghostless % + Top hosts for the selected
+                range),{" "}
                 <strong className="font-semibold text-white">
                   Reliability health
                 </strong>{" "}
-                (7-day no-show / vibe response / open disputes — Pro adds
-                week-over-week when data exists), upcoming scheduled parties, and
-                Standby promotions this week.
+                and Standby for that range (This week / This month / Last 30 days
+                / All time via{" "}
+                <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
+                  ?range=
+                </code>
+                — Pro adds period-over-period when data exists), and upcoming
+                scheduled parties.
               </span>
             </li>
             <li className="flex gap-3">
@@ -574,7 +577,8 @@ export default function GuidePage() {
                 6
               </span>
               <span>
-                Also: LFG parties, People, Analytics (Pro export + trends).{" "}
+                Also: LFG parties, People, Analytics (same UTC range control as
+                Overview; Pro export + trends).{" "}
                 Owners open{" "}
                 <Link href="/app/billing" className="text-coral hover:underline">
                   Billing

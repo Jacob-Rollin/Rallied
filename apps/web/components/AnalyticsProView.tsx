@@ -21,6 +21,7 @@ type Props = {
   topPlayers?: AnalyticsTopPlayer[];
   onExport: () => void;
   exportDisabled?: boolean;
+  rangeLabel?: string;
 };
 
 export function AnalyticsProView({
@@ -32,6 +33,7 @@ export function AnalyticsProView({
   topPlayers = [],
   onExport,
   exportDisabled = false,
+  rangeLabel = "This month",
 }: Props) {
   const empty = trend.every((d) => d.parties === 0 && d.vibes === 0);
   const hasPrior = priorTrend.length > 0;
@@ -66,18 +68,18 @@ export function AnalyticsProView({
 
       {empty ? (
         <p className="text-sm text-muted">
-          No party or vibe activity in the last 7 days. Live servers without a
-          service role key also show empty — check Runtime Secrets.
+          No party or vibe activity in {rangeLabel.toLowerCase()}. Live servers
+          without a service role key also show empty — check Runtime Secrets.
         </p>
       ) : (
         <>
           <section className="space-y-3">
             <div>
               <h2 className="font-display text-xl tracking-wide">
-                Volume this week
+                Volume · {rangeLabel}
               </h2>
               <p className="mt-1 text-sm text-muted">
-                Parties and vibe checks by day (UTC).
+                Parties and vibe checks by day or week (UTC).
               </p>
             </div>
             <AnalyticsWeekBarChart
@@ -100,27 +102,27 @@ export function AnalyticsProView({
           <section className="space-y-3">
             <div>
               <h2 className="font-display text-xl tracking-wide">
-                Week totals
+                Period totals
               </h2>
               <p className="mt-1 text-sm text-muted">
-                Compared to the prior 7 days when data exists.
+                Compared to the prior period when data exists.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
               <AnalyticsKpiCard
-                label="Vibes (7d)"
+                label={`Vibes · ${rangeLabel}`}
                 value={vibes}
                 prior={priorVibes}
               />
               <AnalyticsKpiCard
-                label="Ghost flags (7d)"
+                label={`Ghost flags · ${rangeLabel}`}
                 value={ghosts}
                 prior={priorGhosts}
                 valueClassName="text-coral"
                 lowerIsBetter
               />
               <AnalyticsKpiCard
-                label="Parties (7d)"
+                label={`Parties · ${rangeLabel}`}
                 value={parties}
                 prior={priorParties}
               />
@@ -140,7 +142,7 @@ export function AnalyticsProView({
               <div className="grid gap-3 sm:grid-cols-3">
                 {extras!.showRatePct != null ? (
                   <AnalyticsSoftMetric
-                    label="Show rate (7d)"
+                    label={`Show rate · ${rangeLabel}`}
                     value={`${extras!.showRatePct}%`}
                     numericValue={extras!.showRatePct}
                     prior={extras!.priorShowRatePct ?? null}
@@ -148,7 +150,7 @@ export function AnalyticsProView({
                 ) : null}
                 {extras!.avgVibe != null ? (
                   <AnalyticsSoftMetric
-                    label="Avg vibe (7d)"
+                    label={`Avg vibe · ${rangeLabel}`}
                     value={String(extras!.avgVibe)}
                     numericValue={extras!.avgVibe}
                     prior={extras!.priorAvgVibe ?? null}
@@ -157,7 +159,7 @@ export function AnalyticsProView({
                 ) : null}
                 {extras!.readyCheckCompletionPct != null ? (
                   <AnalyticsSoftMetric
-                    label="Ready completion (7d)"
+                    label={`Ready completion · ${rangeLabel}`}
                     value={`${extras!.readyCheckCompletionPct}%`}
                     numericValue={extras!.readyCheckCompletionPct}
                     prior={extras!.priorReadyCheckCompletionPct ?? null}
@@ -176,7 +178,7 @@ export function AnalyticsProView({
           <section className="space-y-3">
             <div>
               <h2 className="font-display text-xl tracking-wide">
-                Top this week
+                Top players
               </h2>
               <p className="mt-1 text-sm text-muted">
                 By Ghostless show rate, then avg vibe (lifetime board stats).

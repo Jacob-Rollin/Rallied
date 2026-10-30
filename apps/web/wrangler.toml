@@ -1,6 +1,7 @@
 # Rallied website (Next.js → Cloudflare Workers via OpenNext)
 # Deploy from this package: npm run deploy:cf  (or from repo root: npm run deploy:web)
 # Bot Worker config stays in apps/bot/wrangler.toml — separate CF project.
+# Workers Builds watch this package path; keep_vars preserves Stripe/session secrets.
 # Tip rebuild nudge: content touch so Workers Builds re-evaluates this Worker path.
 
 name = "rallied-web"

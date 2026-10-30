@@ -13,14 +13,14 @@ import {
 } from "@/lib/guild-params";
 import { resolveServerDisplayName } from "@/lib/server-display-name";
 
-const NAV = [
-  { href: "/app", label: "Overview" },
-  { href: "/app/lfg", label: "LFG" },
-  { href: "/app/people", label: "People" },
-  { href: "/app/disputes", label: "Disputes" },
-  { href: "/app/analytics", label: "Analytics" },
-  { href: "/app/billing", label: "Billing" },
-  { href: "/app/settings", label: "Settings" },
+const NAV_ALL = [
+  { href: "/app", label: "Overview", access: "any" as const },
+  { href: "/app/lfg", label: "LFG", access: "any" as const },
+  { href: "/app/people", label: "People", access: "any" as const },
+  { href: "/app/disputes", label: "Disputes", access: "any" as const },
+  { href: "/app/analytics", label: "Analytics", access: "any" as const },
+  { href: "/app/billing", label: "Billing", access: "owner" as const },
+  { href: "/app/settings", label: "Settings", access: "owner" as const },
 ];
 
 type MeResponse = {
@@ -140,9 +140,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             icon: null,
             bot_present: true,
             plan: s.plan,
+            access:
+              s.discord_guild_id === "demo-guild-mod"
+                ? ("mod" as const)
+                : ("owner" as const),
           }));
 
   const server = guilds.find((g) => g.id === serverId) ?? guilds[0];
+  const access = server?.access === "mod" ? "mod" : "owner";
+  const nav = NAV_ALL.filter(
+    (item) => item.access === "any" || access === "owner",
+  );
   const withBot = guilds.filter((g) => g.bot_present);
   const empty =
     !loading &&
@@ -161,6 +169,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const q = params.toString();
     return q ? `${href}?${q}` : href;
   }
+
+  // Mods who deep-link to Settings/Billing get bounced to Overview.
+  useEffect(() => {
+    if (access !== "mod" || !server?.id) return;
+    if (
+      pathname.startsWith("/app/settings") ||
+      pathname.startsWith("/app/billing")
+    ) {
+      const params = new URLSearchParams();
+      params.set(GUILD_QUERY, server.id);
+      if (mockFlag) params.set("mock", "1");
+      router.replace(`/app?${params.toString()}`);
+    }
+  }, [access, pathname, router, server?.id, mockFlag]);
 
   return (
     <div className="min-h-screen">
@@ -220,9 +242,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto max-w-lg px-4 py-20 text-center">
           <h1 className="font-display text-3xl tracking-wide">No servers yet</h1>
           <p className="mt-3 text-sm text-muted">
-            Add Rallied to a Discord server you manage, then refresh. You need
-            Manage Server (or Administrator) on that guild. After the bot joins
-            and runs a command, the guild appears with{" "}
+            Add Rallied to a Discord server you manage, then refresh. Owners need
+            Manage Server (or Administrator). On Community+, owners can also
+            grant <strong className="font-semibold text-white">Rallied Mod</strong>{" "}
+            Discord roles in Settings so mods open Overview / LFG / People /
+            Disputes / Analytics (not Billing). After the bot joins and runs a
+            command, the guild appears with{" "}
             <code className="text-coral">bot_present</code>.
           </p>
           {guilds.length > 0 ? (
@@ -259,7 +284,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       ) : (
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[200px_1fr]">
           <nav className="flex gap-2 overflow-x-auto lg:flex-col lg:gap-1">
-            {NAV.map((item) => {
+            {nav.map((item) => {
               const active =
                 item.href === "/app"
                   ? pathname === "/app"
@@ -290,6 +315,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </span>
               <br />
               Plan: {server?.plan ?? "—"}
+              <br />
+              Access: {access === "mod" ? "Rallied Mod" : "Owner"}
             </p>
           </nav>
           <main className="min-w-0">{children}</main>

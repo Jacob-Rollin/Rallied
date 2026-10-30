@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireOwnerGuild } from "@/lib/auth/guild-access";
 import { getSession } from "@/lib/auth/session";
 import { appBaseUrl, getStripe, stripeConfigured } from "@/lib/stripe";
 import { getServiceSupabase } from "@/lib/supabase";
@@ -38,9 +39,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "missing_guild" }, { status: 400 });
   }
 
-  const allowed = (session.guilds ?? []).some((g) => g.id === discordGuildId);
-  if (!allowed) {
-    return NextResponse.json({ error: "guild_forbidden" }, { status: 403 });
+  if (!requireOwnerGuild(session, discordGuildId)) {
+    return NextResponse.json(
+      {
+        error: "owner_required",
+        hint: "Only server owners can open Billing. Rallied Mods cannot bill.",
+      },
+      { status: 403 },
+    );
   }
 
   const sb = getServiceSupabase();

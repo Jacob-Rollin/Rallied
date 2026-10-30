@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PLANS, type BillingInterval, type PaidCheckoutPlan } from "@rallied/shared";
+import { requireOwnerGuild } from "@/lib/auth/guild-access";
 import { getSession } from "@/lib/auth/session";
 import { countFoundingSeats } from "@/lib/billing-sync";
 import {
@@ -66,9 +67,14 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const allowed = (session.guilds ?? []).some((g) => g.id === discordGuildId);
-  if (!allowed) {
-    return NextResponse.json({ error: "guild_forbidden" }, { status: 403 });
+  if (!requireOwnerGuild(session, discordGuildId)) {
+    return NextResponse.json(
+      {
+        error: "owner_required",
+        hint: "Only server owners can open Checkout. Rallied Mods cannot bill.",
+      },
+      { status: 403 },
+    );
   }
 
   const priceId = getStripePriceId(plan, interval);

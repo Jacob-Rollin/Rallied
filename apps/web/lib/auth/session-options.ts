@@ -46,6 +46,7 @@ export function mockSessionPayload(): SessionData {
         icon: null,
         bot_present: true,
         plan: "community",
+        access: "owner",
       },
       {
         id: "demo-guild-2",
@@ -53,6 +54,7 @@ export function mockSessionPayload(): SessionData {
         icon: null,
         bot_present: true,
         plan: "trial",
+        access: "owner",
       },
       {
         id: "demo-guild-founding",
@@ -60,6 +62,15 @@ export function mockSessionPayload(): SessionData {
         icon: null,
         bot_present: true,
         plan: "founding_pro",
+        access: "owner",
+      },
+      {
+        id: "demo-guild-mod",
+        name: "Mod Preview Lounge",
+        icon: null,
+        bot_present: true,
+        plan: "community",
+        access: "mod",
       },
     ],
   };

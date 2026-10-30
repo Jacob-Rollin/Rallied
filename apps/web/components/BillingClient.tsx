@@ -315,9 +315,9 @@ export function BillingClient({
 
       {!stripeReady ? (
         <p className="rounded-brand border border-coral/35 bg-coral/10 px-4 py-3 text-sm text-white/80">
-          Stripe is not configured on this Worker yet. Jacob: add{" "}
-          <code className="text-coral">STRIPE_SECRET_KEY</code> + price IDs
-          (test mode), then Checkout buttons activate. Starter caps stay in
+          Stripe is not configured on this Worker yet. Add{" "}
+          <code className="text-coral">STRIPE_SECRET_KEY</code> + price IDs on
+          the web Worker, then Checkout buttons activate. Starter caps stay in
           force until a paid webhook lands.
         </p>
       ) : null}

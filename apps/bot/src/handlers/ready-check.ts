@@ -85,6 +85,7 @@ function buildReadyPayload(
   roster: Awaited<ReturnType<typeof loadReadyRoster>>,
   graceEndsUnix: number,
   resolved = false,
+  reliabilityOn = false,
 ) {
   const embed = readyCheckEmbed({
     game: party.game,
@@ -97,6 +98,7 @@ function buildReadyPayload(
       ready: m.ready,
     })),
     resolved,
+    reliabilityEnabled: reliabilityOn,
   });
   return {
     embeds: [embed],
@@ -212,11 +214,15 @@ export async function startReadyCheck(opts: {
     );
   }
 
+  const plan = resolveEffectivePlan(server, env, opts.guildId);
+  const reliabilityOn = reliabilityEnabled(plan);
   const roster = await loadReadyRoster(sb, party.id);
   const payload = buildReadyPayload(
     { id: party.id, game: party.game },
     roster,
     graceEndsUnix,
+    false,
+    reliabilityOn,
   );
 
   const posted = await postChannelMessage(env, channelId, {
@@ -314,11 +320,15 @@ export async function markReady(opts: {
   const graceEndsUnix = Math.floor(
     new Date(fullParty.grace_ends_at).getTime() / 1000,
   );
+  const plan = resolveEffectivePlan(server, env, opts.guildId);
+  const reliabilityOn = reliabilityEnabled(plan);
   const roster = await loadReadyRoster(sb, party.id);
   const payload = buildReadyPayload(
     { id: party.id, game: party.game },
     roster,
     graceEndsUnix,
+    false,
+    reliabilityOn,
   );
 
   if (fullParty.ready_check_channel_id && fullParty.ready_check_message_id) {
@@ -602,6 +612,7 @@ export async function finalizeReadyCheck(
     finalRoster,
     graceEndsUnix,
     true,
+    reliabilityOn,
   );
 
   if (party.ready_check_channel_id && party.ready_check_message_id) {

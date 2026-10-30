@@ -476,9 +476,12 @@ export function readyCheckEmbed(opts: {
     ready: boolean;
   }[];
   resolved?: boolean;
+  /** Community+ / trial — Starter uses soft ready copy. */
+  reliabilityEnabled?: boolean;
 }): Embed {
   const readyCount = opts.members.filter((m) => m.ready).length;
   const total = opts.members.length;
+  const reliabilityOn = opts.reliabilityEnabled ?? false;
   const roster = opts.members
     .map((m) => {
       const host = m.role === "host" ? " (host)" : "";
@@ -491,7 +494,9 @@ export function readyCheckEmbed(opts: {
   if (opts.resolved) {
     return {
       title: `Ready check · ${opts.game}`,
-      description: "Grace ended — waiting members marked as no-shows (this server).",
+      description: reliabilityOn
+        ? "Grace ended — waiting members marked as no-shows (this server)."
+        : "Grace ended — waiting members marked as no-shows (soft check on Starter; no strikes).",
       color: 0x6b7280,
       fields: [
         { name: "Roster", value: roster || "—", inline: false },
@@ -507,13 +512,17 @@ export function readyCheckEmbed(opts: {
 
   return {
     title: `Ready check · ${opts.game}`,
-    description: `Tap **Ready** before grace ends <t:${opts.graceEndsUnix}:R>. No-shows get a strike after grace (this server).`,
+    description: reliabilityOn
+      ? `Tap **Ready** before grace ends <t:${opts.graceEndsUnix}:R>. No-shows get a strike after grace (this server).`
+      : `Tap **Ready** before grace ends <t:${opts.graceEndsUnix}:R>. Soft check on Starter — no strikes. Community adds Ghostless + auto-strike after grace.`,
     color: LIME,
     fields: [
       { name: "Roster", value: roster || "—", inline: false },
       {
         name: "Progress",
-        value: `${readyCount}/${total} ready · auto-strike after grace`,
+        value: reliabilityOn
+          ? `${readyCount}/${total} ready · auto-strike after grace`
+          : `${readyCount}/${total} ready · soft check (no strikes)`,
         inline: false,
       },
       {
@@ -568,16 +577,20 @@ export function vibeCheckMessage(opts: {
   rateeMention: string;
   partyId: string;
   rateeMemberId: string;
+  /** Community+ / trial — Starter has no strikes. */
+  reliabilityEnabled?: boolean;
 }) {
   const custom = (action: string) =>
     `vibe:${action}:${opts.partyId}:${opts.rateeMemberId}`;
+  const reliabilityOn = opts.reliabilityEnabled ?? false;
 
   return {
     content: `**Vibe Check** for ${opts.rateeMention} — how did they do? (this server)`,
     embeds: [
       {
-        description:
-          "Tap a quick result, or pick a vibe score 1–5. After grace, **Ghosted** issues a strike (this server) when Ready Check did not run. Ready Check owns shows/ghosts once it starts. Dispute is for the flagged player.",
+        description: reliabilityOn
+          ? "Tap a quick result, or pick a vibe score 1–5. After grace, **Ghosted** issues a strike (this server) when Ready Check did not run. Ready Check owns shows/ghosts once it starts. Dispute is for the flagged player."
+          : "Tap a quick result, or pick a vibe score 1–5. Soft on Starter — **Ghosted** does not issue a strike or Ghostless stats. Community adds strikes + Ghostless.",
         color: LIME,
       },
     ],
@@ -1015,6 +1028,7 @@ export function lfgHowItWorksMessage() {
   return {
     content: [
       "**How Rallied LFG works** (this server only)",
+      "• **Starter** — matching under caps (2 open · 5 creates/24h). Soft Ready/Vibe — no strikes. Upgrade to Community for Ghostless.",
       "• **Create party** — pick a game → size, mic, rank, region, optional start → card + **temp voice** + squad thread.",
       "• **Join / Waitlist** — Join seats you; when full, **Waitlist** promotes when someone Leaves.",
       "• **Voice** — tap **Join VC** on the card (bot needs **Manage Channels**).",

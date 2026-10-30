@@ -30,7 +30,7 @@ export default async function BillingPage({ searchParams }: Props) {
   });
   const data = await loadDashboard(guildId, useMock);
   const current = data.server;
-  const plan = (current?.plan ?? "trial") as PlanId;
+  const plan = (current?.plan ?? "free") as PlanId;
   const checkoutRaw = one(sp.checkout);
   const checkoutFlash =
     checkoutRaw === "success" || checkoutRaw === "cancel"
@@ -60,8 +60,8 @@ export default async function BillingPage({ searchParams }: Props) {
       <div>
         <h1 className="font-display text-3xl tracking-wide">Billing</h1>
         <p className="mt-1 text-sm text-muted">
-          Per Discord server · Path B prices · Stripe Checkout + Customer Portal
-          (test mode first).
+          Per Discord server · Path B prices · Stripe Checkout + Customer
+          Portal.
         </p>
       </div>
 

@@ -45,7 +45,11 @@ export async function handleDispute(
 
   const plan = resolveEffectivePlan(server, env, interaction.guild_id);
   if (!reliabilityEnabled(plan)) {
-    return upgradeEphemeral({ env, reason: "reliability" });
+    return upgradeEphemeral({
+      env,
+      reason: "reliability",
+      guildId: interaction.guild_id,
+    });
   }
 
   if (sub === "open" || !sub) {
@@ -179,7 +183,11 @@ export async function openDisputeFromButton(
 
   const plan = resolveEffectivePlan(server, env, opts.guildId);
   if (!reliabilityEnabled(plan)) {
-    return upgradeEphemeral({ env, reason: "reliability" });
+    return upgradeEphemeral({
+      env,
+      reason: "reliability",
+      guildId: opts.guildId,
+    });
   }
 
   if (member.id !== opts.rateeMemberId) {

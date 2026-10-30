@@ -96,8 +96,7 @@ export const commandDefinitions = [
         description: "Mod: post the LFG desk panel in this channel",
       },
     ],
-    // Same as /setup — Manage Server (bit 32); runtime still checks isMod.
-    default_member_permissions: "32",
+    // Members need create/find/close; /lfg desk stays mod-gated at runtime.
   },
   {
     name: "setup",

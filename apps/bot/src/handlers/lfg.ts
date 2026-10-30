@@ -148,6 +148,7 @@ export async function createParty(opts: {
     env,
     serverId: server.id,
     plan,
+    guildId: opts.guildId,
   });
   if (capBlock) return capBlock;
 
@@ -565,7 +566,7 @@ export async function handleLfg(
   return ephemeral("Unknown `/lfg` subcommand. Try create, find, desk, or close.");
 }
 
-/** `/setup` — admin posts LFG desk; first ensure starts 14-day trial. */
+/** `/setup` — admin posts LFG desk; new installs start on Starter (`plan=free`). */
 export async function handleSetup(
   interaction: Interaction,
   sb: SupabaseClient | null,

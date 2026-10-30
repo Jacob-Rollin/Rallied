@@ -85,7 +85,7 @@ export function effectivePlan(
     return "founding_pro";
   }
 
-  const plan = (server.plan ?? "trial") as string;
+  const plan = (server.plan ?? "free") as string;
   const now = opts?.now ?? new Date();
 
   if (plan === "trial") {
@@ -194,18 +194,18 @@ export function upgradeCopy(reason: CapBlockReason | "reliability" | "public"): 
   switch (reason) {
     case "open_parties":
       return {
-        title: "Party limit on Free",
-        body: `Free allows **${STARTER_MAX_OPEN_PARTIES} open parties for this server** (not per user). Busy communities hit this fast — Community **$${price}/mo** = unlimited LFG + Ghostless.`,
+        title: "Party limit on Starter",
+        body: `Starter allows **${STARTER_MAX_OPEN_PARTIES} open parties for this server** (not per user). Busy communities hit this fast — Community **$${price}/mo** = unlimited LFG + Ghostless.`,
       };
     case "creates_24h":
       return {
-        title: "Daily create limit on Free",
-        body: `Free allows **${STARTER_MAX_CREATES_PER_24H} party creates / 24h for this server**. Busy communities hit this fast — Community **$${price}/mo** = unlimited + Ghostless.`,
+        title: "Daily create limit on Starter",
+        body: `Starter allows **${STARTER_MAX_CREATES_PER_24H} party creates / 24h for this server**. Busy communities hit this fast — Community **$${price}/mo** = unlimited + Ghostless.`,
       };
     case "reliability":
       return {
         title: "Included in Community",
-        body: `Ghostless, strikes, and lockouts need Community (**$${price}/mo**). Free keeps LFG under caps **per Discord server**.`,
+        body: `Ghostless, strikes, and lockouts need Community (**$${price}/mo**). Starter keeps LFG under caps **per Discord server**.`,
       };
     case "public":
       return {

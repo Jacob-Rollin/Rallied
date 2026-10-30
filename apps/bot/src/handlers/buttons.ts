@@ -9,6 +9,10 @@ import {
   type Interaction,
 } from "../lib/discord.js";
 import { vibeCheckMessage, vibePickMemberMessage } from "../lib/embeds.js";
+import {
+  reliabilityEnabled,
+  resolveEffectivePlan,
+} from "../lib/entitlements.js";
 import { openDisputeFromButton } from "./dispute.js";
 import {
   closePartyById,
@@ -192,10 +196,23 @@ export async function handleButton(
 
     if (!ratee) return ephemeral("Member not found.");
 
+    const { server } = await ensureServerAndMember(
+      sb,
+      interaction.guild_id,
+      interaction.guild?.name,
+      user.id,
+      displayName(interaction),
+      null,
+      interactionGuildIdentity(interaction).iconUrl,
+      env,
+    );
+    const plan = resolveEffectivePlan(server, env, interaction.guild_id);
+
     const payload = vibeCheckMessage({
       rateeMention: `<@${ratee.discord_user_id}>`,
       partyId,
       rateeMemberId: ratee.id,
+      reliabilityEnabled: reliabilityEnabled(plan),
     });
 
     return {

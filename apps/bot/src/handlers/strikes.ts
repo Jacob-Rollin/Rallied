@@ -57,7 +57,11 @@ export async function handleStrikes(
 
   const plan = resolveEffectivePlan(server, env, interaction.guild_id);
   if (!reliabilityEnabled(plan)) {
-    return upgradeEphemeral({ env, reason: "reliability" });
+    return upgradeEphemeral({
+      env,
+      reason: "reliability",
+      guildId: interaction.guild_id,
+    });
   }
 
   const settings = await getServerSettings(sb, server.id);

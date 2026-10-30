@@ -43,7 +43,7 @@ export default async function SettingsPage({ searchParams }: Props) {
       <SettingsClient
         serverName={serverName}
         discordGuildId={data.server?.discord_guild_id ?? guildId}
-        plan={data.server?.plan ?? "trial"}
+        plan={data.server?.plan ?? "free"}
         priceLockCents={data.server?.price_lock_cents ?? null}
         settings={data.settings}
         billingHref={withGuildQuery("/app/billing", guildId)}

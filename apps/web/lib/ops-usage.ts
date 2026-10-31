@@ -656,11 +656,7 @@ async function loadSupabaseSizes(sb: SupabaseClient): Promise<SupabaseUsage> {
   const token = (getRuntimeEnv("SUPABASE_ACCESS_TOKEN") ?? "").trim();
   const projectRef = (getRuntimeEnv("SUPABASE_PROJECT_REF") ?? "").trim();
   const setupHint =
-<<<<<<< HEAD
-    "Optional: add SUPABASE_ACCESS_TOKEN + SUPABASE_PROJECT_REF for Management API sizes. Else run migration 018 (ops_relation_sizes) for SQL estimates. Redeploy rallied after secrets.";
-=======
-    "Optional: add SUPABASE_ACCESS_TOKEN + SUPABASE_PROJECT_REF for Management API sizes. Else run migration 018 (ops_relation_sizes) for SQL size estimates only — 016 is for archived_at / retention-aware server counts, not sizes. Redeploy rallied-web after secrets.";
->>>>>>> 3a92abb (fix(web): soft-fail ops usage when archived_at missing)
+    "Optional: add SUPABASE_ACCESS_TOKEN + SUPABASE_PROJECT_REF for Management API sizes. Else run migration 018 (ops_relation_sizes) for SQL size estimates only — 016 is for archived_at / retention-aware server counts, not sizes. Redeploy rallied after secrets.";
 
   const tablesBase: SupabaseTableSize[] = OPS_SIZE_TABLES.map((table) => ({
     table,

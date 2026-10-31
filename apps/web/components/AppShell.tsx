@@ -13,6 +13,7 @@ import {
   isDemoGuildId,
 } from "@/lib/guild-params";
 import { resolveServerDisplayName } from "@/lib/server-display-name";
+import { MobileMenuNav } from "@/components/MobileMenuNav";
 import { ReportFeedbackModal } from "@/components/ReportFeedbackModal";
 
 const NAV_ALL = [
@@ -299,61 +300,43 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </a>
             </div>
 
-            {/* Mobile: Ops → Report → Log out */}
-            <div className="relative sm:hidden">
-              <button
-                ref={menuButtonRef}
-                type="button"
-                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-brand border border-white/20 text-white/85 transition hover:border-coral/50 hover:text-white"
-                aria-expanded={menuOpen}
-                aria-controls={menuId}
-                aria-label={menuOpen ? "Close menu" : "Open menu"}
-                onClick={() => setMenuOpen((open) => !open)}
-              >
-                {menuOpen ? <CloseIcon /> : <MenuIcon />}
-              </button>
-              {menuOpen ? (
-                <div
-                  ref={menuPanelRef}
-                  id={menuId}
-                  className="absolute right-0 top-full z-30 mt-1.5 min-w-[9.5rem] border border-white/15 bg-slate-elevated py-1 shadow-lg"
-                  role="menu"
-                >
-                  {!loading && me?.ops ? (
-                    <Link
-                      href="/ops"
-                      role="menuitem"
-                      className="block px-3 py-2 text-sm text-white/80 hover:bg-white/5 hover:text-coral"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      Ops
-                    </Link>
-                  ) : null}
-                  {!loading && me?.authenticated ? (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className="block w-full px-3 py-2 text-left text-sm text-white/80 hover:bg-white/5 hover:text-coral"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        setReportOpen(true);
-                      }}
-                    >
-                      Report
-                    </button>
-                  ) : null}
-                  <a
-                    href="/api/auth/logout"
-                    role="menuitem"
-                    className="block px-3 py-2 text-sm text-white/80 hover:bg-white/5 hover:text-coral"
-                  >
-                    Log out
-                  </a>
-                </div>
-              ) : null}
-            </div>
+            {/* Mobile hamburger — same sheet as SiteHeader */}
+            <button
+              ref={menuButtonRef}
+              type="button"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-brand border border-white/20 text-white/85 transition hover:border-coral/50 hover:text-white sm:hidden"
+              aria-expanded={menuOpen}
+              aria-controls={menuId}
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              {menuOpen ? <CloseIcon /> : <MenuIcon />}
+            </button>
           </div>
         </div>
+
+        {menuOpen ? (
+          <div
+            ref={menuPanelRef}
+            id={menuId}
+            className="border-t border-white/10 bg-slate/95 px-4 py-3 backdrop-blur-md sm:hidden"
+          >
+            <MobileMenuNav
+              authed={!loading && Boolean(me?.authenticated)}
+              showOps={!loading && Boolean(me?.ops)}
+              inviteHref={inviteUrl}
+              botInstalledOnActiveGuild={Boolean(server?.bot_present)}
+              onNavigate={() => setMenuOpen(false)}
+              onReport={
+                !loading && me?.authenticated
+                  ? () => {
+                      setReportOpen(true);
+                    }
+                  : undefined
+              }
+            />
+          </div>
+        ) : null}
       </header>
 
       {loading ? (

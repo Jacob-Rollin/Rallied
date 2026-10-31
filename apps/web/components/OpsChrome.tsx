@@ -2,17 +2,20 @@
 
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
+import { buildBotInviteUrl } from "@rallied/shared";
+import { MobileMenuNav } from "@/components/MobileMenuNav";
 import { ReportFeedbackModal } from "@/components/ReportFeedbackModal";
 
 type MeResponse = {
   authenticated: boolean;
   ops?: boolean;
+  guilds?: { id: string; bot_present?: boolean }[];
 };
 
 /**
  * Ops top bar — same chrome pattern as /app AppShell.
- * Logo → /app; coral OPS mark; Dashboard return; Report + Log out (hamburger on mobile).
- * Feedback / Usage live in page tabs (OpsSubnav) — not duplicated here.
+ * Logo → /app; coral OPS mark; desktop Dashboard + Report + Log out;
+ * mobile hamburger uses the shared signed-in sheet (Account + site + legal).
  */
 export function OpsChrome() {
   const [me, setMe] = useState<MeResponse | null>(null);
@@ -21,6 +24,11 @@ export function OpsChrome() {
   const menuId = useId();
   const menuPanelRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+  const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
+  const inviteUrl = clientId
+    ? buildBotInviteUrl(clientId)
+    : "https://discord.com/developers/applications";
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -57,6 +65,10 @@ export function OpsChrome() {
   }, [menuOpen]);
 
   const authed = Boolean(me?.authenticated);
+  const showOps = Boolean(authed && me?.ops);
+  const hasBotGuild = Boolean(
+    authed && me?.guilds?.some((g) => Boolean(g.bot_present)),
+  );
 
   return (
     <>
@@ -78,6 +90,7 @@ export function OpsChrome() {
           </Link>
 
           <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:gap-3">
+            {/* Desktop only — mobile uses the shared sheet (one Log out per viewport) */}
             <Link
               href="/app"
               className="hidden text-xs text-muted hover:text-coral sm:inline"
@@ -103,58 +116,43 @@ export function OpsChrome() {
               </a>
             </div>
 
-            <div className="relative sm:hidden">
-              <button
-                ref={menuButtonRef}
-                type="button"
-                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-brand border border-white/20 text-white/85 transition hover:border-coral/50 hover:text-white"
-                aria-expanded={menuOpen}
-                aria-controls={menuId}
-                aria-label={menuOpen ? "Close menu" : "Open menu"}
-                onClick={() => setMenuOpen((open) => !open)}
-              >
-                {menuOpen ? <CloseIcon /> : <MenuIcon />}
-              </button>
-              {menuOpen ? (
-                <div
-                  ref={menuPanelRef}
-                  id={menuId}
-                  className="absolute right-0 top-full z-30 mt-1.5 min-w-[9.5rem] border border-white/15 bg-slate-elevated py-1 shadow-lg"
-                  role="menu"
-                >
-                  <Link
-                    href="/app"
-                    role="menuitem"
-                    className="block px-3 py-2 text-sm text-white/80 hover:bg-white/5 hover:text-coral"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Dashboard
-                  </Link>
-                  {authed ? (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className="block w-full px-3 py-2 text-left text-sm text-white/80 hover:bg-white/5 hover:text-coral"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        setReportOpen(true);
-                      }}
-                    >
-                      Report
-                    </button>
-                  ) : null}
-                  <a
-                    href="/api/auth/logout"
-                    role="menuitem"
-                    className="block px-3 py-2 text-sm text-white/80 hover:bg-white/5 hover:text-coral"
-                  >
-                    Log out
-                  </a>
-                </div>
-              ) : null}
-            </div>
+            {/* Mobile: logo-only bar + hamburger (no duplicate Dashboard) */}
+            <button
+              ref={menuButtonRef}
+              type="button"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-brand border border-white/20 text-white/85 transition hover:border-coral/50 hover:text-white sm:hidden"
+              aria-expanded={menuOpen}
+              aria-controls={menuId}
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              {menuOpen ? <CloseIcon /> : <MenuIcon />}
+            </button>
           </div>
         </div>
+
+        {menuOpen ? (
+          <div
+            ref={menuPanelRef}
+            id={menuId}
+            className="border-t border-white/10 bg-slate/95 px-4 py-3 backdrop-blur-md sm:hidden"
+          >
+            <MobileMenuNav
+              authed={authed}
+              showOps={showOps}
+              inviteHref={inviteUrl}
+              botInstalledOnActiveGuild={hasBotGuild}
+              onNavigate={() => setMenuOpen(false)}
+              onReport={
+                authed
+                  ? () => {
+                      setReportOpen(true);
+                    }
+                  : undefined
+              }
+            />
+          </div>
+        ) : null}
       </header>
 
       <ReportFeedbackModal

@@ -21,6 +21,7 @@ import {
   type ServerSettings,
 } from "@rallied/shared";
 import { FieldInfo } from "@/components/FieldInfo";
+import { NumberField } from "@/components/NumberField";
 
 type DiscordRoleOption = {
   id: string;
@@ -105,10 +106,10 @@ export function SettingsClient({
   const [grace, setGrace] = useState(base.grace_minutes);
   const [threshold, setThreshold] = useState(base.strike_threshold);
   const [lockoutDays, setLockoutDays] = useState(base.lockout_days);
-  const [joinMinGhostless, setJoinMinGhostless] = useState(
+  const [joinMinGhostless, setJoinMinGhostless] = useState<number | null>(
     base.join_min_ghostless_pct == null
-      ? ""
-      : String(base.join_min_ghostless_pct),
+      ? null
+      : Number(base.join_min_ghostless_pct),
   );
   const [joinLockoutEnforced, setJoinLockoutEnforced] = useState(
     base.join_lockout_enforced !== false,
@@ -230,15 +231,12 @@ export function SettingsClient({
         payload.strike_threshold = threshold;
         payload.lockout_days = lockoutDays;
         payload.join_lockout_enforced = joinLockoutEnforced;
-        const minRaw = joinMinGhostless.trim();
         payload.join_min_ghostless_pct =
-          minRaw === "" ? null : Math.min(100, Math.max(1, Number(minRaw) || 0));
-        if (
-          payload.join_min_ghostless_pct === 0 ||
-          !Number.isFinite(payload.join_min_ghostless_pct as number)
-        ) {
-          payload.join_min_ghostless_pct = null;
-        }
+          joinMinGhostless == null ||
+          !Number.isFinite(joinMinGhostless) ||
+          joinMinGhostless < 1
+            ? null
+            : Math.min(100, Math.max(1, Math.trunc(joinMinGhostless)));
         payload.ghostless_role_id = roleId || null;
         payload.digest_channel_id = digestChannel || null;
         payload.max_open_parties_per_host = Math.min(
@@ -625,14 +623,17 @@ export function SettingsClient({
                 slot.
               </FieldInfo>
             </div>
-            <input
-              type="number"
+            <NumberField
               min={MIN_OPEN_PARTIES_PER_HOST}
               max={MAX_OPEN_PARTIES_PER_HOST}
               aria-label="Open parties per host"
               value={perHostOpenCap}
-              onChange={(e) => setPerHostOpenCap(Number(e.target.value))}
-              className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white"
+              onChange={(next) =>
+                setPerHostOpenCap(
+                  next ?? DEFAULT_MAX_OPEN_PARTIES_PER_HOST,
+                )
+              }
+              emptyFallback={DEFAULT_MAX_OPEN_PARTIES_PER_HOST}
             />
             <p className="mt-1 text-xs text-muted">
               Guild-wide open parties stay unlimited on Community+. This only
@@ -674,14 +675,13 @@ export function SettingsClient({
                 strike. Default is 5.
               </FieldInfo>
             </div>
-            <input
-              type="number"
+            <NumberField
               min={0}
               max={60}
               aria-label="Grace window (minutes)"
               value={grace}
-              onChange={(e) => setGrace(Number(e.target.value))}
-              className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white"
+              onChange={(next) => setGrace(next ?? 0)}
+              emptyFallback={0}
             />
           </div>
           <div className="block max-w-sm text-sm">
@@ -690,14 +690,13 @@ export function SettingsClient({
                 How many strikes before LFG lockout. Default is 3.
               </FieldInfo>
             </div>
-            <input
-              type="number"
+            <NumberField
               min={1}
               max={20}
               aria-label="Strike threshold → lockout"
               value={threshold}
-              onChange={(e) => setThreshold(Number(e.target.value))}
-              className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white"
+              onChange={(next) => setThreshold(next ?? 1)}
+              emptyFallback={1}
             />
           </div>
           <div className="block max-w-sm text-sm">
@@ -706,14 +705,13 @@ export function SettingsClient({
                 How long an LFG lockout lasts. Default is 7 days.
               </FieldInfo>
             </div>
-            <input
-              type="number"
+            <NumberField
               min={1}
               max={365}
               aria-label="Lockout days"
               value={lockoutDays}
-              onChange={(e) => setLockoutDays(Number(e.target.value))}
-              className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white"
+              onChange={(next) => setLockoutDays(next ?? 1)}
+              emptyFallback={1}
             />
           </div>
           <label className="flex items-center gap-3 text-sm">
@@ -739,15 +737,14 @@ export function SettingsClient({
                 history are allowed. Community+ only.
               </FieldInfo>
             </div>
-            <input
-              type="number"
+            <NumberField
               min={1}
               max={100}
+              allowEmpty
               placeholder="Off"
               aria-label="Min Ghostless % to Join"
               value={joinMinGhostless}
-              onChange={(e) => setJoinMinGhostless(e.target.value)}
-              className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white placeholder:text-muted/50"
+              onChange={setJoinMinGhostless}
             />
           </div>
           <div className="block max-w-md text-sm">

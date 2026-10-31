@@ -57,7 +57,10 @@ export interface Server {
    * Child history remains until a future hard purge (ops-only).
    */
   archived_at?: string | null;
-  /** Discord guild icon CDN URL (Pro public page vanity) */
+  /**
+   * Discord guild icon CDN URL. Shown on Community+ public /s pages and the
+   * /servers directory when present — not Pro vanity. Placeholder when null.
+   */
   icon_url: string | null;
   created_at: string;
   updated_at: string;

@@ -50,7 +50,8 @@ const TIERS = [
     name: "Pro",
     price: PRO_PRICE_USD,
     annual: PLANS.pro.annualCents / 100,
-    blurb: "Export, vanity branding, iCal subscribe, priority support.",
+    blurb:
+      "CSV export + trends, iCal, priority support, and Pro vanity branding: custom accent + hide “Powered by Rallied” (not Discord’s own guild icon — that ships with Community+ public pages / directory).",
     trial: false,
     accent: false,
     badge: null,
@@ -60,7 +61,7 @@ const TIERS = [
     name: "Founding",
     price: FOUNDING_PRO_PRICE_USD,
     annual: PLANS.founding_pro.annualCents / 100,
-    blurb: `Pro locked at $${FOUNDING_PRO_PRICE_USD}/mo · ≤${PLANS.founding_pro.seatCap} seats.`,
+    blurb: `Full Pro (incl. vanity branding) locked at $${FOUNDING_PRO_PRICE_USD}/mo · ≤${PLANS.founding_pro.seatCap} seats.`,
     trial: false,
     accent: true,
     badge: `≤${PLANS.founding_pro.seatCap} seats`,
@@ -127,7 +128,13 @@ const MATRIX: {
     label: "Public /s page",
     starter: "no",
     community: "yes",
-    pro: "yes + vanity",
+    pro: "yes + Vanity",
+  },
+  {
+    label: "Discord guild icon (/s + /servers)",
+    starter: "no",
+    community: "yes",
+    pro: "yes",
   },
   {
     label: "Admin reliability settings",
@@ -145,7 +152,7 @@ const MATRIX: {
     label: "Analytics / CSV export",
     starter: "no",
     community: "This week",
-    pro: "Export + trends",
+    pro: "Export + Trends",
   },
   {
     label: "Calendar subscribe (.ics)",
@@ -154,12 +161,20 @@ const MATRIX: {
     pro: "yes",
   },
   {
-    label: "Vanity (icon, accent, hide Po)",
+    label: "Pro vanity branding",
     starter: "no",
     community: "no",
-    pro: "yes",
+    pro: "Accent · hide Po",
   },
 ];
+
+/** Hover/title copy for matrix cells that need more than the short label. */
+const CELL_HINTS: Record<string, string> = {
+  Vanity:
+    "Pro vanity branding: custom public accent + hide “Powered by Rallied”. Distinct from Discord’s own guild icon (Community+).",
+  "Accent · hide Po":
+    "Pro vanity: custom accent color on the public page + option to hide “Powered by Rallied”. Discord’s guild icon is included with Community+ public pages and the /servers directory — not Pro.",
+};
 
 function CellValue({ value }: { value: Cell }) {
   if (value === "yes") {
@@ -172,7 +187,33 @@ function CellValue({ value }: { value: Cell }) {
   if (value === "no") {
     return <span className="text-white/30">—</span>;
   }
-  return <span className="text-xs text-white/80 sm:text-sm">{value}</span>;
+  // e.g. "yes + Vanity" → green check + trailing label
+  if (typeof value === "string" && value.startsWith("yes + ")) {
+    const suffix = value.slice("yes + ".length);
+    const hint = CELL_HINTS[suffix];
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 text-lime"
+        aria-label={
+          hint ? `Included · ${suffix}. ${hint}` : `Included · ${suffix}`
+        }
+        title={hint}
+      >
+        <TierCheck accent="lime" />
+        <span className="text-xs text-white/80 sm:text-sm">{suffix}</span>
+      </span>
+    );
+  }
+  const hint = typeof value === "string" ? CELL_HINTS[value] : undefined;
+  return (
+    <span
+      className="text-xs text-white/80 sm:text-sm"
+      title={hint}
+      aria-label={hint ? `${value}. ${hint}` : undefined}
+    >
+      {value}
+    </span>
+  );
 }
 
 export default function PricingPage() {
@@ -185,7 +226,7 @@ export default function PricingPage() {
 
       <main className="mx-auto max-w-5xl px-4 pb-20 pt-10 sm:pt-12">
         <p className="font-display text-xs tracking-[0.16em] text-coral">
-          PRICING · PATH B
+          Pricing
         </p>
         <h1 className="mt-2 font-display text-4xl tracking-wide sm:text-5xl">
           Free matching. Paid reliability.
@@ -265,32 +306,15 @@ export default function PricingPage() {
           ))}
         </div>
 
-        <section className="mt-14 rounded-brand border border-lime/25 bg-lime/5 px-5 py-6 sm:px-6">
-          <h2 className="font-display text-2xl tracking-wide text-white">
-            How Ghostless works
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">
-            Ready Check → grace → strike on no-show → lockout after N strikes
-            (admin-set). Ghostless % = showed / (showed + ghosted). Admins can
-            dispute or clear. Community+ only — Starter keeps soft ready-check
-            without strikes.{" "}
-            <Link
-              href="/guide#ghostless"
-              className="font-medium text-lime transition hover:underline"
-            >
-              Full rules in the guide
-            </Link>
-            .
-          </p>
-        </section>
-
         <section className="mt-14">
           <h2 className="font-display text-2xl tracking-wide text-white">
             Feature comparison
           </h2>
           <p className="mt-1 text-sm text-white/55">
             Founding = full Pro column at the locked price. Trial = Community
-            column for 14 days (not Pro).
+            column for 14 days (not Pro). Discord’s guild icon is Community+ on
+            public pages and /servers; Pro vanity is custom branding (accent +
+            hide “Powered by Rallied”).
           </p>
 
           {/* Mobile: stacked cards */}

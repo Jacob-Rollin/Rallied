@@ -386,7 +386,16 @@ export function SettingsClient({
           <span>Public Ghostless spotlight / list</span>
         </label>
         <label className="block max-w-md text-sm">
-          <span className="text-muted">Vanity slug</span>
+          <div className="text-muted">
+            <FieldInfo label="Public path (slug)">
+              Community+ public page URL segment —{" "}
+              <strong className="font-semibold text-white/90">
+                /s/your-slug
+              </strong>
+              . Not Pro vanity branding. Leave blank to use the Discord guild
+              id. Pro vanity (accent + hide “Powered by”) is below.
+            </FieldInfo>
+          </div>
           <input
             type="text"
             value={slug}
@@ -422,8 +431,9 @@ export function SettingsClient({
                 Opt into{" "}
                 <strong className="font-semibold text-white/90">/servers</strong>
                 . Needs public page on + Community / trial / Pro. Shows name,
-                icon, View → your /s page, and Join → your Discord invite. No
-                cross-server Ghostless passport.
+                Discord guild icon (when Discord has one — not Pro vanity), View
+                → your /s page, and Join → your Discord invite. No cross-server
+                Ghostless passport.
               </FieldInfo>
             </span>
           </label>
@@ -455,6 +465,11 @@ export function SettingsClient({
 
       <section className="space-y-4">
         <h2 className="font-display text-xl tracking-wide">Pro vanity</h2>
+        <p className="max-w-md text-sm text-muted">
+          Custom public branding — accent color and hide “Powered by Rallied”.
+          Your Discord guild icon already appears on /s and /servers for
+          Community+ when Discord has one (not a Pro feature).
+        </p>
 
         {demoProUnlock && demoProPreview ? (
           <p
@@ -465,7 +480,7 @@ export function SettingsClient({
               Demo · Pro preview
             </span>
             {" — "}
-            Vanity controls unlocked locally. Not a purchase — Discord is
+            Vanity branding unlocked locally. Not a purchase — Discord is
             unchanged. See a live Pro vanity card at{" "}
             <Link href="/s/founding-beta" className="underline hover:text-white">
               /s/founding-beta
@@ -477,9 +492,9 @@ export function SettingsClient({
         {!pro ? (
           <div className="rounded-brand border border-coral/40 bg-coral/5 p-4 text-sm">
             <p className="text-muted">
-              Hide “Powered by” and custom accent require Pro ($
-              {PRO_PRICE_USD}/mo) or Founding Pro. Community can still set slug +
-              public toggles.
+              Accent + hide “Powered by” require Pro (${PRO_PRICE_USD}/mo) or
+              Founding Pro. Community still gets the public page, slug, directory
+              listing, and Discord’s own guild icon.
             </p>
             {demoProUnlock ? (
               <>
@@ -533,21 +548,32 @@ export function SettingsClient({
         ) : null}
 
         <label
-          className={`flex items-center gap-3 text-sm ${!pro ? "opacity-40" : ""}`}
+          className={`flex items-start gap-3 text-sm ${!pro ? "opacity-40" : ""}`}
         >
           <input
             type="checkbox"
             checked={hidePoweredBy}
             disabled={!pro}
             onChange={(e) => setHidePoweredBy(e.target.checked)}
-            className="h-4 w-4 accent-lime"
+            className="mt-0.5 h-4 w-4 accent-lime"
           />
-          <span>Hide “Powered by Rallied” on public page</span>
+          <span>
+            <FieldInfo label="Hide “Powered by Rallied”">
+              Pro vanity — removes the Powered by Rallied line on your public /s
+              page. Discord guild icon and slug stay available on Community+.
+            </FieldInfo>
+          </span>
         </label>
         <label
           className={`block max-w-md text-sm ${!pro ? "opacity-40" : ""}`}
         >
-          <span className="text-muted">Public accent (hex)</span>
+          <div className="text-muted">
+            <FieldInfo label="Public accent (hex)">
+              Pro vanity — optional accent color for public page chrome (header
+              border / icon ring). Not a custom uploaded mark yet; Discord’s
+              guild icon is used as the page/directory mark.
+            </FieldInfo>
+          </div>
           <input
             type="text"
             placeholder="#B8F000"
@@ -583,9 +609,10 @@ export function SettingsClient({
         ) : null}
 
         <p className="max-w-md text-xs text-muted">
-          On Pro / Founding Pro, the public page shows your Discord server icon
-          (top-right) instead of the Rallied mark. Icons sync when you log into
-          the dashboard; if Discord has no icon, Rallied stays as the fallback.
+          Discord guild icons sync when someone with dashboard access logs in
+          (or via the bot). They show on Community+ public /s pages and the
+          /servers directory. If Discord has no icon, we use a Rallied mark
+          (public page) or a letter placeholder (directory).
         </p>
       </section>
 

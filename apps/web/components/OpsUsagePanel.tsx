@@ -112,7 +112,7 @@ export function OpsUsagePanel() {
 
       <OpsSubnav active="usage" />
 
-      {error ? (
+      {error && !data ? (
         <p className="mt-6 text-sm text-coral">Failed to load: {error}</p>
       ) : null}
 
@@ -126,9 +126,20 @@ export function OpsUsagePanel() {
           {data?.cached ? " · cached briefly" : ""}.
         </p>
 
+        {data?.productError ? (
+          <p className="mt-3 text-sm text-coral">{data.productError}</p>
+        ) : null}
+        {product?.schemaHints?.length ? (
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-coral/90">
+            {product.schemaHints.map((h) => (
+              <li key={h}>{h}</li>
+            ))}
+          </ul>
+        ) : null}
+
         {!product && loading ? (
           <p className="mt-4 text-sm text-muted">Loading…</p>
-        ) : product ? (
+        ) : product && !product.error ? (
           <div className="mt-3">
             <MetricRow
               label="Active servers"
@@ -251,6 +262,17 @@ export function OpsUsagePanel() {
             Official
           </button>
         </div>
+
+        {data?.drillError ? (
+          <p className="mt-3 text-sm text-coral">{data.drillError}</p>
+        ) : null}
+        {drill?.schemaHints?.length ? (
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-coral/90">
+            {drill.schemaHints.map((h) => (
+              <li key={h}>{h}</li>
+            ))}
+          </ul>
+        ) : null}
 
         {drill ? (
           <div className="mt-4">

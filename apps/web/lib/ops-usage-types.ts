@@ -19,10 +19,13 @@ export type ProductUsage = {
   activeServers: number;
   foundingSeatsUsed: number;
   foundingSeatCap: number;
-  openPartiesGlobal: number;
-  feedbackNew: number;
-  feedbackTriaging: number;
-  trialConsumers: number;
+  /** null when lfg_parties query failed (not invented). */
+  openPartiesGlobal: number | null;
+  /** null when feedback_reports (015) is missing. */
+  feedbackNew: number | null;
+  feedbackTriaging: number | null;
+  /** null when trial_consumers (017) is missing. */
+  trialConsumers: number | null;
   serverOptions: Array<{
     id: string;
     discord_guild_id: string;
@@ -30,6 +33,9 @@ export type ProductUsage = {
     plan: string;
     archived_at: string | null;
   }>;
+  /** Soft schema gaps (e.g. missing archived_at) — page still loads. */
+  schemaHints: string[];
+  error: string | null;
 };
 
 export type ServerDrill = {
@@ -40,13 +46,15 @@ export type ServerDrill = {
   trial_consumed_at: string | null;
   archived_at: string | null;
   forever_pro: boolean | null;
-  memberCount: number;
-  openParties: number;
-  createsLast24h: number;
-  feedbackNew: number;
-  feedbackTriaging: number;
-  feedbackTotal: number;
+  memberCount: number | null;
+  openParties: number | null;
+  createsLast24h: number | null;
+  feedbackNew: number | null;
+  feedbackTriaging: number | null;
+  feedbackTotal: number | null;
   found: boolean;
+  schemaHints: string[];
+  error: string | null;
 };
 
 export type CfWorkerWindow = {
@@ -96,8 +104,11 @@ export type OpsUsagePayload = {
   ok: true;
   cached: boolean;
   cacheTtlSeconds: number;
-  product: ProductUsage;
+  /** null only when product load failed hard (rare); prefer product.error / schemaHints. */
+  product: ProductUsage | null;
+  productError: string | null;
   drill: ServerDrill | null;
+  drillError: string | null;
   cloudflare: CfUsage;
   supabase: SupabaseUsage;
   links: {

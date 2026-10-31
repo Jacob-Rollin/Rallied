@@ -97,27 +97,163 @@ function cfWorkerNames(): string[] {
     .filter(Boolean);
 }
 
+/** PostgREST / Postgres missing column or relation (PGRST204 / 42703 / 42P01). */
+function isMissingSchemaError(message: string, name: string): boolean {
+  const m = message.toLowerCase();
+  const n = name.toLowerCase();
+  if (!m.includes(n)) return false;
+  return (
+    m.includes("does not exist") ||
+    m.includes("could not find") ||
+    m.includes("schema cache") ||
+    m.includes("undefined column") ||
+    m.includes("undefined table")
+  );
+}
+
+const SERVER_BASE_COLS = [
+  "id",
+  "discord_guild_id",
+  "name",
+  "plan",
+] as const;
+
+/** Ops-usage-only optional columns from migrations 012 / 014 / 016. */
+const SERVER_OPTIONAL_COLS = [
+  "forever_pro",
+  "trial_consumed_at",
+  "archived_at",
+] as const;
+
+type ServerOptionalCol = (typeof SERVER_OPTIONAL_COLS)[number];
+
+function schemaHintFor(name: string): string {
+  switch (name) {
+    case "archived_at":
+      return "Run migration 016 (servers.archived_at) for retention-aware server counts — treating all servers as non-archived until then.";
+    case "trial_consumed_at":
+      return "Run migration 014 (servers.trial_consumed_at) for guild trial drill fields.";
+    case "forever_pro":
+      return "Run migration 012 (servers.forever_pro) for forever_pro protection flags.";
+    case "trial_consumers":
+      return "Run migration 017 (trial_consumers) for trial consumer counts.";
+    case "feedback_reports":
+      return "Run migration 015 (feedback_reports) for feedback backlog counts.";
+    default:
+      return `Optional schema missing: ${name}`;
+  }
+}
+
+type ServerRow = {
+  id: string;
+  discord_guild_id: string;
+  name: string | null;
+  plan: string | null;
+  forever_pro?: boolean | null;
+  trial_consumed_at?: string | null;
+  archived_at?: string | null;
+};
+
+async function selectServersOptional(
+  sb: SupabaseClient,
+  opts: { guildId?: string },
+): Promise<{
+  rows: ServerRow[];
+  missing: Set<ServerOptionalCol>;
+  hints: string[];
+  error: string | null;
+}> {
+  const optional: ServerOptionalCol[] = [...SERVER_OPTIONAL_COLS];
+  const hints: string[] = [];
+  const missing = new Set<ServerOptionalCol>();
+
+  for (;;) {
+    const cols = [...SERVER_BASE_COLS, ...optional].join(", ");
+    const { data, error } = opts.guildId
+      ? await sb
+          .from("servers")
+          .select(cols)
+          .eq("discord_guild_id", opts.guildId)
+          .maybeSingle()
+      : await sb
+          .from("servers")
+          .select(cols)
+          .order("name", { ascending: true })
+          .limit(500);
+
+    if (!error) {
+      const rows = opts.guildId
+        ? data
+          ? [data as unknown as ServerRow]
+          : []
+        : ((data ?? []) as unknown as ServerRow[]);
+      return { rows, missing, hints, error: null };
+    }
+
+    const hit = optional.find((c) => isMissingSchemaError(error.message, c));
+    if (hit) {
+      optional.splice(optional.indexOf(hit), 1);
+      missing.add(hit);
+      hints.push(schemaHintFor(hit));
+      continue;
+    }
+
+    return {
+      rows: [],
+      missing,
+      hints,
+      error: `servers: ${error.message}`,
+    };
+  }
+}
+
+async function softCount(
+  label: string,
+  run: () => PromiseLike<{ count: number | null; error: { message: string } | null }>,
+): Promise<{ count: number | null; hint: string | null }> {
+  const { count, error } = await run();
+  if (!error) return { count: count ?? 0, hint: null };
+  if (
+    isMissingSchemaError(error.message, label) ||
+    /does not exist|could not find|schema cache/i.test(error.message)
+  ) {
+    return { count: null, hint: schemaHintFor(label) };
+  }
+  return { count: null, hint: `${label}: ${error.message}` };
+}
+
 async function loadProduct(sb: SupabaseClient): Promise<ProductUsage> {
   const serversByPlan = emptyPlanBuckets();
   let archivedServers = 0;
   let activeServers = 0;
   let foundingSeatsUsed = 0;
+  const schemaHints: string[] = [];
 
-  const { data: servers, error: serversErr } = await sb
-    .from("servers")
-    .select(
-      "id, discord_guild_id, name, plan, archived_at, forever_pro, trial_consumed_at",
-    )
-    .order("name", { ascending: true })
-    .limit(500);
-
-  if (serversErr) {
-    throw new Error(`servers: ${serversErr.message}`);
+  const selected = await selectServersOptional(sb, {});
+  if (selected.error) {
+    return {
+      serversByPlan: emptyPlanBuckets(),
+      archivedServers: 0,
+      activeServers: 0,
+      foundingSeatsUsed: 0,
+      foundingSeatCap: PLANS.founding_pro.seatCap,
+      openPartiesGlobal: null,
+      feedbackNew: null,
+      feedbackTriaging: null,
+      trialConsumers: null,
+      serverOptions: [],
+      schemaHints: selected.hints,
+      error: selected.error,
+    };
   }
 
-  const list = servers ?? [];
+  schemaHints.push(...selected.hints);
+  const hasArchivedAt = !selected.missing.has("archived_at");
+  const list = selected.rows;
+
   for (const s of list) {
-    const archived = Boolean(s.archived_at);
+    // Missing archived_at (pre-016): treat all as non-archived — do not invent archives.
+    const archived = hasArchivedAt ? Boolean(s.archived_at) : false;
     if (archived) {
       archivedServers += 1;
     } else {
@@ -128,26 +264,45 @@ async function loadProduct(sb: SupabaseClient): Promise<ProductUsage> {
   }
 
   const [
-    openPartiesRes,
-    feedbackNewRes,
-    feedbackTriagingRes,
-    trialConsumersRes,
+    openParties,
+    feedbackNew,
+    feedbackTriaging,
+    trialConsumers,
   ] = await Promise.all([
-    sb
-      .from("lfg_parties")
-      .select("*", { count: "exact", head: true })
-      .in("status", ["open", "filled"])
-      .is("deleted_at", null),
-    sb
-      .from("feedback_reports")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "new"),
-    sb
-      .from("feedback_reports")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "triaging"),
-    sb.from("trial_consumers").select("*", { count: "exact", head: true }),
+    softCount("lfg_parties", () =>
+      sb
+        .from("lfg_parties")
+        .select("*", { count: "exact", head: true })
+        .in("status", ["open", "filled"])
+        .is("deleted_at", null),
+    ),
+    softCount("feedback_reports", () =>
+      sb
+        .from("feedback_reports")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "new"),
+    ),
+    softCount("feedback_reports", () =>
+      sb
+        .from("feedback_reports")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "triaging"),
+    ),
+    softCount("trial_consumers", () =>
+      sb.from("trial_consumers").select("*", { count: "exact", head: true }),
+    ),
   ]);
+
+  for (const part of [
+    openParties,
+    feedbackNew,
+    feedbackTriaging,
+    trialConsumers,
+  ]) {
+    if (part.hint && !schemaHints.includes(part.hint)) {
+      schemaHints.push(part.hint);
+    }
+  }
 
   return {
     serversByPlan,
@@ -155,17 +310,19 @@ async function loadProduct(sb: SupabaseClient): Promise<ProductUsage> {
     activeServers,
     foundingSeatsUsed,
     foundingSeatCap: PLANS.founding_pro.seatCap,
-    openPartiesGlobal: openPartiesRes.count ?? 0,
-    feedbackNew: feedbackNewRes.count ?? 0,
-    feedbackTriaging: feedbackTriagingRes.count ?? 0,
-    trialConsumers: trialConsumersRes.count ?? 0,
+    openPartiesGlobal: openParties.count,
+    feedbackNew: feedbackNew.count,
+    feedbackTriaging: feedbackTriaging.count,
+    trialConsumers: trialConsumers.count,
     serverOptions: list.map((s) => ({
-      id: s.id as string,
-      discord_guild_id: s.discord_guild_id as string,
-      name: (s.name as string) || s.discord_guild_id,
-      plan: s.plan as string,
-      archived_at: (s.archived_at as string | null) ?? null,
+      id: s.id,
+      discord_guild_id: s.discord_guild_id,
+      name: s.name || s.discord_guild_id,
+      plan: (s.plan as string) || "free",
+      archived_at: hasArchivedAt ? (s.archived_at ?? null) : null,
     })),
+    schemaHints,
+    error: null,
   };
 }
 
@@ -174,14 +331,35 @@ export async function loadServerDrill(
   guildIdRaw: string,
 ): Promise<ServerDrill> {
   const discord_guild_id = guildIdRaw.trim() || OFFICIAL_RALLIED_GUILD_ID;
+  const schemaHints: string[] = [];
 
-  const { data: server } = await sb
-    .from("servers")
-    .select(
-      "id, discord_guild_id, name, plan, trial_consumed_at, archived_at, forever_pro",
-    )
-    .eq("discord_guild_id", discord_guild_id)
-    .maybeSingle();
+  const selected = await selectServersOptional(sb, { guildId: discord_guild_id });
+  if (selected.error) {
+    return {
+      discord_guild_id,
+      id: null,
+      name: null,
+      plan: null,
+      trial_consumed_at: null,
+      archived_at: null,
+      forever_pro: null,
+      memberCount: null,
+      openParties: null,
+      createsLast24h: null,
+      feedbackNew: null,
+      feedbackTriaging: null,
+      feedbackTotal: null,
+      found: false,
+      schemaHints: selected.hints,
+      error: selected.error,
+    };
+  }
+
+  schemaHints.push(...selected.hints);
+  const server = selected.rows[0];
+  const hasArchivedAt = !selected.missing.has("archived_at");
+  const hasTrialConsumed = !selected.missing.has("trial_consumed_at");
+  const hasForeverPro = !selected.missing.has("forever_pro");
 
   if (!server) {
     return {
@@ -192,71 +370,95 @@ export async function loadServerDrill(
       trial_consumed_at: null,
       archived_at: null,
       forever_pro: null,
-      memberCount: 0,
-      openParties: 0,
-      createsLast24h: 0,
-      feedbackNew: 0,
-      feedbackTriaging: 0,
-      feedbackTotal: 0,
+      memberCount: null,
+      openParties: null,
+      createsLast24h: null,
+      feedbackNew: null,
+      feedbackTriaging: null,
+      feedbackTotal: null,
       found: false,
+      schemaHints,
+      error: null,
     };
   }
 
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const [
-    membersRes,
-    openRes,
-    createsRes,
-    fbNewRes,
-    fbTriRes,
-    fbAllRes,
+    members,
+    openParties,
+    creates,
+    fbNew,
+    fbTri,
+    fbAll,
   ] = await Promise.all([
-    sb
-      .from("members")
-      .select("*", { count: "exact", head: true })
-      .eq("server_id", server.id),
-    sb
-      .from("lfg_parties")
-      .select("*", { count: "exact", head: true })
-      .eq("server_id", server.id)
-      .in("status", ["open", "filled"])
-      .is("deleted_at", null),
-    sb
-      .from("lfg_parties")
-      .select("*", { count: "exact", head: true })
-      .eq("server_id", server.id)
-      .gte("created_at", since),
-    sb
-      .from("feedback_reports")
-      .select("*", { count: "exact", head: true })
-      .eq("discord_guild_id", discord_guild_id)
-      .eq("status", "new"),
-    sb
-      .from("feedback_reports")
-      .select("*", { count: "exact", head: true })
-      .eq("discord_guild_id", discord_guild_id)
-      .eq("status", "triaging"),
-    sb
-      .from("feedback_reports")
-      .select("*", { count: "exact", head: true })
-      .eq("discord_guild_id", discord_guild_id),
+    softCount("members", () =>
+      sb
+        .from("members")
+        .select("*", { count: "exact", head: true })
+        .eq("server_id", server.id),
+    ),
+    softCount("lfg_parties", () =>
+      sb
+        .from("lfg_parties")
+        .select("*", { count: "exact", head: true })
+        .eq("server_id", server.id)
+        .in("status", ["open", "filled"])
+        .is("deleted_at", null),
+    ),
+    softCount("lfg_parties", () =>
+      sb
+        .from("lfg_parties")
+        .select("*", { count: "exact", head: true })
+        .eq("server_id", server.id)
+        .gte("created_at", since),
+    ),
+    softCount("feedback_reports", () =>
+      sb
+        .from("feedback_reports")
+        .select("*", { count: "exact", head: true })
+        .eq("discord_guild_id", discord_guild_id)
+        .eq("status", "new"),
+    ),
+    softCount("feedback_reports", () =>
+      sb
+        .from("feedback_reports")
+        .select("*", { count: "exact", head: true })
+        .eq("discord_guild_id", discord_guild_id)
+        .eq("status", "triaging"),
+    ),
+    softCount("feedback_reports", () =>
+      sb
+        .from("feedback_reports")
+        .select("*", { count: "exact", head: true })
+        .eq("discord_guild_id", discord_guild_id),
+    ),
   ]);
+
+  for (const part of [members, openParties, creates, fbNew, fbTri, fbAll]) {
+    if (part.hint && !schemaHints.includes(part.hint)) {
+      schemaHints.push(part.hint);
+    }
+  }
 
   return {
     discord_guild_id,
-    id: server.id as string,
-    name: (server.name as string) || null,
-    plan: (server.plan as string) || null,
-    trial_consumed_at: (server.trial_consumed_at as string | null) ?? null,
-    archived_at: (server.archived_at as string | null) ?? null,
-    forever_pro: Boolean(server.forever_pro),
-    memberCount: membersRes.count ?? 0,
-    openParties: openRes.count ?? 0,
-    createsLast24h: createsRes.count ?? 0,
-    feedbackNew: fbNewRes.count ?? 0,
-    feedbackTriaging: fbTriRes.count ?? 0,
-    feedbackTotal: fbAllRes.count ?? 0,
+    id: server.id,
+    name: server.name || null,
+    plan: server.plan || null,
+    trial_consumed_at: hasTrialConsumed
+      ? (server.trial_consumed_at ?? null)
+      : null,
+    archived_at: hasArchivedAt ? (server.archived_at ?? null) : null,
+    forever_pro: hasForeverPro ? Boolean(server.forever_pro) : null,
+    memberCount: members.count,
+    openParties: openParties.count,
+    createsLast24h: creates.count,
+    feedbackNew: fbNew.count,
+    feedbackTriaging: fbTri.count,
+    feedbackTotal: fbAll.count,
     found: true,
+    schemaHints,
+    error: null,
   };
 }
 
@@ -454,7 +656,11 @@ async function loadSupabaseSizes(sb: SupabaseClient): Promise<SupabaseUsage> {
   const token = (getRuntimeEnv("SUPABASE_ACCESS_TOKEN") ?? "").trim();
   const projectRef = (getRuntimeEnv("SUPABASE_PROJECT_REF") ?? "").trim();
   const setupHint =
+<<<<<<< HEAD
     "Optional: add SUPABASE_ACCESS_TOKEN + SUPABASE_PROJECT_REF for Management API sizes. Else run migration 018 (ops_relation_sizes) for SQL estimates. Redeploy rallied after secrets.";
+=======
+    "Optional: add SUPABASE_ACCESS_TOKEN + SUPABASE_PROJECT_REF for Management API sizes. Else run migration 018 (ops_relation_sizes) for SQL size estimates only — 016 is for archived_at / retention-aware server counts, not sizes. Redeploy rallied-web after secrets.";
+>>>>>>> 3a92abb (fix(web): soft-fail ops usage when archived_at missing)
 
   const tablesBase: SupabaseTableSize[] = OPS_SIZE_TABLES.map((table) => ({
     table,
@@ -656,17 +862,33 @@ export async function getOpsUsage(opts: {
   const guildId =
     (opts.guildId ?? "").trim() || OFFICIAL_RALLIED_GUILD_ID;
 
-  const productCacheKey = "product:v1";
+  const productCacheKey = "product:v2";
   let product = cacheGet<ProductUsage>(productCacheKey);
   let cached = Boolean(product);
+  let productError: string | null = null;
   if (!product) {
-    product = await loadProduct(sb);
-    cacheSet(productCacheKey, product);
-    cached = false;
+    try {
+      product = await loadProduct(sb);
+      // Cache successful / soft-schema payloads (not hard error empties).
+      if (!product.error) {
+        cacheSet(productCacheKey, product);
+      }
+      cached = false;
+    } catch (e) {
+      product = null;
+      productError = e instanceof Error ? e.message : String(e);
+      cached = false;
+    }
   }
 
-  const [drill, cloudflare, supabase] = await Promise.all([
-    loadServerDrill(sb, guildId),
+  const [drillResult, cloudflare, supabase] = await Promise.all([
+    loadServerDrill(sb, guildId).then(
+      (drill) => ({ drill, drillError: null as string | null }),
+      (e: unknown) => ({
+        drill: null as ServerDrill | null,
+        drillError: e instanceof Error ? e.message : String(e),
+      }),
+    ),
     loadCloudflare(),
     loadSupabaseSizes(sb),
   ]);
@@ -684,7 +906,9 @@ export async function getOpsUsage(opts: {
     cached,
     cacheTtlSeconds: Math.round(CACHE_TTL_MS / 1000),
     product,
-    drill,
+    productError: productError ?? product?.error ?? null,
+    drill: drillResult.drill,
+    drillError: drillResult.drillError ?? drillResult.drill?.error ?? null,
     cloudflare,
     supabase,
     links: {

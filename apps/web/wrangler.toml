@@ -56,9 +56,10 @@ binding = "ASSETS"
 #   OPS_DISCORD_IDS                (SECRET — comma-separated Discord user snowflakes)
 #   OPS_FEEDBACK_CHANNEL_ID        (optional — staff channel for new-report embeds)
 #
-# Ops Usage (/ops/usage) — free-tier signals (fail soft if unset):
+# Ops Usage (/ops/usage) — free-tier signals (fail soft if unset / optional schema missing):
 #   CF_API_TOKEN                   (SECRET — Account Analytics Read / Workers Analytics)
 #   CF_ACCOUNT_ID                  (account id from CF dashboard)
 #   CF_WORKER_NAMES                (optional — default rallied,rallied-bot)
 #   SUPABASE_ACCESS_TOKEN          (optional — Management API personal access token)
 #   SUPABASE_PROJECT_REF           (optional — project ref for size queries)
+#   Schema: 016 archived_at (retention counts); 018 sizes RPC only — page fails soft without them.

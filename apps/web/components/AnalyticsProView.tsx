@@ -170,8 +170,8 @@ export function AnalyticsProView({
               </div>
             ) : (
               <p className="text-sm text-muted">
-                No soft metrics yet — need vibe checks or ready-check events
-                (migration 011).
+                No soft metrics yet — need vibe checks or ready-check activity in
+                this range.
               </p>
             )}
           </section>

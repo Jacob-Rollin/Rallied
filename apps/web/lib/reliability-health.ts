@@ -91,7 +91,7 @@ export function buildReliabilityHealth(
       noShowHint = "No ready checks resolved in the last 7 days.";
     } else if (resolved > 0 && !hasEventHistory) {
       noShowHint =
-        "Rate available after new ready checks (event log). Recent resolved: " +
+        "Rate available after new ready checks. Recent resolved: " +
         String(resolved) +
         (strikes > 0 ? ` · ${strikes} no-show strike${strikes === 1 ? "" : "s"}` : "");
     } else {
@@ -107,12 +107,13 @@ export function buildReliabilityHealth(
   }
 
   let standbyHint: string | null = null;
-  if (input.standbyPromotionsThisWeek == null) {
+  if (
+    input.standbyPromotionsThisWeek == null ||
+    input.standbyPromotionsThisWeek === 0
+  ) {
+    // Keep "this week" so dashboard-data can swap in the active range label.
     standbyHint =
-      "Standby log not available yet — run migration 011, then waitlist promotes from ready-fail will count.";
-  } else if (input.standbyPromotionsThisWeek === 0) {
-    standbyHint =
-      "No waitlist promotions from ready-fail this week (older promotes weren’t logged).";
+      "No standby promotions this week yet. When a waitlisted player is promoted after a ready-check no-show, it will show up here.";
   }
 
   return {

@@ -117,6 +117,60 @@ export function isForeverProProtected(server: {
   return false;
 }
 
+/** Title Case plan name for admin UI — never raw snake_case slugs. */
+export function planDisplayName(plan: string | null | undefined): string {
+  if (!plan) return "Unknown";
+  switch (plan) {
+    case "founding_pro":
+      return PLANS.founding_pro.label;
+    case "pro":
+      return PLANS.pro.label;
+    case "community":
+      return PLANS.community.label;
+    case "free":
+    case "lapsed":
+      return "Starter";
+    case "trial":
+      return PLANS.trial.label;
+    case "demo":
+      return "Demo";
+    default:
+      return plan
+        .split(/[_\s-]+/)
+        .filter(Boolean)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join(" ");
+  }
+}
+
+/**
+ * Admin plan line like "Founding Pro - $8.99/mo".
+ * Uses priceLockCents when set; otherwise list price for paid plans.
+ * No "lock" / "locked" wording.
+ */
+export function formatAdminPlanLine(
+  plan: string | null | undefined,
+  opts?: { priceLockCents?: number | null },
+): string {
+  const name = planDisplayName(plan);
+  const lockCents = opts?.priceLockCents;
+  let monthly: number | null = null;
+  if (lockCents != null && Number.isFinite(Number(lockCents))) {
+    monthly = Number(lockCents) / 100;
+  } else if (plan === "founding_pro") {
+    monthly = PLANS.founding_pro.priceMonthly;
+  } else if (plan === "pro") {
+    monthly = PLANS.pro.priceMonthly;
+  } else if (plan === "community" || plan === "trial") {
+    monthly = PLANS.community.priceMonthly;
+  }
+  if (monthly == null) return name;
+  const price = Number.isInteger(monthly)
+    ? String(monthly)
+    : monthly.toFixed(2);
+  return `${name} - $${price}/mo`;
+}
+
 /** Monthly cents to persist on servers.price_lock_cents after Checkout. */
 export function priceLockCentsForPlan(
   plan: PaidCheckoutPlan,

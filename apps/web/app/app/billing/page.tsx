@@ -89,7 +89,6 @@ export default async function BillingPage({ searchParams }: Props) {
         trialConsumedAt={current?.trial_consumed_at ?? null}
         userTrialConsumedAt={userTrialConsumedAt}
         stripeCustomerId={current?.stripe_customer_id ?? null}
-        stripeSubscriptionId={current?.stripe_subscription_id ?? null}
         billingInterval={current?.billing_interval ?? null}
         foreverPro={foreverPro}
         stripeReady={stripeConfigured() && data.source === "live"}

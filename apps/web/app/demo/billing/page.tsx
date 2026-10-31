@@ -4,6 +4,7 @@ import {
   FOUNDING_PRO_PRICE_USD,
   PLANS,
   PRO_PRICE_USD,
+  formatAdminPlanLine,
   isProPlan,
 } from "@rallied/shared";
 import { DemoDataBanner } from "@/components/DemoDataBanner";
@@ -15,19 +16,9 @@ export default async function DemoBillingPage() {
   const current = data.server;
   const plan = current?.plan ?? "community";
   const pro = isProPlan(plan);
-  const lock =
-    current?.price_lock_cents != null
-      ? (current.price_lock_cents / 100).toFixed(2)
-      : null;
-
-  const planLabel =
-    plan === "founding_pro"
-      ? PLANS.founding_pro.label
-      : plan === "pro"
-        ? PLANS.pro.label
-        : plan === "community"
-          ? PLANS.community.label
-          : plan;
+  const planLine = formatAdminPlanLine(plan, {
+    priceLockCents: current?.price_lock_cents ?? null,
+  });
 
   return (
     <div className="space-y-8">
@@ -53,16 +44,7 @@ export default async function DemoBillingPage() {
             <h2 className="mt-1 font-display text-2xl tracking-wide">
               {current?.name ?? "Demo server"}
             </h2>
-            <p className="mt-1 text-sm text-white/90">
-              {planLabel}
-              {lock
-                ? ` · $${lock}/mo locked`
-                : plan === "pro"
-                  ? ` · $${PRO_PRICE_USD}/mo`
-                  : plan === "community"
-                    ? ` · $${COMMUNITY_PRICE_USD}/mo`
-                    : ""}
-            </p>
+            <p className="mt-1 text-sm text-white/90">{planLine}</p>
             {pro && plan === "founding_pro" ? (
               <p className="mt-2 inline-block rounded-brand border border-lime/50 px-2 py-0.5 text-xs text-lime">
                 Founding badge · Pro features · ≤{PLANS.founding_pro.seatCap}{" "}
@@ -118,7 +100,7 @@ export default async function DemoBillingPage() {
           </p>
           <p className="mt-2 text-xs text-muted">
             Analytics export, vanity, iCal, priority. Founding seats use $
-            {FOUNDING_PRO_PRICE_USD} lock (≤{PLANS.founding_pro.seatCap}).
+            {FOUNDING_PRO_PRICE_USD}/mo (≤{PLANS.founding_pro.seatCap}).
           </p>
           <button
             type="button"

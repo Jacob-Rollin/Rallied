@@ -10,6 +10,15 @@ type Props = {
   guildName?: string;
 };
 
+/** iOS Safari zooms inputs under 16px; keep 16px on small screens. */
+const fieldClass =
+  "mt-1 w-full rounded-brand border border-white/15 bg-slate px-3 py-2 text-base text-white placeholder:text-muted/60 sm:text-sm";
+
+function blurActiveField() {
+  const active = document.activeElement;
+  if (active instanceof HTMLElement) active.blur();
+}
+
 export function ReportFeedbackModal({
   open,
   onClose,
@@ -25,8 +34,16 @@ export function ReportFeedbackModal({
   const [err, setErr] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
 
+  function dismiss() {
+    blurActiveField();
+    onClose();
+  }
+
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      blurActiveField();
+      return;
+    }
     setKind("bug");
     setTitle("");
     setDetails("");
@@ -40,7 +57,10 @@ export function ReportFeedbackModal({
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape" && !busy) onClose();
+      if (e.key === "Escape" && !busy) {
+        blurActiveField();
+        onClose();
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -83,7 +103,7 @@ export function ReportFeedbackModal({
       setOk("Thanks — report sent to the Rallied team.");
       setTitle("");
       setDetails("");
-      window.setTimeout(() => onClose(), 900);
+      window.setTimeout(() => dismiss(), 900);
     } catch (e2) {
       setErr(e2 instanceof Error ? e2.message : "Submit failed");
     } finally {
@@ -96,7 +116,7 @@ export function ReportFeedbackModal({
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center"
       role="presentation"
       onClick={() => {
-        if (!busy) onClose();
+        if (!busy) dismiss();
       }}
     >
       <div
@@ -130,7 +150,7 @@ export function ReportFeedbackModal({
             <span className="text-muted">Type</span>
             <select
               ref={firstFieldRef}
-              className="mt-1 w-full rounded-brand border border-white/15 bg-slate px-3 py-2 text-white"
+              className={fieldClass}
               value={kind}
               onChange={(e) => setKind(e.target.value as FeedbackKind)}
               disabled={busy}
@@ -146,7 +166,7 @@ export function ReportFeedbackModal({
           <label className="block text-sm">
             <span className="text-muted">Title</span>
             <input
-              className="mt-1 w-full rounded-brand border border-white/15 bg-slate px-3 py-2 text-white placeholder:text-muted/60"
+              className={fieldClass}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={120}
@@ -159,7 +179,7 @@ export function ReportFeedbackModal({
           <label className="block text-sm">
             <span className="text-muted">Details</span>
             <textarea
-              className="mt-1 min-h-[120px] w-full rounded-brand border border-white/15 bg-slate px-3 py-2 text-white placeholder:text-muted/60"
+              className={`${fieldClass} min-h-[120px]`}
               value={details}
               onChange={(e) => setDetails(e.target.value)}
               maxLength={4000}
@@ -183,7 +203,7 @@ export function ReportFeedbackModal({
           <div className="flex flex-wrap justify-end gap-2 pt-1">
             <button
               type="button"
-              onClick={onClose}
+              onClick={dismiss}
               disabled={busy}
               className="rounded-brand border border-white/20 px-4 py-2 text-sm text-white/80 hover:border-white/40 disabled:opacity-50"
             >

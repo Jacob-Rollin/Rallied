@@ -8,11 +8,11 @@ import {
   DEFAULT_MAX_OPEN_PARTIES_PER_HOST,
   MAX_OPEN_PARTIES_PER_HOST,
   MIN_OPEN_PARTIES_PER_HOST,
-  PLANS,
   PRO_PRICE_USD,
   STARTER_MAX_CREATES_PER_24H,
   STARTER_MAX_OPEN_PARTIES,
   buildBotInviteUrl,
+  formatAdminPlanLine,
   isProPlan,
   isStarterPlan,
   modDashboardEnabled,
@@ -350,17 +350,15 @@ export function SettingsClient({
             <span className="text-muted">Name</span> · {serverName}
           </p>
           <p className="mt-1">
-            <span className="text-muted">Plan</span> · {plan}
-            {priceLockCents != null
-              ? ` · $${(priceLockCents / 100).toFixed(2)}/mo lock`
-              : ""}
+            <span className="text-muted">Plan</span> ·{" "}
+            {formatAdminPlanLine(plan, { priceLockCents })}
             {demoProUnlock && demoProPreview ? " · Pro preview" : ""}
           </p>
           <p className="mt-1 text-xs text-muted">
-            Data source: {source}.{" "}
-            {canWrite
-              ? "Save writes server_settings when live."
-              : "Demo changes stay in this browser tab (not saved)."}
+            Data source: {source}
+            {!canWrite
+              ? " · Demo changes stay in this browser tab (not saved)."
+              : ""}
           </p>
         </div>
       </section>
@@ -990,17 +988,6 @@ export function SettingsClient({
         {saveErr ? <p className="text-xs text-coral">{saveErr}</p> : null}
       </div>
 
-      <section className="space-y-4">
-        <h2 className="font-display text-xl tracking-wide">Billing snapshot</h2>
-        <p className="text-sm text-muted">
-          Per Discord server: Community ${COMMUNITY_PRICE_USD} · Pro $
-          {PRO_PRICE_USD} · Founding Pro ${PLANS.founding_pro.priceMonthly}{" "}
-          locked (≤{PLANS.founding_pro.seatCap}).{" "}
-          <Link href={billingHref} className="text-coral hover:underline">
-            Open billing
-          </Link>
-        </p>
-      </section>
     </div>
   );
 }

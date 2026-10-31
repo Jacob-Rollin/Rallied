@@ -8,6 +8,7 @@ import {
   FOUNDING_PRO_PRICE_USD,
   PLANS,
   PRO_PRICE_USD,
+  formatAdminPlanLine,
   isCommunityTrialEligible,
   isPaidPlan,
   isProPlan,
@@ -26,7 +27,6 @@ type Props = {
   trialConsumedAt: string | null;
   userTrialConsumedAt: string | null;
   stripeCustomerId: string | null;
-  stripeSubscriptionId: string | null;
   billingInterval: "month" | "year" | null;
   foreverPro: boolean;
   stripeReady: boolean;
@@ -65,7 +65,7 @@ const SKUS: Sku[] = [
     title: "Founding Pro",
     monthly: FOUNDING_PRO_PRICE_USD,
     annual: PLANS.founding_pro.annualCents / 100,
-    blurb: `Pro locked at $${FOUNDING_PRO_PRICE_USD}/mo · ≤${PLANS.founding_pro.seatCap} seats (coupon / manual if sold out).`,
+    blurb: `Pro features at $${FOUNDING_PRO_PRICE_USD}/mo · ≤${PLANS.founding_pro.seatCap} seats (coupon / manual if sold out).`,
     accent: "founding",
   },
 ];
@@ -79,7 +79,6 @@ export function BillingClient({
   trialConsumedAt,
   userTrialConsumedAt,
   stripeCustomerId,
-  stripeSubscriptionId,
   billingInterval,
   foreverPro,
   stripeReady,
@@ -99,21 +98,7 @@ export function BillingClient({
     trial_consumed_at: trialConsumedAt,
     user_trial_consumed_at: userTrialConsumedAt,
   });
-  const lock =
-    priceLockCents != null ? (priceLockCents / 100).toFixed(2) : null;
-
-  const planLabel =
-    plan === "founding_pro"
-      ? PLANS.founding_pro.label
-      : plan === "pro"
-        ? PLANS.pro.label
-        : plan === "community"
-          ? PLANS.community.label
-          : plan === "free" || plan === "lapsed"
-            ? "Starter"
-            : plan === "trial"
-              ? "Trial"
-              : String(plan);
+  const planLine = formatAdminPlanLine(plan, { priceLockCents });
 
   async function startCheckout(
     target: "community" | "pro" | "founding_pro",
@@ -216,14 +201,7 @@ export function BillingClient({
               {serverName ?? "Server not in Supabase yet"}
             </h2>
             <p className="mt-1 text-sm text-white/90">
-              {planLabel}
-              {lock
-                ? ` · $${lock}/mo locked`
-                : plan === "pro"
-                  ? ` · $${PRO_PRICE_USD}/mo`
-                  : plan === "community"
-                    ? ` · $${COMMUNITY_PRICE_USD}/mo`
-                    : ""}
+              {planLine}
               {billingInterval === "year" ? " · billed yearly" : ""}
             </p>
             {plan === "trial" && trialEndsAt ? (
@@ -258,7 +236,8 @@ export function BillingClient({
             ) : null}
             {foreverPro && plan !== "founding_pro" ? (
               <p className="mt-2 text-xs text-lime/80">
-                Forever-Pro flag on — webhooks will not strip entitlements.
+                Forever-Pro protection on — billing changes will not strip
+                entitlements.
               </p>
             ) : null}
           </div>
@@ -278,11 +257,6 @@ export function BillingClient({
             ) : null}
           </div>
         </div>
-        {stripeSubscriptionId ? (
-          <p className="mt-3 font-mono text-[10px] text-white/35">
-            sub {stripeSubscriptionId}
-          </p>
-        ) : null}
       </section>
 
       <div className="flex flex-wrap items-center gap-3 text-sm">
@@ -387,7 +361,8 @@ export function BillingClient({
         <span className="text-white/70">Manage billing</span> keeps paid (or
         trial) access until the period / trial ends — then Starter. One Community
         trial per server and per Discord user (uninstall / new server does not
-        reset it). Official Rallied / forever_pro are never downgraded.
+        reset it). Official Rallied and forever-protected servers are never
+        downgraded.
       </p>
     </div>
   );

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { buildBotInviteUrl } from "@rallied/shared";
 import { AddToDiscordButton } from "./AddToDiscordButton";
+import { MobileMenuNav, SITE_NAV } from "./MobileMenuNav";
+import { ReportFeedbackModal } from "./ReportFeedbackModal";
 
 type Props = {
   /** Translucent over hero vs solid strip on inner pages. */
@@ -14,28 +16,17 @@ type MeResponse = {
   authenticated: boolean;
   ops?: boolean;
   user?: { username?: string; globalName?: string | null };
+  guilds?: { id: string; bot_present?: boolean }[];
 };
-
-const NAV = [
-  { href: "/guide", label: "Guide" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/servers", label: "Servers" },
-  { href: "/changelog", label: "Changelog" },
-  { href: "/demo", label: "Demo" },
-] as const;
-
-/** Legal links — mobile menu secondary only (footer carries them on desktop). */
-const LEGAL_NAV = [
-  { href: "/privacy", label: "Privacy" },
-  { href: "/terms", label: "Terms" },
-] as const;
 
 export function SiteHeader({ variant = "solid" }: Props) {
   const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
   const inviteHref = clientId ? buildBotInviteUrl(clientId) : "#add-bot";
   const [menuOpen, setMenuOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const [authed, setAuthed] = useState(false);
   const [showOps, setShowOps] = useState(false);
+  const [hasBotGuild, setHasBotGuild] = useState(false);
   const menuId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -47,10 +38,16 @@ export function SiteHeader({ variant = "solid" }: Props) {
         const loggedIn = Boolean(data?.authenticated);
         setAuthed(loggedIn);
         setShowOps(Boolean(loggedIn && data?.ops));
+        setHasBotGuild(
+          Boolean(
+            loggedIn && data?.guilds?.some((g) => Boolean(g.bot_present)),
+          ),
+        );
       })
       .catch(() => {
         setAuthed(false);
         setShowOps(false);
+        setHasBotGuild(false);
       });
   }, []);
 
@@ -100,12 +97,12 @@ export function SiteHeader({ variant = "solid" }: Props) {
           />
         </Link>
 
-        {/* Desktop / tablet: full nav + CTAs */}
+        {/* Desktop / tablet: full nav + CTAs — unchanged */}
         <nav
           className="hidden items-center gap-4 text-sm text-white/70 md:flex"
           aria-label="Primary"
         >
-          {NAV.map((item) => (
+          {SITE_NAV.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -154,23 +151,19 @@ export function SiteHeader({ variant = "solid" }: Props) {
           />
         </div>
 
-        {/* Mobile: account + menu */}
+        {/*
+          Mobile: logo + Log in (logged-out) or logo-only + hamburger (signed-in).
+          Dashboard lives in the sheet — no duplicate next to the logo.
+        */}
         <div className="flex items-center gap-1 md:hidden">
-          {authed ? (
-            <Link
-              href="/app"
-              className="whitespace-nowrap px-2.5 py-1.5 text-sm font-medium text-white/90 transition hover:text-coral"
-            >
-              Dashboard
-            </Link>
-          ) : (
+          {!authed ? (
             <Link
               href="/login"
               className="whitespace-nowrap px-2.5 py-1.5 text-sm font-medium text-white/90 transition hover:text-white"
             >
               Log in
             </Link>
-          )}
+          ) : null}
           <button
             ref={buttonRef}
             type="button"
@@ -191,63 +184,27 @@ export function SiteHeader({ variant = "solid" }: Props) {
           id={menuId}
           className="border-t border-white/10 bg-slate/95 px-4 py-3 backdrop-blur-md md:hidden"
         >
-          <nav aria-label="Mobile" className="mx-auto flex max-w-5xl flex-col">
-            {NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-brand px-3 py-2.5 text-sm text-white/80 transition hover:bg-white/5 hover:text-white"
-                onClick={() => setMenuOpen(false)}
-              >
-                {item.label}
-              </Link>
-            ))}
-            <div className="my-1 border-t border-white/10" role="presentation" />
-            {LEGAL_NAV.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-brand px-3 py-2.5 text-sm text-white/55 transition hover:bg-white/5 hover:text-white"
-                onClick={() => setMenuOpen(false)}
-              >
-                {item.label}
-              </Link>
-            ))}
-            {authed ? (
-              <>
-                <Link
-                  href="/app"
-                  className="rounded-brand px-3 py-2.5 text-sm text-white/80 transition hover:bg-white/5 hover:text-coral"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  Dashboard
-                </Link>
-                {showOps ? (
-                  <Link
-                    href="/ops"
-                    className="rounded-brand px-3 py-2.5 text-sm text-white/55 transition hover:bg-white/5 hover:text-coral"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    Ops
-                  </Link>
-                ) : null}
-                <a
-                  href="/api/auth/logout"
-                  className="rounded-brand px-3 py-2.5 text-sm text-white/55 transition hover:bg-white/5 hover:text-coral"
-                >
-                  Log out
-                </a>
-              </>
-            ) : null}
-            <div className="mt-2 border-t border-white/10 pt-3">
-              <AddToDiscordButton
-                href={inviteHref}
-                className="w-full !whitespace-nowrap"
-              />
-            </div>
-          </nav>
+          <MobileMenuNav
+            authed={authed}
+            showOps={showOps}
+            inviteHref={inviteHref}
+            botInstalledOnActiveGuild={hasBotGuild}
+            onNavigate={() => setMenuOpen(false)}
+            onReport={
+              authed
+                ? () => {
+                    setReportOpen(true);
+                  }
+                : undefined
+            }
+          />
         </div>
       ) : null}
+
+      <ReportFeedbackModal
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+      />
     </header>
   );
 }

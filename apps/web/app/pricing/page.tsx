@@ -127,7 +127,7 @@ const MATRIX: {
     label: "Public /s page",
     starter: "no",
     community: "yes",
-    pro: "yes + vanity",
+    pro: "yes + Vanity",
   },
   {
     label: "Admin reliability settings",
@@ -145,7 +145,7 @@ const MATRIX: {
     label: "Analytics / CSV export",
     starter: "no",
     community: "This week",
-    pro: "Export + trends",
+    pro: "Export + Trends",
   },
   {
     label: "Calendar subscribe (.ics)",
@@ -172,6 +172,19 @@ function CellValue({ value }: { value: Cell }) {
   if (value === "no") {
     return <span className="text-white/30">—</span>;
   }
+  // e.g. "yes + Vanity" → green check + trailing label
+  if (typeof value === "string" && value.startsWith("yes + ")) {
+    const suffix = value.slice("yes + ".length);
+    return (
+      <span
+        className="inline-flex items-center gap-1.5 text-lime"
+        aria-label={`Included · ${suffix}`}
+      >
+        <TierCheck accent="lime" />
+        <span className="text-xs text-white/80 sm:text-sm">{suffix}</span>
+      </span>
+    );
+  }
   return <span className="text-xs text-white/80 sm:text-sm">{value}</span>;
 }
 
@@ -185,7 +198,7 @@ export default function PricingPage() {
 
       <main className="mx-auto max-w-5xl px-4 pb-20 pt-10 sm:pt-12">
         <p className="font-display text-xs tracking-[0.16em] text-coral">
-          PRICING · PATH B
+          Pricing
         </p>
         <h1 className="mt-2 font-display text-4xl tracking-wide sm:text-5xl">
           Free matching. Paid reliability.
@@ -264,25 +277,6 @@ export default function PricingPage() {
             </div>
           ))}
         </div>
-
-        <section className="mt-14 rounded-brand border border-lime/25 bg-lime/5 px-5 py-6 sm:px-6">
-          <h2 className="font-display text-2xl tracking-wide text-white">
-            How Ghostless works
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/75">
-            Ready Check → grace → strike on no-show → lockout after N strikes
-            (admin-set). Ghostless % = showed / (showed + ghosted). Admins can
-            dispute or clear. Community+ only — Starter keeps soft ready-check
-            without strikes.{" "}
-            <Link
-              href="/guide#ghostless"
-              className="font-medium text-lime transition hover:underline"
-            >
-              Full rules in the guide
-            </Link>
-            .
-          </p>
-        </section>
 
         <section className="mt-14">
           <h2 className="font-display text-2xl tracking-wide text-white">

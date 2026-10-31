@@ -42,6 +42,8 @@ function valueToDraft(value: number | null): string {
 /**
  * Settings-style integer field: native spinners hidden, custom up/down chevrons,
  * no leading zeros while typing, empty allowed temporarily then committed on blur.
+ * Uses text-base on mobile (≥16px) so iOS Safari does not auto-zoom on focus;
+ * globals.css also enforces this for all text-like form controls.
  */
 export function NumberField({
   value,
@@ -164,7 +166,7 @@ export function NumberField({
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className="number-field-input min-w-0 flex-1 bg-transparent px-3 py-2.5 text-white outline-none placeholder:text-muted/50 disabled:cursor-not-allowed"
+        className="number-field-input min-w-0 flex-1 bg-transparent px-3 py-2.5 text-base text-white outline-none placeholder:text-muted/50 disabled:cursor-not-allowed sm:text-sm"
       />
       <div className="flex w-12 shrink-0 flex-col border-l border-white/12 sm:w-11">
         <button

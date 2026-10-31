@@ -1,4 +1,6 @@
 # Rallied Discord bot Worker. Tip builds: content change here retriggers rallied-bot.
+# Non-production tip builds run `npx wrangler preview` and need a previews block
+# (empty OK) or the GitHub "Workers Builds: rallied-bot" check fails instantly.
 name = "rallied-bot"
 main = "src/worker.ts"
 compatibility_date = "2024-10-01"
@@ -10,6 +12,9 @@ compatibility_flags = ["nodejs_compat"]
 # Plaintext public values can still live in [vars]; secrets stay in dashboard Secrets.
 # Without keep_vars, CI deploy clears dashboard bindings not listed in this file.
 keep_vars = true
+
+# Required for Workers Builds preview / tip checks (`npx wrangler preview`).
+previews = { }
 
 # Set secrets via: wrangler secret put DISCORD_PUBLIC_KEY
 #                  wrangler secret put DISCORD_BOT_TOKEN

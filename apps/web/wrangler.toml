@@ -3,8 +3,12 @@
 # Bot Worker config stays in apps/bot/wrangler.toml — separate CF project.
 # Workers Builds watch this package path; keep_vars preserves Stripe/session secrets.
 # Tip rebuild nudge: content touch so Workers Builds re-evaluates this Worker path.
+#
+# name must match the Cloudflare Worker script (dashboard + GitHub check:
+# "Workers Builds: rallied"). Non-production tip builds run `npx wrangler preview`,
+# which requires an (empty OK) previews block or the check fails instantly.
 
-name = "rallied-web"
+name = "rallied"
 main = ".open-next/worker.js"
 compatibility_date = "2025-10-01"
 compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
@@ -14,6 +18,10 @@ compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
 # Without keep_vars, CI deploy clears dashboard bindings not listed in this file.
 # Deploy scripts also pass --keep-vars (see package.json deploy:cf / deploy:cf:full).
 keep_vars = true
+
+# Required for Workers Builds preview / tip checks (`npx wrangler preview`).
+# Empty = inherit top-level assets/compat; runtime secrets stay dashboard-bound.
+previews = { }
 
 [assets]
 directory = ".open-next/assets"

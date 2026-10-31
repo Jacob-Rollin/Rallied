@@ -365,7 +365,7 @@ async function loadCloudflare(): Promise<CfUsage> {
   const accountId = (getRuntimeEnv("CF_ACCOUNT_ID") ?? "").trim();
   const workerNames = cfWorkerNames();
   const setupHint =
-    "Connect Cloudflare — add CF_API_TOKEN + CF_ACCOUNT_ID on rallied-web (Account Analytics Read / Workers Analytics). Optional CF_WORKER_NAMES=rallied-web,rallied-bot. Redeploy after setting.";
+    "Connect Cloudflare — add CF_API_TOKEN + CF_ACCOUNT_ID on rallied (Account Analytics Read / Workers Analytics). Optional CF_WORKER_NAMES=rallied,rallied-bot. Redeploy after setting.";
 
   if (!token || !accountId) {
     return {
@@ -454,7 +454,7 @@ async function loadSupabaseSizes(sb: SupabaseClient): Promise<SupabaseUsage> {
   const token = (getRuntimeEnv("SUPABASE_ACCESS_TOKEN") ?? "").trim();
   const projectRef = (getRuntimeEnv("SUPABASE_PROJECT_REF") ?? "").trim();
   const setupHint =
-    "Optional: add SUPABASE_ACCESS_TOKEN + SUPABASE_PROJECT_REF for Management API sizes. Else run migration 018 (ops_relation_sizes) for SQL estimates. Redeploy rallied-web after secrets.";
+    "Optional: add SUPABASE_ACCESS_TOKEN + SUPABASE_PROJECT_REF for Management API sizes. Else run migration 018 (ops_relation_sizes) for SQL estimates. Redeploy rallied after secrets.";
 
   const tablesBase: SupabaseTableSize[] = OPS_SIZE_TABLES.map((table) => ({
     table,

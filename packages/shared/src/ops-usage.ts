@@ -29,7 +29,7 @@ export const SUPABASE_FREE_TIER_REF = {
 } as const;
 
 /** Default Worker script names for CF analytics (override via CF_WORKER_NAMES). */
-export const DEFAULT_CF_WORKER_NAMES = ["rallied-web", "rallied-bot"] as const;
+export const DEFAULT_CF_WORKER_NAMES = ["rallied", "rallied-bot"] as const;
 
 /** Big tables we size for dogfood free-tier watch. */
 export const OPS_SIZE_TABLES = [

@@ -343,12 +343,12 @@ export function OpsUsagePanel() {
                 copy Account ID.
               </li>
               <li>
-                Encrypt on <code className="text-white/70">rallied-web</code>:{" "}
+                Encrypt on <code className="text-white/70">rallied</code>:{" "}
                 <code className="text-white/70">CF_API_TOKEN</code>,{" "}
                 <code className="text-white/70">CF_ACCOUNT_ID</code>, optional{" "}
                 <code className="text-white/70">CF_WORKER_NAMES</code>.
               </li>
-              <li>Redeploy rallied-web.</li>
+              <li>Redeploy rallied.</li>
             </ol>
           </div>
         ) : null}

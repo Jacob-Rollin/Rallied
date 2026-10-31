@@ -550,12 +550,12 @@ async function fetchCfWindow(
     w.requests += row.sum?.requests ?? 0;
     w.errors += row.sum?.errors ?? 0;
     w.subrequests += row.sum?.subrequests ?? 0;
-    // Keep last quantile sample (adaptive rows); good enough for ops glance.
+    // CF GraphQL cpuTimeP* is microseconds — store as ms for the UI.
     if (row.quantiles?.cpuTimeP50 != null) {
-      w.cpuTimeP50Ms = row.quantiles.cpuTimeP50;
+      w.cpuTimeP50Ms = row.quantiles.cpuTimeP50 / 1000;
     }
     if (row.quantiles?.cpuTimeP99 != null) {
-      w.cpuTimeP99Ms = row.quantiles.cpuTimeP99;
+      w.cpuTimeP99Ms = row.quantiles.cpuTimeP99 / 1000;
     }
   }
 

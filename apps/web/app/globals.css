@@ -269,3 +269,21 @@ body::before {
   -moz-appearance: textfield;
   appearance: textfield;
 }
+
+/*
+ * iOS Safari zooms focused form controls when computed font-size is under 16px
+ * and does not zoom back out. Force ≥16px on small viewports so Settings
+ * NumberFields, Report modal, ops filters, and any future text inputs stay put.
+ * Matches Tailwind `sm` (640px): desktop can keep text-sm / compact sizes.
+ */
+@media (max-width: 639px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+      [type="file"]
+    ):not([type="color"]):not([type="submit"]):not([type="button"]):not(
+      [type="reset"]
+    ):not([type="hidden"]):not([type="image"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}

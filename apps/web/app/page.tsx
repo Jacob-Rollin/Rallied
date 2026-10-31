@@ -76,8 +76,12 @@ const LANDING_TIERS = [
     name: "Community",
     price: COMMUNITY_PRICE_USD,
     annual: PLANS.community.annualCents / 100,
-    blurb: "Unlimited LFG + Ghostless + strikes.",
-    features: ["Unlimited parties", "Ghostless + strikes", "Public page"],
+    blurb: "Unlimited guild LFG + Ghostless + strikes.",
+    features: [
+      "Unlimited guild parties",
+      "Per-host open hygiene cap",
+      "Ghostless + strikes",
+    ],
     founding: false as const,
   },
   {

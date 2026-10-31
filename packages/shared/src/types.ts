@@ -112,6 +112,11 @@ export interface ServerSettings {
    * Null = feed not enabled / rotated off. Never expose on public pages.
    */
   ical_token?: string | null;
+  /**
+   * Max concurrent open/filled parties one Discord user may host in this guild.
+   * Hygiene (anti lobby-spam). Default 3; Settings allow 1–10 on Community+.
+   */
+  max_open_parties_per_host?: number;
   created_at: string;
   updated_at: string;
 }

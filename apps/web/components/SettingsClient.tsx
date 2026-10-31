@@ -5,8 +5,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   COMMUNITY_PRICE_USD,
+  DEFAULT_MAX_OPEN_PARTIES_PER_HOST,
+  MAX_OPEN_PARTIES_PER_HOST,
+  MIN_OPEN_PARTIES_PER_HOST,
   PLANS,
   PRO_PRICE_USD,
+  STARTER_MAX_CREATES_PER_24H,
+  STARTER_MAX_OPEN_PARTIES,
   buildBotInviteUrl,
   isProPlan,
   isStarterPlan,
@@ -61,6 +66,7 @@ const DEFAULTS: Omit<
   hide_powered_by: false,
   public_accent: null,
   ical_token: null,
+  max_open_parties_per_host: DEFAULT_MAX_OPEN_PARTIES_PER_HOST,
 };
 
 const DEMO_ROLE_OPTIONS: DiscordRoleOption[] = [
@@ -108,6 +114,9 @@ export function SettingsClient({
     base.join_lockout_enforced !== false,
   );
   const [roleId, setRoleId] = useState(base.ghostless_role_id ?? "");
+  const [perHostOpenCap, setPerHostOpenCap] = useState(
+    base.max_open_parties_per_host ?? DEFAULT_MAX_OPEN_PARTIES_PER_HOST,
+  );
   const [modRoleIds, setModRoleIds] = useState<string[]>(
     base.mod_role_ids ?? [],
   );
@@ -232,6 +241,14 @@ export function SettingsClient({
         }
         payload.ghostless_role_id = roleId || null;
         payload.digest_channel_id = digestChannel || null;
+        payload.max_open_parties_per_host = Math.min(
+          MAX_OPEN_PARTIES_PER_HOST,
+          Math.max(
+            MIN_OPEN_PARTIES_PER_HOST,
+            Math.floor(Number(perHostOpenCap)) ||
+              DEFAULT_MAX_OPEN_PARTIES_PER_HOST,
+          ),
+        );
       }
       if (modRolesOn) {
         payload.mod_role_ids = modRoleIds;
@@ -577,6 +594,55 @@ export function SettingsClient({
       </section>
 
       <section className="space-y-4">
+        <h2 className="font-display text-xl tracking-wide">LFG hygiene</h2>
+        {starterLocked || !reliabilityOn ? (
+          <div className="rounded-brand border border-white/12 bg-slate-elevated/40 px-4 py-3 text-sm text-white/85">
+            <p className="font-medium text-white">Starter guild caps</p>
+            <p className="mt-1 text-white/65">
+              This server:{" "}
+              <strong className="font-semibold text-white/90">
+                {STARTER_MAX_OPEN_PARTIES} open parties
+              </strong>{" "}
+              and{" "}
+              <strong className="font-semibold text-white/90">
+                {STARTER_MAX_CREATES_PER_24H} creates / 24h
+              </strong>
+              . Per-host open parties cannot exceed the guild open cap
+              (effectively ≤{STARTER_MAX_OPEN_PARTIES}). Community+ adds an
+              admin knob for per-host open parties (default{" "}
+              {DEFAULT_MAX_OPEN_PARTIES_PER_HOST}) — hygiene against lobby spam,
+              not a plan limit.
+            </p>
+          </div>
+        ) : (
+          <div className="block max-w-sm text-sm">
+            <div className="text-muted">
+              <FieldInfo label="Open parties per host">
+                Max concurrent open parties one Discord user may host in this
+                server. Stops lobby spam — not a plan limit. Range{" "}
+                {MIN_OPEN_PARTIES_PER_HOST}–{MAX_OPEN_PARTIES_PER_HOST}; default{" "}
+                {DEFAULT_MAX_OPEN_PARTIES_PER_HOST}. Closing a party frees a
+                slot.
+              </FieldInfo>
+            </div>
+            <input
+              type="number"
+              min={MIN_OPEN_PARTIES_PER_HOST}
+              max={MAX_OPEN_PARTIES_PER_HOST}
+              aria-label="Open parties per host"
+              value={perHostOpenCap}
+              onChange={(e) => setPerHostOpenCap(Number(e.target.value))}
+              className="mt-1 w-full rounded-brand border border-white/15 bg-slate-elevated px-3 py-2 text-white"
+            />
+            <p className="mt-1 text-xs text-muted">
+              Guild-wide open parties stay unlimited on Community+. This only
+              caps how many one host can keep open at once.
+            </p>
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-4">
         <h2 className="font-display text-xl tracking-wide">Reliability rules</h2>
         {starterLocked || !reliabilityOn ? (
           <div className="rounded-brand border border-coral/35 bg-coral/10 px-4 py-3 text-sm text-white/85">
@@ -584,7 +650,8 @@ export function SettingsClient({
               Ghostless &amp; strikes need Community
             </p>
             <p className="mt-1 text-white/65">
-              Starter keeps LFG under caps for this server (2 open · 5
+              Starter keeps LFG under caps for this server (
+              {STARTER_MAX_OPEN_PARTIES} open · {STARTER_MAX_CREATES_PER_24H}{" "}
               creates/24h). Upgrade to Community (${COMMUNITY_PRICE_USD}/mo) to
               edit grace, strikes, and digest.
             </p>

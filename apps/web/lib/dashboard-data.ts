@@ -223,6 +223,7 @@ function mapSettingsRow(row: Record<string, unknown>): ServerSettings {
     hide_powered_by: Boolean(row.hide_powered_by),
     public_accent: (row.public_accent as string | null) ?? null,
     ical_token: (row.ical_token as string | null | undefined) ?? null,
+    max_open_parties_per_host: Number(row.max_open_parties_per_host ?? 3),
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
   };

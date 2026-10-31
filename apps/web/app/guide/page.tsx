@@ -237,7 +237,12 @@ export default function GuidePage() {
             <code className="text-white/65">in 30m</code> / UTC). Discord
             modals can&apos;t nest dropdowns — game stays a prior select; mic
             normalizes to Required / Optional / Any. A scheduled start gets a
-            ~T-10m reminder.
+            ~T-10m reminder. You are seated as{" "}
+            <strong className="font-semibold text-white">host</strong>. To stop
+            lobby spam, each person may only host a few open parties at once
+            (Community+ default 3; admins set 1–10 in Settings — not a plan
+            limit). Starter still uses the guild caps (2 open · 5 creates/24h).
+            Hit the host cap → close or finish one first.
           </p>
           <div className="mt-6">
             <CreatePartyFlowMock />
@@ -419,6 +424,18 @@ export default function GuidePage() {
               the same Reliability rules block on{" "}
               <code className="text-white/85">/app/settings</code>.
             </p>
+            <p>
+              <strong className="font-semibold text-white">
+                LFG hygiene
+              </strong>{" "}
+              — Community+{" "}
+              <strong className="font-semibold text-white">
+                Open parties per host
+              </strong>{" "}
+              (default 3, range 1–10) stops one person from flooding the board.
+              Not a plan limit; guild-wide open parties stay unlimited. Starter
+              Settings show a read-only note of the guild caps instead.
+            </p>
           </div>
         </section>
 
@@ -552,8 +569,9 @@ export default function GuidePage() {
                 <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
                   /s/your-slug
                 </code>
-                ), directory list + invite, Reliability rules (grace, strikes,
-                lockout, min Ghostless % to Join),{" "}
+                ), directory list + invite, LFG hygiene (open parties per host),
+                Reliability rules (grace, strikes, lockout, min Ghostless % to
+                Join),{" "}
                 <strong className="font-semibold text-white">
                   Rallied Mod roles
                 </strong>{" "}
@@ -621,8 +639,11 @@ export default function GuidePage() {
               (charged after trial ends). One trial per Discord server and per
               Discord user (reinstall / new server does not reset it). Cancel
               keeps access until the trial or paid period ends, then Starter (2
-              open + 5 creates/24h, no Ghostless). Community $4.99 · Pro $9.99 ·
-              Founding $8.99 locked (≤10 seats). Upgrade on{" "}
+              open + 5 creates/24h, no Ghostless). Community+ also caps open
+              parties per host (default 3; Settings 1–10) to stop lobby spam —
+              not a plan limit; guild-wide open stays unlimited on paid.
+              Community $4.99 · Pro $9.99 · Founding $8.99 locked (≤10 seats).
+              Upgrade on{" "}
               <Link href="/app/billing" className="text-coral hover:underline">
                 /app/billing
               </Link>{" "}

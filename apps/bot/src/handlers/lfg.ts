@@ -148,6 +148,7 @@ export async function createParty(opts: {
     env,
     serverId: server.id,
     plan,
+    hostMemberId: member.id,
     guildId: opts.guildId,
   });
   if (capBlock) return capBlock;
@@ -162,23 +163,6 @@ export async function createParty(opts: {
   });
   const createGateMsg = joinGateEphemeralMessage(createGate);
   if (createGateMsg) return ephemeral(createGateMsg);
-
-  const { data: existingHost } = await sb
-    .from("lfg_parties")
-    .select("id, game")
-    .eq("server_id", server.id)
-    .eq("host_member_id", member.id)
-    .in("status", ["open", "filled"])
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (existingHost) {
-    return ephemeral(
-      `You already host **${existingHost.game}** (\`${existingHost.id.slice(0, 8)}\`). Close it before creating another.`,
-    );
-  }
 
   // Extend TTL when scheduled further out so cron doesn't close early.
   let expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000);

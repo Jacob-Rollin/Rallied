@@ -1028,8 +1028,9 @@ export function lfgHowItWorksMessage() {
   return {
     content: [
       "**How Rallied LFG works** (this server only)",
-      "• **Starter** — matching under caps (2 open · 5 creates/24h). Soft Ready/Vibe — no strikes. Upgrade to Community for Ghostless.",
-      "• **Create party** — pick a game → size, mic, rank, region, optional start → card + **temp voice** + squad thread.",
+      "• **Starter** — matching under caps (2 open · 5 creates/24h for this server). Soft Ready/Vibe — no strikes. Upgrade to Community for Ghostless.",
+      "• **Per-host open cap** — you can host a few open parties at once (Community+ default 3; admins set 1–10). Stops lobby spam — not a plan limit. Close or finish one to free a slot.",
+      "• **Create party** — pick a game → size, mic, rank, region, optional start → card + **temp voice** + squad thread. You are seated as host.",
       "• **Join / Waitlist** — Join seats you; when full, **Waitlist** promotes when someone Leaves.",
       "• **Voice** — tap **Join VC** on the card (bot needs **Manage Channels**).",
       "• **Schedule** — optional start (`in 30m` / UTC time); reminder ~10 minutes before.",

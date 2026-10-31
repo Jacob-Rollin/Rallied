@@ -6,9 +6,18 @@ export const STARTER_MAX_OPEN_PARTIES = 2;
 /** Starter creates in a rolling 24h window. */
 export const STARTER_MAX_CREATES_PER_24H = 5;
 
+/** Default open parties one host may hold at once (Community+ hygiene). */
+export const DEFAULT_MAX_OPEN_PARTIES_PER_HOST = 3;
+export const MIN_OPEN_PARTIES_PER_HOST = 1;
+export const MAX_OPEN_PARTIES_PER_HOST = 10;
+
 export type EffectivePlan = PlanId | "free";
 
-export type CapBlockReason = "open_parties" | "creates_24h" | "feature";
+export type CapBlockReason =
+  | "open_parties"
+  | "creates_24h"
+  | "per_host_open"
+  | "feature";
 
 export interface ServerEntitlementInput {
   plan: string | null | undefined;
@@ -157,10 +166,42 @@ export function maxCreatesPer24h(
   return isStarterPlan(plan) ? STARTER_MAX_CREATES_PER_24H : null;
 }
 
+/** Clamp admin-configured per-host open cap into the sane 1–10 range. */
+export function clampOpenPartiesPerHost(n: unknown): number {
+  const v = typeof n === "number" ? n : Number(n);
+  if (!Number.isFinite(v)) return DEFAULT_MAX_OPEN_PARTIES_PER_HOST;
+  return Math.min(
+    MAX_OPEN_PARTIES_PER_HOST,
+    Math.max(MIN_OPEN_PARTIES_PER_HOST, Math.floor(v)),
+  );
+}
+
+/**
+ * Effective per-host open-party cap in this guild.
+ * Community+ / trial / forever_pro: configured value (default 3, range 1–10).
+ * Starter: never above the guild open cap (effectively ≤2) — not a harsher story.
+ */
+export function maxOpenPartiesPerHost(
+  plan: string | null | undefined,
+  configured: number | null | undefined = DEFAULT_MAX_OPEN_PARTIES_PER_HOST,
+): number {
+  const capped = clampOpenPartiesPerHost(
+    configured ?? DEFAULT_MAX_OPEN_PARTIES_PER_HOST,
+  );
+  if (isStarterPlan(plan)) {
+    return Math.min(STARTER_MAX_OPEN_PARTIES, capped);
+  }
+  return capped;
+}
+
 export function canCreateParty(opts: {
   plan: string | null | undefined;
   openPartyCount: number;
   createsLast24h: number;
+  /** Open/filled parties this Discord user currently hosts in the guild. */
+  hostedOpenCount: number;
+  /** server_settings.max_open_parties_per_host (default 3). */
+  maxOpenPartiesPerHost?: number | null;
 }): { ok: true } | { ok: false; reason: CapBlockReason; limit: number } {
   const openCap = maxOpenParties(opts.plan);
   if (openCap != null && opts.openPartyCount >= openCap) {
@@ -169,6 +210,13 @@ export function canCreateParty(opts: {
   const createCap = maxCreatesPer24h(opts.plan);
   if (createCap != null && opts.createsLast24h >= createCap) {
     return { ok: false, reason: "creates_24h", limit: createCap };
+  }
+  const perHost = maxOpenPartiesPerHost(
+    opts.plan,
+    opts.maxOpenPartiesPerHost,
+  );
+  if (opts.hostedOpenCount >= perHost) {
+    return { ok: false, reason: "per_host_open", limit: perHost };
   }
   return { ok: true };
 }
@@ -199,12 +247,17 @@ export function upgradeCopy(reason: CapBlockReason | "reliability" | "public"): 
     case "open_parties":
       return {
         title: "Party limit on Starter",
-        body: `Starter allows **${STARTER_MAX_OPEN_PARTIES} open parties for this server** (not per user). Busy communities hit this fast — Community **$${price}/mo** = unlimited LFG + Ghostless.`,
+        body: `Starter allows **${STARTER_MAX_OPEN_PARTIES} open parties for this server** (not per user). Busy communities hit this fast — Community **$${price}/mo** = unlimited LFG + Ghostless (per-host open cap is lobby hygiene, not a plan downgrade).`,
       };
     case "creates_24h":
       return {
         title: "Daily create limit on Starter",
         body: `Starter allows **${STARTER_MAX_CREATES_PER_24H} party creates / 24h for this server**. Busy communities hit this fast — Community **$${price}/mo** = unlimited + Ghostless.`,
+      };
+    case "per_host_open":
+      return {
+        title: "Too many open parties",
+        body: `Close or fill one of your open parties first. This per-host cap stops lobby spam — it is **not** a plan limit.`,
       };
     case "reliability":
       return {

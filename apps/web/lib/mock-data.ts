@@ -10,7 +10,7 @@ import type {
 } from "@rallied/shared";
 import { PLANS } from "@rallied/shared";
 
-/** Placeholder guild mark for demo Pro vanity (not the Rallied square). */
+/** Demo Discord guild icon (Community+ public/directory mark; not Pro vanity). */
 export const DEMO_GUILD_ICON_URL = "/brand/demo-guild-icon.svg";
 
 export const MOCK_SERVERS: Server[] = [

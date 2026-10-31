@@ -155,6 +155,7 @@ function mapPublicSettings(row: Record<string, unknown>): ServerSettings {
 export type DirectoryServerCard = {
   name: string;
   pathKey: string;
+  /** Discord guild icon when synced; null → letter placeholder (not Pro-gated). */
   iconUrl: string | null;
   inviteUrl: string | null;
   /** This server publishes a public Ghostless spotlight (not a passport %). */
@@ -200,6 +201,8 @@ function toDirectoryCard(
     return null;
   }
   if (!directoryListingEnabled(server.plan)) return null;
+  // Discord guild icon for any Community+ listing — not Pro vanity.
+  // Pro accent / custom mark (when present) stay gated on public pages.
   return {
     name: humanServerName(server),
     pathKey: settings.slug || server.discord_guild_id,

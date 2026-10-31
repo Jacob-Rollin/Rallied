@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { isProPlan } from "@rallied/shared";
 import { GhostlessMark } from "@/components/GhostlessMark";
 import { MonthlyLeaderboard } from "@/components/MonthlyLeaderboard";
 import { PublicGhostlessCard } from "@/components/PublicGhostlessCard";
@@ -21,8 +20,6 @@ type Props = {
   vanity?: {
     showPoweredBy: boolean;
     accent: string | null;
-    /** When set, force guild vs Rallied mark (demo Pro preview). */
-    useGuildIcon?: boolean;
   };
 };
 
@@ -38,10 +35,6 @@ export function PublicServerView({ bundle, vanity }: Props) {
   } = bundle;
   const showPoweredBy = vanity?.showPoweredBy ?? bundle.showPoweredBy;
   const accent = vanity?.accent !== undefined ? vanity.accent : bundle.accent;
-  const proVanity =
-    vanity?.useGuildIcon !== undefined
-      ? vanity.useGuildIcon
-      : isProPlan(server.plan);
   const serverLabel = resolveServerDisplayName({
     dbName: server.name,
     guildId: server.discord_guild_id,
@@ -50,10 +43,10 @@ export function PublicServerView({ bundle, vanity }: Props) {
     serverLabel || server.name,
     server.discord_guild_id,
   );
-  const headerIcon =
-    proVanity && server.icon_url ? server.icon_url : RALLIED_SQUARE;
-  const headerIconAlt =
-    proVanity && server.icon_url ? `${serverLabel} icon` : "";
+  // Discord's own guild icon — Community+ public pages + /servers directory.
+  // Not Pro vanity (accent / hide Powered by stay plan-gated).
+  const headerIcon = server.icon_url ? server.icon_url : RALLIED_SQUARE;
+  const headerIconAlt = server.icon_url ? `${serverLabel} icon` : "";
 
   const accentStyle = accent
     ? ({ ["--public-accent" as string]: accent } as React.CSSProperties)

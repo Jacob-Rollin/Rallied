@@ -57,7 +57,8 @@ const SKUS: Sku[] = [
     title: "Pro",
     monthly: PRO_PRICE_USD,
     annual: PLANS.pro.annualCents / 100,
-    blurb: "Analytics export, vanity, iCal subscribe, priority support.",
+    blurb:
+      "CSV export + trends, iCal, priority. Pro vanity = custom public accent + hide “Powered by Rallied” (Discord’s own guild icon is Community+ on /s and /servers).",
     accent: "coral",
   },
   {
@@ -65,7 +66,7 @@ const SKUS: Sku[] = [
     title: "Founding Pro",
     monthly: FOUNDING_PRO_PRICE_USD,
     annual: PLANS.founding_pro.annualCents / 100,
-    blurb: `Pro features at $${FOUNDING_PRO_PRICE_USD}/mo · ≤${PLANS.founding_pro.seatCap} seats (coupon / manual if sold out).`,
+    blurb: `Full Pro (incl. vanity branding) at $${FOUNDING_PRO_PRICE_USD}/mo · ≤${PLANS.founding_pro.seatCap} seats (coupon / manual if sold out).`,
     accent: "founding",
   },
 ];
@@ -243,7 +244,7 @@ export function BillingClient({
           </div>
           <div className="flex flex-col items-end gap-2">
             <Link href="/pricing" className="text-sm text-muted hover:text-coral">
-              Compare plans →
+              Compare plans (incl. vanity) →
             </Link>
             {stripeCustomerId ? (
               <button

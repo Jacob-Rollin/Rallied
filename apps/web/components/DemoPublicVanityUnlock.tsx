@@ -7,6 +7,7 @@ import { PRO_PRICE_USD, buildBotInviteUrl } from "@rallied/shared";
 /**
  * Demo-only Pro vanity unlock on public mock pages (e.g. /s/demo-esports).
  * Live guild pages must not mount this — plan gates vanity via showPoweredBy.
+ * Discord guild icon is Community+ (always shown when Discord has one).
  */
 export function DemoPublicVanityUnlock({
   serverName,
@@ -17,7 +18,6 @@ export function DemoPublicVanityUnlock({
     showPoweredBy: boolean;
     accent: string | null;
     unlocked: boolean;
-    useGuildIcon: boolean;
   }) => ReactNode;
 }) {
   const [unlocked, setUnlocked] = useState(false);
@@ -31,7 +31,6 @@ export function DemoPublicVanityUnlock({
 
   const showPoweredBy = unlocked ? !hidePoweredBy : true;
   const effectiveAccent = unlocked ? accent : null;
-  const useGuildIcon = unlocked;
 
   return (
     <div className="min-h-screen">
@@ -98,7 +97,7 @@ export function DemoPublicVanityUnlock({
               </a>
             ) : (
               <span className="text-[11px] text-muted">
-                Preview vanity + server icon (${PRO_PRICE_USD}/mo on live)
+                Preview Pro vanity branding (${PRO_PRICE_USD}/mo on live)
               </span>
             )}
           </div>
@@ -108,7 +107,6 @@ export function DemoPublicVanityUnlock({
         showPoweredBy,
         accent: effectiveAccent,
         unlocked,
-        useGuildIcon,
       })}
     </div>
   );

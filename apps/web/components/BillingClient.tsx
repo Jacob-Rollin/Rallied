@@ -49,7 +49,7 @@ const SKUS: Sku[] = [
     monthly: COMMUNITY_PRICE_USD,
     annual: PLANS.community.annualCents / 100,
     blurb:
-      "Unlimited LFG + Ghostless + strikes. First Checkout: 14-day trial (card required, charged after trial). One trial per Discord server and per Discord user.",
+      "Unlimited guild LFG + Ghostless + strikes (per-host open cap is lobby hygiene, admin-set). First Checkout: 14-day trial (card required, charged after trial). One trial per Discord server and per Discord user.",
     accent: "lime",
   },
   {

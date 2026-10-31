@@ -3,7 +3,10 @@ import type { Metadata } from "next";
 import {
   BRAND,
   COMMUNITY_PRICE_USD,
+  DEFAULT_MAX_OPEN_PARTIES_PER_HOST,
   FOUNDING_PRO_PRICE_USD,
+  MAX_OPEN_PARTIES_PER_HOST,
+  MIN_OPEN_PARTIES_PER_HOST,
   PLANS,
   PRO_PRICE_USD,
   STARTER_MAX_CREATES_PER_24H,
@@ -37,7 +40,7 @@ const TIERS = [
     name: "Community",
     price: COMMUNITY_PRICE_USD,
     annual: PLANS.community.annualCents / 100,
-    blurb: "Unlimited LFG + Ghostless + strikes. The reliability core.",
+    blurb: `Unlimited guild LFG + Ghostless + strikes. Per-host open parties default ${DEFAULT_MAX_OPEN_PARTIES_PER_HOST} (admin ${MIN_OPEN_PARTIES_PER_HOST}–${MAX_OPEN_PARTIES_PER_HOST}) — hygiene against lobby spam, not a plan limit.`,
     trial: true,
     accent: false,
     badge: null,
@@ -83,6 +86,12 @@ const MATRIX: {
     starter: String(STARTER_MAX_OPEN_PARTIES),
     community: "Unlimited",
     pro: "Unlimited",
+  },
+  {
+    label: "Open parties per host",
+    starter: `≤${STARTER_MAX_OPEN_PARTIES} (guild cap)`,
+    community: `${DEFAULT_MAX_OPEN_PARTIES_PER_HOST} default (${MIN_OPEN_PARTIES_PER_HOST}–${MAX_OPEN_PARTIES_PER_HOST})`,
+    pro: `${DEFAULT_MAX_OPEN_PARTIES_PER_HOST} default (${MIN_OPEN_PARTIES_PER_HOST}–${MAX_OPEN_PARTIES_PER_HOST})`,
   },
   {
     label: "Creates / 24h (per server)",

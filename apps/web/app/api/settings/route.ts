@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  clampOpenPartiesPerHost,
   directoryListingEnabled,
   isProPlan,
   modDashboardEnabled,
@@ -36,6 +37,8 @@ type Body = {
   rotate_ical_token?: boolean;
   /** Pro: clear ical_token (disables feed). */
   clear_ical_token?: boolean;
+  /** Community+: per-host open party hygiene cap (1–10, default 3). */
+  max_open_parties_per_host?: number;
 };
 
 function cleanSlug(raw: string | null | undefined): string | null {
@@ -290,6 +293,21 @@ export async function POST(req: NextRequest) {
     }
     patch.mod_role_ids = normalizeRoleIdList(
       Array.isArray(body.mod_role_ids) ? body.mod_role_ids : [],
+    );
+  }
+
+  if (body.max_open_parties_per_host !== undefined) {
+    if (!reliabilityOn) {
+      return NextResponse.json(
+        {
+          error: "community_required",
+          hint: "Per-host open party cap requires Community (or active trial / Pro).",
+        },
+        { status: 403 },
+      );
+    }
+    patch.max_open_parties_per_host = clampOpenPartiesPerHost(
+      body.max_open_parties_per_host,
     );
   }
 

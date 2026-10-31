@@ -19,6 +19,7 @@ import {
 } from "./discord.js";
 import type { BotEnv } from "./env.js";
 import { CORAL } from "./embeds.js";
+import { getServerSettings } from "./settings.js";
 
 export function dogfoodGuildIds(env: BotEnv): Set<string> {
   return parseDogfoodGuildIds(env.DOGFOOD_GUILD_IDS);
@@ -245,8 +246,12 @@ export async function checkCreateCaps(opts: {
   env: BotEnv;
   serverId: string;
   plan: string;
+  /** members.id of the creating host — required for per-host open cap. */
+  hostMemberId: string;
   guildId?: string | null;
 }): Promise<InteractionResponse | null> {
+  const settings = await getServerSettings(opts.sb, opts.serverId);
+
   const openCapCheck = await opts.sb
     .from("lfg_parties")
     .select("*", { count: "exact", head: true })
@@ -261,13 +266,36 @@ export async function checkCreateCaps(opts: {
     .eq("server_id", opts.serverId)
     .gte("created_at", since);
 
+  // Count open/filled parties this member hosts (membership role=host via host_member_id).
+  const hostedCheck = await opts.sb
+    .from("lfg_parties")
+    .select("*", { count: "exact", head: true })
+    .eq("server_id", opts.serverId)
+    .eq("host_member_id", opts.hostMemberId)
+    .in("status", ["open", "filled"])
+    .is("deleted_at", null);
+
+  const hostedOpenCount = hostedCheck.count ?? 0;
   const gate = canCreateParty({
     plan: opts.plan,
     openPartyCount: openCapCheck.count ?? 0,
     createsLast24h: createsCheck.count ?? 0,
+    hostedOpenCount,
+    maxOpenPartiesPerHost: settings.max_open_parties_per_host,
   });
 
   if (gate.ok) return null;
+
+  // Per-host hygiene — not a paid plan gate. Clear Discord error, no upgrade CTA.
+  if (gate.reason === "per_host_open") {
+    return {
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: {
+        flags: EPHEMERAL_FLAG,
+        content: `Close or fill one of your open parties first (${hostedOpenCount}/${gate.limit}).`,
+      },
+    };
+  }
 
   let resetHint: string | undefined;
   if (gate.reason === "creates_24h") {

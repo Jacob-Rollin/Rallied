@@ -23,6 +23,8 @@ export interface ServerSettingsRow {
   public_member_list?: boolean;
   list_in_directory?: boolean;
   discord_invite_url?: string | null;
+  /** Max open/filled parties one host may hold (hygiene). Default 3. */
+  max_open_parties_per_host?: number;
 }
 
 const DEFAULTS: Omit<ServerSettingsRow, "server_id"> = {
@@ -40,6 +42,7 @@ const DEFAULTS: Omit<ServerSettingsRow, "server_id"> = {
   public_member_list: false,
   list_in_directory: false,
   discord_invite_url: null,
+  max_open_parties_per_host: 3,
 };
 
 export async function getServerSettings(

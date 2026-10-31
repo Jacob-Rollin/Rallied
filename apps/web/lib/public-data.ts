@@ -115,6 +115,7 @@ function defaultPublicSettings(server: Server): ServerSettings {
     hide_powered_by: false,
     public_accent: null,
     ical_token: null,
+    max_open_parties_per_host: 3,
     created_at: server.created_at,
     updated_at: server.updated_at,
   };
@@ -145,6 +146,7 @@ function mapPublicSettings(row: Record<string, unknown>): ServerSettings {
     hide_powered_by: Boolean(row.hide_powered_by),
     public_accent: (row.public_accent as string | null) ?? null,
     ical_token: null,
+    max_open_parties_per_host: 3,
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
   };

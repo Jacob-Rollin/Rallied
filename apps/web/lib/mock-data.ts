@@ -305,6 +305,7 @@ export const MOCK_SETTINGS: ServerSettings = {
   hide_powered_by: false,
   public_accent: null,
   ical_token: null,
+  max_open_parties_per_host: 3,
   created_at: "2026-10-01T00:00:00Z",
   updated_at: "2026-10-01T00:00:00Z",
 };

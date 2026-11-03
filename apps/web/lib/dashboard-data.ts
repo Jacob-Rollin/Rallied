@@ -231,6 +231,17 @@ function mapSettingsRow(row: Record<string, unknown>): ServerSettings {
     public_accent: (row.public_accent as string | null) ?? null,
     ical_token: (row.ical_token as string | null | undefined) ?? null,
     max_open_parties_per_host: Number(row.max_open_parties_per_host ?? 3),
+    game_aliases: (() => {
+      const raw = row.game_aliases;
+      if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+      const out: Record<string, string> = {};
+      for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+        const key = String(k).trim().replace(/\s+/g, " ").toLowerCase();
+        const display = String(v ?? "").trim().replace(/\s+/g, " ");
+        if (key && display) out[key] = display;
+      }
+      return out;
+    })(),
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
   };
@@ -439,6 +450,7 @@ function buildMockBundle(
   const { trend, prior } = mockTrendForRange(range);
   const reliabilityScale =
     range.key === "week" ? 1 : range.key === "month" ? 1.4 : range.key === "30d" ? 1.6 : 2.2;
+  const settings = mockSettingsForServer(server);
 
   return {
     source: "mock",
@@ -446,7 +458,7 @@ function buildMockBundle(
     liveAvailable: hasServiceRole(),
     range,
     server,
-    settings: mockSettingsForServer(server),
+    settings,
     parties,
     openPartyCount: parties.filter((p) => p.status === "open").length,
     members,
@@ -482,7 +494,7 @@ function buildMockBundle(
             new Date(p.created_at).getTime() >= range.start.getTime(),
         )
         .map((p) => p.game),
-      { limit: 10 },
+      { limit: 10, aliases: settings.game_aliases ?? {} },
     ),
     reliabilityHealth: {
       ...MOCK_RELIABILITY_HEALTH,
@@ -1367,7 +1379,7 @@ async function loadLiveBundle(
       ((monthHostPartiesRes.data ?? []) as {
         game?: string | null;
       }[]).map((p) => p.game),
-      { limit: 10 },
+      { limit: 10, aliases: settings?.game_aliases ?? {} },
     ),
     reliabilityHealth,
     upcomingScheduled,

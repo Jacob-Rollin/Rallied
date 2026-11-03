@@ -120,9 +120,21 @@ function defaultPublicSettings(server: Server): ServerSettings {
     public_accent: null,
     ical_token: null,
     max_open_parties_per_host: 3,
+    game_aliases: {},
     created_at: server.created_at,
     updated_at: server.updated_at,
   };
+}
+
+function parseAliases(raw: unknown): Record<string, string> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    const key = String(k).trim().replace(/\s+/g, " ").toLowerCase();
+    const display = String(v ?? "").trim().replace(/\s+/g, " ");
+    if (key && display) out[key] = display;
+  }
+  return out;
 }
 
 function mapPublicSettings(row: Record<string, unknown>): ServerSettings {
@@ -151,6 +163,8 @@ function mapPublicSettings(row: Record<string, unknown>): ServerSettings {
     public_accent: (row.public_accent as string | null) ?? null,
     ical_token: null,
     max_open_parties_per_host: 3,
+    // Needed to resolve Top games on the public page (display names only)
+    game_aliases: parseAliases(row.game_aliases),
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
   };
@@ -330,7 +344,7 @@ function resolveMockPublicServer(
     },
     topGames: rankTopGames(
       weekPartyRows.map((p) => p.game),
-      { limit: 5 },
+      { limit: 5, aliases: settings.game_aliases ?? {} },
     ),
     spotlight,
     monthlyLeaderboard,
@@ -568,7 +582,7 @@ async function resolveLivePublicServer(
     },
     topGames: rankTopGames(
       weekPartyRows.map((p) => p.game),
-      { limit: 5 },
+      { limit: 5, aliases: settings.game_aliases ?? {} },
     ),
     spotlight: ranked.slice(0, limit),
     monthlyLeaderboard,

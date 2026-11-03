@@ -25,6 +25,8 @@ export interface ServerSettingsRow {
   discord_invite_url?: string | null;
   /** Max open/filled parties one host may hold (hygiene). Default 3. */
   max_open_parties_per_host?: number;
+  /** alias_normalized → canonical_display (Top games hygiene). */
+  game_aliases?: Record<string, string>;
 }
 
 const DEFAULTS: Omit<ServerSettingsRow, "server_id"> = {

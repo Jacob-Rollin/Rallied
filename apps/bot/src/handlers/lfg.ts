@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { gamesMatch, normalizeGame } from "@rallied/shared";
+import {
+  gamesMatch,
+  normalizeGame,
+  normalizeGameWithAliases,
+  parseGameAliases,
+} from "@rallied/shared";
 import type { BotEnv } from "../lib/env.js";
 import {
   interactionGuildIdentity,
@@ -19,6 +24,7 @@ import {
   LFG_ALL_GAMES,
   LFG_OTHER_GAME,
   lfgCloseConfirmMessage,
+  lfgCreateGameSelectMessage,
   lfgDeskMessage,
   lfgFindEmptyMessage,
   lfgFindMessage,
@@ -31,6 +37,7 @@ import {
   publicEmbed,
   resolveCreateGameKey,
 } from "../lib/embeds.js";
+import { loadGuildGameSuggestionContext } from "../lib/game-suggestions.js";
 import { formatError } from "../lib/errors.js";
 import {
   checkCreateCaps,
@@ -120,16 +127,6 @@ export async function createParty(opts: {
   notes?: string;
 }): Promise<InteractionResponse> {
   const { sb, env } = opts;
-  const game = normalizeGame(opts.game);
-  if (!game) {
-    return ephemeral("Pick a game (catalog title or free text).");
-  }
-
-  const slots = Math.min(20, Math.max(2, Math.floor(opts.slots) || 5));
-  const mic = normalizeMic(opts.mic ?? "");
-  const region = normalizeRegion(opts.region ?? "");
-  const rankText = (opts.rankText ?? opts.notes ?? "").trim();
-  const scheduledStartAt = opts.scheduledStartAt ?? null;
 
   const { server, member } = await ensureServerAndMember(
     sb,
@@ -142,6 +139,21 @@ export async function createParty(opts: {
     env,
   );
 
+  const createSettings = await getServerSettings(sb, server.id);
+  const game = normalizeGameWithAliases(
+    opts.game,
+    parseGameAliases(createSettings.game_aliases),
+  );
+  if (!game) {
+    return ephemeral("Pick a game (catalog title or free text).");
+  }
+
+  const slots = Math.min(20, Math.max(2, Math.floor(opts.slots) || 5));
+  const mic = normalizeMic(opts.mic ?? "");
+  const region = normalizeRegion(opts.region ?? "");
+  const rankText = (opts.rankText ?? opts.notes ?? "").trim();
+  const scheduledStartAt = opts.scheduledStartAt ?? null;
+
   const plan = resolveEffectivePlan(server, env, opts.guildId);
   const capBlock = await checkCreateCaps({
     sb,
@@ -153,7 +165,6 @@ export async function createParty(opts: {
   });
   if (capBlock) return capBlock;
 
-  const createSettings = await getServerSettings(sb, server.id);
   const createGate = await evaluateJoinGates({
     sb,
     serverId: server.id,
@@ -468,8 +479,9 @@ export async function handleLfg(
 
   if (sub === "create") {
     const gameRaw = String(getOption(options, "game")?.value ?? "");
-    const game = normalizeGame(gameRaw);
-    if (!game) return ephemeral("Pick a game (type a few letters for suggestions).");
+    if (!gameRaw.trim()) {
+      return ephemeral("Pick a game (type a few letters for suggestions).");
+    }
 
     const rank = String(getOption(options, "rank")?.value ?? "");
     const mic = String(getOption(options, "mic")?.value ?? "");
@@ -491,7 +503,7 @@ export async function handleLfg(
       discordUserId: user.id,
       displayName: displayName(interaction),
       avatarUrl: avatarUrl(user),
-      game,
+      game: gameRaw,
       slots,
       rankText: rank,
       mic,
@@ -594,7 +606,21 @@ export async function handleLfgDeskComponent(
   if (!user || !interaction.guild_id) return ephemeral("Could not resolve user.");
 
   if (action === "create") {
-    return ephemeral("Tap **Create party** again to pick a game.");
+    const { server } = await ensureServerAndMember(
+      sb,
+      interaction.guild_id,
+      interaction.guild?.name,
+      user.id,
+      displayName(interaction),
+      null,
+      interactionGuildIdentity(interaction).iconUrl,
+      env,
+    );
+    const { suggestions } = await loadGuildGameSuggestionContext(sb, server.id);
+    return {
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: lfgCreateGameSelectMessage(suggestions),
+    };
   }
 
   if (action === "find") {

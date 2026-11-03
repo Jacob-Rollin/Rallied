@@ -676,7 +676,7 @@ async function loadLiveBundle(
   if (!serverRow) {
     return emptyBundle(
       guildId,
-      "No Rallied server row for this guild yet. Invite the bot and run a slash command (e.g. /lfg create) so it upserts into Supabase.",
+      "Almost there — add Rallied, then run /setup (or /lfg desk) in your LFG channel. The dashboard unlocks once that finishes.",
       null,
       rangeKey,
     );

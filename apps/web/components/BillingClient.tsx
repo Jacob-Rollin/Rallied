@@ -219,7 +219,7 @@ export function BillingClient({
               Current plan
             </p>
             <h2 className="mt-1 font-display text-2xl tracking-wide">
-              {serverName ?? "Server not in Supabase yet"}
+              {serverName ?? "Finish setup in Discord"}
             </h2>
             <p className="mt-1 text-sm text-white/90">
               {planLine}
@@ -313,10 +313,14 @@ export function BillingClient({
 
       {!hasServerRow ? (
         <p className="rounded-brand border border-white/15 bg-white/5 px-4 py-3 text-sm text-white/75">
-          Checkout needs a Rallied <code className="text-coral">servers</code>{" "}
-          row for this guild. Invite the bot to this Discord, run{" "}
+          Billing unlocks after setup. Add Rallied to this Discord, run{" "}
           <code className="text-coral">/setup</code> or{" "}
-          <code className="text-coral">/lfg create</code>, then refresh Billing.
+          <code className="text-coral">/lfg desk</code> in your LFG channel, then
+          refresh.{" "}
+          <Link href="/app/setup" className="text-coral hover:underline">
+            Open setup checklist
+          </Link>
+          .
         </p>
       ) : null}
 

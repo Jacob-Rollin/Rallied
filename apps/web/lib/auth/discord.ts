@@ -127,12 +127,15 @@ export async function filterAccessibleGuilds(
   const out: AdminGuild[] = [];
 
   for (const g of ownerGuilds) {
+    const row = meta.get(g.id);
     out.push({
       id: g.id,
       name: g.name,
       icon: g.icon,
       bot_present: botGuildIds === null ? true : botGuildIds.has(g.id),
-      plan: meta.get(g.id)?.plan,
+      // Local stub (no bot token + no Supabase): treat manageable as ready.
+      setup_ready: botGuildIds === null ? true : Boolean(row),
+      plan: row?.plan,
       access: "owner",
     });
   }
@@ -162,6 +165,7 @@ export async function filterAccessibleGuilds(
         name: g.name,
         icon: g.icon,
         bot_present: true,
+        setup_ready: Boolean(row),
         plan,
         access: "mod",
       });
@@ -188,6 +192,7 @@ export async function filterAdminGuilds(
     name: g.name,
     icon: g.icon,
     bot_present: botGuildIds === null ? true : botGuildIds.has(g.id),
+    setup_ready: botGuildIds === null ? true : plans.has(g.id),
     plan: plans.get(g.id),
     access: "owner" as DashboardAccess,
   }));
@@ -286,7 +291,12 @@ export async function refreshSessionGuildAccess(
     const row = meta.get(g.id);
     const plan = row?.plan ?? g.plan;
     if (g.access !== "mod") {
-      out.push({ ...g, plan, access: "owner" });
+      out.push({
+        ...g,
+        plan,
+        setup_ready: Boolean(row),
+        access: "owner",
+      });
       continue;
     }
     const modRoleIds = row?.mod_role_ids ?? [];
@@ -295,11 +305,11 @@ export async function refreshSessionGuildAccess(
     const memberRoles = await fetchMemberRoleIds(g.id, userId);
     if (!memberRoles) {
       // Keep briefly if Discord unavailable — avoid kicking mid-session.
-      out.push({ ...g, plan, access: "mod" });
+      out.push({ ...g, plan, setup_ready: Boolean(row), access: "mod" });
       continue;
     }
     if (!modRoleIds.some((id) => memberRoles.has(id))) continue;
-    out.push({ ...g, plan, access: "mod" });
+    out.push({ ...g, plan, setup_ready: Boolean(row), access: "mod" });
   }
 
   return out;

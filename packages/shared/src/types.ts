@@ -285,6 +285,11 @@ export interface AdminGuild {
   name: string;
   icon: string | null;
   bot_present: boolean;
+  /**
+   * True when Supabase has a `servers` row for this guild (bot ran `/setup`
+   * or another slash that upserts). Dashboard Overview unlocks only then.
+   */
+  setup_ready?: boolean;
   plan?: PlanId;
   /**
    * owner = Manage Guild / Administrator (full /app including Settings + Billing).

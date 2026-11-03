@@ -17,7 +17,11 @@ export function DataSourceBanner({
         : "border-coral/30 text-coral/90";
 
   const label =
-    source === "live" ? "Live" : source === "mock" ? "Demo / mock" : "Empty";
+    source === "live"
+      ? "Live"
+      : source === "mock"
+        ? "Demo / mock"
+        : "Needs setup";
 
   return (
     <p
@@ -26,6 +30,13 @@ export function DataSourceBanner({
     >
       <span className="font-semibold uppercase tracking-wider">{label}</span>
       {notice ? ` — ${notice}` : null}
+      {source === "empty" && !notice ? (
+        <>
+          {" "}
+          Add Rallied → run <code className="text-coral">/setup</code> in your
+          LFG channel → dashboard unlocks.
+        </>
+      ) : null}
       {source === "mock" ? (
         <>
           {" "}

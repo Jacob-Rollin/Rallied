@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error: "stripe_not_configured",
-        hint: "Set STRIPE_SECRET_KEY + price IDs on the web Worker (test mode OK).",
+        hint: "Set STRIPE_SECRET_KEY + price IDs on Worker rallied (not rallied-bot; test mode OK).",
       },
       { status: 503 },
     );

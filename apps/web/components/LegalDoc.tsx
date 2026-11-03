@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { resolveBotInviteHref } from "@/lib/bot-invite";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
 
@@ -17,9 +18,10 @@ type Props = {
 };
 
 export function LegalDoc({ eyebrow, title, description, sections }: Props) {
+  const inviteHref = resolveBotInviteHref();
   return (
     <div className="min-h-screen">
-      <SiteHeader variant="solid" />
+      <SiteHeader variant="solid" inviteHref={inviteHref} />
 
       <main className="mx-auto max-w-3xl px-4 pb-20 pt-10 sm:pt-12">
         <p className="font-display text-xs tracking-[0.16em] text-coral">

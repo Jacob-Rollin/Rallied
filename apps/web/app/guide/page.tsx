@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { BRAND, buildBotInviteUrl } from "@rallied/shared";
+import { BRAND } from "@rallied/shared";
 import { AddToDiscordButton } from "../../components/AddToDiscordButton";
 import { GhostlessMark } from "../../components/GhostlessMark";
 import {
@@ -15,6 +15,7 @@ import {
 } from "../../components/DiscordGuideMocks";
 import { SiteFooter } from "../../components/SiteFooter";
 import { SiteHeader } from "../../components/SiteHeader";
+import { resolveBotInviteHref } from "../../lib/bot-invite";
 
 export const metadata: Metadata = {
   title: `How it works — ${BRAND.name}`,
@@ -38,12 +39,11 @@ const SECTIONS = [
 ] as const;
 
 export default function GuidePage() {
-  const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
-  const inviteHref = clientId ? buildBotInviteUrl(clientId) : "#add-bot";
+  const inviteHref = resolveBotInviteHref();
 
   return (
     <div className="min-h-screen">
-      <SiteHeader variant="hero" />
+      <SiteHeader variant="hero" inviteHref={inviteHref} />
 
       <div className="relative overflow-hidden border-b border-white/10">
         <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">

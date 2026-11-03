@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
-import { buildBotInviteUrl } from "@rallied/shared";
+import { getPublicBotInviteHref } from "@/lib/bot-invite";
 import { AddToDiscordButton } from "./AddToDiscordButton";
 import { MobileMenuNav, SITE_NAV } from "./MobileMenuNav";
 import { ReportFeedbackModal } from "./ReportFeedbackModal";
@@ -10,6 +10,8 @@ import { ReportFeedbackModal } from "./ReportFeedbackModal";
 type Props = {
   /** Translucent over hero vs solid strip on inner pages. */
   variant?: "hero" | "solid";
+  /** Server-resolved OAuth invite when available (matches landing). */
+  inviteHref?: string;
 };
 
 type MeResponse = {
@@ -19,9 +21,11 @@ type MeResponse = {
   guilds?: { id: string; bot_present?: boolean }[];
 };
 
-export function SiteHeader({ variant = "solid" }: Props) {
-  const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
-  const inviteHref = clientId ? buildBotInviteUrl(clientId) : "#add-bot";
+export function SiteHeader({
+  variant = "solid",
+  inviteHref: inviteHrefProp,
+}: Props) {
+  const inviteHref = inviteHrefProp || getPublicBotInviteHref();
   const [menuOpen, setMenuOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [authed, setAuthed] = useState(false);

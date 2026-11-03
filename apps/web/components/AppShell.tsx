@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import type { AdminGuild } from "@rallied/shared";
-import { buildBotInviteUrl } from "@rallied/shared";
 import { MOCK_SERVERS } from "@/lib/mock-data";
 import {
   DASHBOARD_RANGE_QUERY,
@@ -12,6 +11,7 @@ import {
   GUILD_QUERY,
   isDemoGuildId,
 } from "@/lib/guild-params";
+import { getPublicBotInviteHref } from "@/lib/bot-invite";
 import { resolveServerDisplayName } from "@/lib/server-display-name";
 import { MobileMenuNav } from "@/components/MobileMenuNav";
 import { ReportFeedbackModal } from "@/components/ReportFeedbackModal";
@@ -52,7 +52,14 @@ function clearGuildCookie() {
   document.cookie = `${GUILD_COOKIE}=; path=/; max-age=0; samesite=lax`;
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  inviteHref,
+}: {
+  children: React.ReactNode;
+  /** Server-resolved OAuth invite — required so menus match landing. */
+  inviteHref?: string;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -192,10 +199,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     (searchParams.get("empty") === "1" ||
       (liveAuthed && withBot.length === 0));
 
-  const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
-  const inviteUrl = clientId
-    ? buildBotInviteUrl(clientId)
-    : "https://discord.com/developers/applications";
+  const inviteUrl = inviteHref || getPublicBotInviteHref();
 
   function navHref(href: string) {
     const params = new URLSearchParams();

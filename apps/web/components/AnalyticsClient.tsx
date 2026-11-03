@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { isProPlan, PRO_PRICE_USD, type PlanId } from "@rallied/shared";
+import type { LeaderboardGameEntry } from "@rallied/shared";
 import type {
   AnalyticsExtras,
   AnalyticsTopPlayer,
   AnalyticsTrendPoint,
 } from "@/lib/dashboard-data";
 import { AnalyticsProView } from "@/components/AnalyticsProView";
+import { TopGamesList } from "@/components/TopGamesList";
 import { sumTrend } from "@/lib/analytics-stats";
 
 type Props = {
@@ -18,6 +20,7 @@ type Props = {
   priorTrend?: AnalyticsTrendPoint[];
   extras?: AnalyticsExtras | null;
   topPlayers?: AnalyticsTopPlayer[];
+  topGames?: LeaderboardGameEntry[];
   billingHref: string;
   overviewHref: string;
   sourceLabel: string;
@@ -31,6 +34,7 @@ export function AnalyticsClient({
   priorTrend = [],
   extras = null,
   topPlayers = [],
+  topGames = [],
   billingHref,
   overviewHref,
   sourceLabel,
@@ -50,7 +54,13 @@ export function AnalyticsClient({
     const rows = trend
       .map((d) => `${d.day},${d.parties},${d.vibes},${d.ghosts}`)
       .join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv" });
+    const gamesHeader = "\n\ngame,parties\n";
+    const gameRows = topGames
+      .map((g) => `${csvEscape(g.game)},${g.parties}`)
+      .join("\n");
+    const blob = new Blob([header + rows + gamesHeader + gameRows], {
+      type: "text/csv",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -89,6 +99,12 @@ export function AnalyticsClient({
             .
           </p>
         </section>
+
+        <TopGamesList
+          games={topGames}
+          rangeLabel={rangeLabel}
+          variant="analytics"
+        />
 
         <section className="space-y-3 border border-coral/35 bg-coral/5 p-5">
           <h2 className="font-display text-xl tracking-wide">Pro analytics</h2>
@@ -131,8 +147,16 @@ export function AnalyticsClient({
       priorTrend={priorTrend}
       extras={extras}
       topPlayers={topPlayers}
+      topGames={topGames}
       onExport={exportCsv}
       rangeLabel={rangeLabel}
     />
   );
+}
+
+function csvEscape(value: string): string {
+  if (/[",\n]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
 }

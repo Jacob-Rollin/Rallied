@@ -21,8 +21,8 @@ export default async function DemoAnalyticsPage({ searchParams }: Props) {
         <div>
           <h1 className="font-display text-3xl tracking-wide">Analytics</h1>
           <p className="mt-1 text-sm text-muted">
-            One job per section — volume, totals, soft reliability, top players.
-            Demo Community teaser; Upgrade unlocks Pro preview.
+            One job per section — volume, totals, soft reliability, top games,
+            top players. Demo Community teaser; Upgrade unlocks Pro preview.
           </p>
         </div>
         <DashboardRangeControl pathname="/demo/analytics" current={rangeKey} />
@@ -36,6 +36,7 @@ export default async function DemoAnalyticsPage({ searchParams }: Props) {
         priorTrend={data.analyticsTrendPrior}
         extras={data.analyticsExtras}
         topPlayers={data.analyticsTopPlayers}
+        topGames={data.topGames}
         sourceLabel={data.source}
         rangeLabel={data.range.heading}
       />

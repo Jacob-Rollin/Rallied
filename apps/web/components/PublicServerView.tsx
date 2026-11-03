@@ -2,6 +2,7 @@ import Link from "next/link";
 import { GhostlessMark } from "@/components/GhostlessMark";
 import { MonthlyLeaderboard } from "@/components/MonthlyLeaderboard";
 import { PublicGhostlessCard } from "@/components/PublicGhostlessCard";
+import { TopGamesList } from "@/components/TopGamesList";
 import {
   discordPartyDeepLink,
   publicCardPath,
@@ -29,6 +30,7 @@ export function PublicServerView({ bundle, vanity }: Props) {
     pathKey,
     openParties,
     weekly,
+    topGames,
     spotlight,
     settings,
     monthlyLeaderboard,
@@ -126,6 +128,12 @@ export function PublicServerView({ bundle, vanity }: Props) {
             ))}
           </div>
         </section>
+
+        <TopGamesList
+          compact
+          games={topGames}
+          rangeLabel="This week"
+        />
 
         <section>
           <h2 className="font-display text-xl tracking-wide">Open LFG</h2>

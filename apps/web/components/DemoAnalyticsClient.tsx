@@ -1,13 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { PRO_PRICE_USD, buildBotInviteUrl } from "@rallied/shared";
+import {
+  PRO_PRICE_USD,
+  buildBotInviteUrl,
+  type LeaderboardGameEntry,
+} from "@rallied/shared";
 import type {
   AnalyticsExtras,
   AnalyticsTopPlayer,
   AnalyticsTrendPoint,
 } from "@/lib/dashboard-data";
 import { AnalyticsProView } from "@/components/AnalyticsProView";
+import { TopGamesList } from "@/components/TopGamesList";
 import { sumTrend } from "@/lib/analytics-stats";
 
 type Props = {
@@ -16,6 +21,7 @@ type Props = {
   priorTrend?: AnalyticsTrendPoint[];
   extras?: AnalyticsExtras | null;
   topPlayers?: AnalyticsTopPlayer[];
+  topGames?: LeaderboardGameEntry[];
   sourceLabel: string;
   rangeLabel?: string;
 };
@@ -26,6 +32,7 @@ export function DemoAnalyticsClient({
   priorTrend = [],
   extras = null,
   topPlayers = [],
+  topGames = [],
   sourceLabel,
   rangeLabel = "This month",
 }: Props) {
@@ -47,7 +54,18 @@ export function DemoAnalyticsClient({
     const rows = trend
       .map((d) => `${d.day},${d.parties},${d.vibes},${d.ghosts}`)
       .join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv" });
+    const gamesHeader = "\n\ngame,parties\n";
+    const gameRows = topGames
+      .map((g) => {
+        const name = /[",\n]/.test(g.game)
+          ? `"${g.game.replace(/"/g, '""')}"`
+          : g.game;
+        return `${name},${g.parties}`;
+      })
+      .join("\n");
+    const blob = new Blob([header + rows + gamesHeader + gameRows], {
+      type: "text/csv",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -86,6 +104,12 @@ export function DemoAnalyticsClient({
             .
           </p>
         </section>
+
+        <TopGamesList
+          games={topGames}
+          rangeLabel={rangeLabel}
+          variant="analytics"
+        />
 
         <section className="space-y-3 border border-coral/35 bg-coral/5 p-5">
           <h2 className="font-display text-xl tracking-wide">Pro analytics</h2>
@@ -161,6 +185,7 @@ export function DemoAnalyticsClient({
         priorTrend={priorTrend}
         extras={extras}
         topPlayers={topPlayers}
+        topGames={topGames}
         onExport={exportCsv}
         rangeLabel={rangeLabel}
       />

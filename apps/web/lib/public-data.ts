@@ -13,6 +13,8 @@ import {
   directoryListingEnabled,
   isProPlan,
   publicPagesEnabled,
+  rankTopGames,
+  type LeaderboardGameEntry,
 } from "@rallied/shared";
 import {
   MOCK_FOUNDING_SETTINGS,
@@ -51,6 +53,8 @@ export type PublicServerBundle = {
     ghostlessPct: number | null;
     vibeCount: number;
   };
+  /** Top LFG games in the rolling 7d window (matches weekly KPIs). */
+  topGames: LeaderboardGameEntry[];
   spotlight: {
     member: Member;
     ghostless: GhostlessStats;
@@ -272,9 +276,10 @@ function resolveMockPublicServer(
   const ghostlessPct =
     total === 0 ? null : Math.round((shows / total) * 1000) / 10;
 
-  const weekParties = MOCK_PARTIES.filter(
+  const weekPartyRows = MOCK_PARTIES.filter(
     (p) => p.server_id === contentServerId,
-  ).length;
+  );
+  const weekParties = weekPartyRows.length;
 
   const ranked = members
     .map((m) => ({ member: m, ghostless: MOCK_GHOSTLESS[m.id] }))
@@ -323,6 +328,10 @@ function resolveMockPublicServer(
       ghostlessPct,
       vibeCount,
     },
+    topGames: rankTopGames(
+      weekPartyRows.map((p) => p.game),
+      { limit: 5 },
+    ),
     spotlight,
     monthlyLeaderboard,
   };
@@ -429,7 +438,7 @@ async function resolveLivePublicServer(
       sb.from("ghostless_stats_view").select("*").eq("server_id", server.id),
       sb
         .from("lfg_parties")
-        .select("id")
+        .select("id, game")
         .eq("server_id", server.id)
         .gte("created_at", weekAgo),
       // Include soft-closed — Top hosts counts Closed parties this month.
@@ -540,6 +549,11 @@ async function resolveLivePublicServer(
     })),
   });
 
+  const weekPartyRows = (weekPartiesRes.data ?? []) as {
+    id: string;
+    game?: string | null;
+  }[];
+
   return {
     server,
     settings,
@@ -548,10 +562,14 @@ async function resolveLivePublicServer(
     accent,
     openParties,
     weekly: {
-      parties: (weekPartiesRes.data ?? []).length,
+      parties: weekPartyRows.length,
       ghostlessPct,
       vibeCount,
     },
+    topGames: rankTopGames(
+      weekPartyRows.map((p) => p.game),
+      { limit: 5 },
+    ),
     spotlight: ranked.slice(0, limit),
     monthlyLeaderboard,
   };

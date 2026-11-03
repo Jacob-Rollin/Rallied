@@ -117,21 +117,35 @@ export function rankTopHosts(
  * Blank / null / whitespace-only titles are excluded (not "Unspecified").
  * Groups case-insensitively after trim + whitespace collapse; display label
  * prefers the most common casing (ties → localeCompare).
+ * Optional per-server `aliases` (alias_normalized → canonical_display) are
+ * applied at read time — does not rewrite `lfg_parties.game`.
  * Count every party create — including soft-closed (`deleted_at` set), same
  * rule as Top hosts.
  */
 export function rankTopGames(
   games: (string | null | undefined)[],
-  opts?: { limit?: number },
+  opts?: {
+    limit?: number;
+    /** Per-guild alias map from server_settings.game_aliases */
+    aliases?: Record<string, string> | null;
+  },
 ): LeaderboardGameEntry[] {
   const limit = opts?.limit ?? 5;
+  const aliases = opts?.aliases ?? null;
   type Acc = { count: number; labels: Map<string, number> };
   const byKey = new Map<string, Acc>();
 
   for (const raw of games) {
     if (raw == null) continue;
-    const trimmed = String(raw).trim().replace(/\s+/g, " ");
+    let trimmed = String(raw).trim().replace(/\s+/g, " ");
     if (!trimmed) continue;
+    if (aliases) {
+      const mapped = aliases[trimmed.toLowerCase()];
+      if (mapped) {
+        const canon = String(mapped).trim().replace(/\s+/g, " ");
+        if (canon) trimmed = canon;
+      }
+    }
     const key = trimmed.toLowerCase();
     let acc = byKey.get(key);
     if (!acc) {

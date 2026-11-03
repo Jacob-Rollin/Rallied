@@ -21,6 +21,7 @@ import {
   type ServerSettings,
 } from "@rallied/shared";
 import { FieldInfo } from "@/components/FieldInfo";
+import { GameNamesHygiene } from "@/components/GameNamesHygiene";
 import { NumberField } from "@/components/NumberField";
 
 type DiscordRoleOption = {
@@ -68,6 +69,7 @@ const DEFAULTS: Omit<
   public_accent: null,
   ical_token: null,
   max_open_parties_per_host: DEFAULT_MAX_OPEN_PARTIES_PER_HOST,
+  game_aliases: {},
 };
 
 const DEMO_ROLE_OPTIONS: DiscordRoleOption[] = [
@@ -905,6 +907,14 @@ export function SettingsClient({
           ) : null}
         </div>
       </section>
+
+      <GameNamesHygiene
+        discordGuildId={discordGuildId}
+        canWrite={canWrite}
+        communityPlus={reliabilityOn}
+        billingHref={billingHref}
+        demoMode={Boolean(demoProUnlock) || source !== "live"}
+      />
 
       <section className="space-y-4">
         <h2 className="font-display text-xl tracking-wide">

@@ -22,7 +22,6 @@ import {
   secretsMatch,
 } from "./lib/register-commands.js";
 import {
-  lfgCreateGameSelectMessage,
   lfgCreateModalResponse,
   lfgHowItWorksMessage,
 } from "./lib/embeds.js";
@@ -78,21 +77,16 @@ async function handleRegisterCommands(c: AppContext) {
 
 /**
  * Fast-path component replies (no defer):
- * - Create → catalog game select (analytics-stable titles; Discord modals
- *   cannot embed dropdowns, so select is a message step before the modal)
- * - Game select → modal (size, mic, rank/region, optional start)
- * - Help → ephemeral text
+ * - Desk Help (no DB)
+ * - Game select → modal (must be immediate; Discord forbids deferred modals)
+ * Desk Create is deferred so we can load guild recent/top game suggestions.
  */
 function syncComponentResponse(interaction: Interaction) {
   const customId = interaction.data?.custom_id;
   if (!customId) return null;
 
-  if (customId === "lfg:desk:create") {
-    return {
-      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-      data: lfgCreateGameSelectMessage(),
-    };
-  }
+  // Desk Create is deferred so we can load this guild's recent/top games.
+  // Help stays sync (no DB). creategame → modal MUST stay sync (Discord rule).
 
   if (customId === "lfg:desk:help") {
     return {
@@ -158,10 +152,10 @@ export function createApp() {
 
       // Autocomplete cannot be deferred — reply with choices within 3s.
       if (interaction.type === InteractionType.APPLICATION_COMMAND_AUTOCOMPLETE) {
-        return c.json(handleAutocomplete(interaction));
+        return c.json(await handleAutocomplete(interaction, env));
       }
 
-      // Desk Create/Find/Help + create-game → modal: reply sync (no defer).
+      // Sync-only component replies (modals / help). Desk Create defers below.
       if (interaction.type === InteractionType.MESSAGE_COMPONENT) {
         const sync = syncComponentResponse(interaction);
         if (sync) {

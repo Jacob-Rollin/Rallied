@@ -1,5 +1,11 @@
 /** Curated multiplayer catalog + normalize/autocomplete helpers for Discord LFG. */
 
+import {
+  normalizeGameAliasKey,
+  resolveGameAlias,
+  type GameAliasMap,
+} from "./game-aliases";
+
 export type GameEntry = {
   /** Stable id for matching (not stored in DB — we store `name`). */
   slug: string;
@@ -174,6 +180,28 @@ export function normalizeGame(input: string): string {
   return hit ? hit.name : trimmed;
 }
 
+/**
+ * Catalog normalize, then per-server aliases (new creates only — does not
+ * rewrite historical rows). Custom text still allowed when neither hits.
+ */
+export function normalizeGameWithAliases(
+  input: string,
+  aliases?: GameAliasMap | null,
+): string {
+  const catalog = normalizeGame(input);
+  if (!catalog) return catalog;
+  if (!aliases || Object.keys(aliases).length === 0) return catalog;
+  // Prefer alias on the raw input (misspellings) then on catalog result.
+  const fromRaw = resolveGameAlias(input, aliases);
+  if (
+    fromRaw &&
+    normalizeGameAliasKey(fromRaw) !== normalizeGameAliasKey(String(input ?? "").trim())
+  ) {
+    return fromRaw;
+  }
+  return resolveGameAlias(catalog, aliases);
+}
+
 /** True when two game strings refer to the same title after normalize. */
 export function gamesMatch(a: string, b: string): boolean {
   const na = normalizeGame(a);
@@ -189,13 +217,45 @@ export type AutocompleteChoice = { name: string; value: string };
 
 /**
  * Discord APPLICATION_COMMAND_AUTOCOMPLETE choices (≤25).
+ * Prefers optional server recent/top resolved titles, then catalog.
  * Filters by typed prefix against name / slug / aliases.
  * If the typed string isn't an exact catalog hit, appends an Other choice
- * so niche games stay allowed.
+ * so niche games stay allowed (not a locked enum).
  */
-export function autocompleteGames(focusedRaw: string): AutocompleteChoice[] {
+export function autocompleteGames(
+  focusedRaw: string,
+  opts?: { serverSuggestions?: string[] },
+): AutocompleteChoice[] {
   const focused = focusedRaw.trim();
   const key = normalizeKey(focused);
+  const choices: AutocompleteChoice[] = [];
+  const seen = new Set<string>();
+
+  const pushChoice = (name: string, value: string) => {
+    const v = value.trim().slice(0, 100);
+    if (!v) return;
+    const sk = normalizeKey(v);
+    if (seen.has(sk)) return;
+    seen.add(sk);
+    choices.push({ name: name.slice(0, 100), value: v });
+  };
+
+  const serverPool = opts?.serverSuggestions ?? [];
+  if (!key) {
+    for (const s of serverPool) {
+      if (choices.length >= DISCORD_AUTOCOMPLETE_MAX) break;
+      pushChoice(s, s);
+    }
+  } else {
+    const short = key.length <= 3;
+    for (const s of serverPool) {
+      if (choices.length >= DISCORD_AUTOCOMPLETE_MAX) break;
+      const nk = normalizeKey(s);
+      if (short ? nk.startsWith(key) : nk.startsWith(key) || nk.includes(key)) {
+        pushChoice(s, s);
+      }
+    }
+  }
 
   let matches: GameEntry[];
   if (!key) {
@@ -218,22 +278,26 @@ export function autocompleteGames(focusedRaw: string): AutocompleteChoice[] {
   }
 
   const exact = focused ? findGameEntry(focused) : undefined;
-  const choices: AutocompleteChoice[] = [];
 
   for (const entry of matches) {
     if (choices.length >= DISCORD_AUTOCOMPLETE_MAX) break;
-    choices.push({ name: entry.name, value: entry.name });
+    pushChoice(entry.name, entry.name);
   }
 
   if (focused && !exact) {
     const otherLabel =
       focused.length > 90 ? `Other: ${focused.slice(0, 87)}…` : `Other: ${focused}`;
     const otherValue = focused.slice(0, 100);
-    const other: AutocompleteChoice = { name: otherLabel, value: otherValue };
-    if (choices.length >= DISCORD_AUTOCOMPLETE_MAX) {
-      choices[DISCORD_AUTOCOMPLETE_MAX - 1] = other;
-    } else {
-      choices.push(other);
+    const otherKey = normalizeKey(otherValue);
+    if (!seen.has(otherKey)) {
+      if (choices.length >= DISCORD_AUTOCOMPLETE_MAX) {
+        choices[DISCORD_AUTOCOMPLETE_MAX - 1] = {
+          name: otherLabel,
+          value: otherValue,
+        };
+      } else {
+        choices.push({ name: otherLabel, value: otherValue });
+      }
     }
   }
 

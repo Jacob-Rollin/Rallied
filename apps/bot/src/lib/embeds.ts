@@ -777,10 +777,43 @@ function resolveCatalogGame(key: string): string {
   return hit?.name ?? key;
 }
 
-/** Ephemeral: pick a game before the create modal (modals have no autocomplete). */
-export function lfgCreateGameSelectMessage() {
+/**
+ * Build create-game select options from server suggestions + catalog.
+ * Values are display names (or catalog slugs when from catalog-only fallback)
+ * so custom_ids stay within Discord limits; resolveCreateGameKey handles both.
+ */
+function createSelectOptions(suggestionNames: string[] | undefined, limit: number) {
+  if (!suggestionNames?.length) {
+    return catalogSelectOptions(limit);
+  }
+  const options: { label: string; value: string; description?: string }[] = [];
+  const seen = new Set<string>();
+  for (const name of suggestionNames) {
+    if (options.length >= limit) break;
+    const label = name.trim().slice(0, 100);
+    if (!label) continue;
+    const key = label.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const slug = GAME_CATALOG.find(
+      (g) => g.name.toLowerCase() === key,
+    )?.slug;
+    options.push({
+      label,
+      // Prefer slug when catalog hit (stable custom_id); else display name.
+      value: (slug ?? label).slice(0, 100),
+    });
+  }
+  return options;
+}
+
+/**
+ * Ephemeral: pick a game before the create modal (modals have no autocomplete).
+ * Pass `suggestionNames` (server recent/top + catalog) when available.
+ */
+export function lfgCreateGameSelectMessage(suggestionNames?: string[]) {
   const options = [
-    ...catalogSelectOptions(CREATE_GAME_SLOTS),
+    ...createSelectOptions(suggestionNames, CREATE_GAME_SLOTS),
     {
       label: "Other (type game next)",
       value: LFG_OTHER_GAME,
@@ -790,7 +823,7 @@ export function lfgCreateGameSelectMessage() {
 
   return {
     content:
-      "**Create party** — pick a game (keeps titles tidy for Find + analytics). Next popup: size, mic, notes.\n_After you submit, tap **Dismiss message** on this picker._",
+      "**Create party** — pick a game (server favorites + popular titles). Next popup: size, mic, notes.\n_After you submit, tap **Dismiss message** on this picker._",
     flags: 64,
     components: [
       {

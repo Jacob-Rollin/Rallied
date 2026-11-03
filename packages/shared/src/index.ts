@@ -2,6 +2,7 @@ export * from "./constants";
 export * from "./dashboard-range";
 export * from "./entitlements";
 export * from "./feedback";
+export * from "./game-aliases";
 export * from "./games";
 export * from "./leaderboard";
 export * from "./ops-usage";

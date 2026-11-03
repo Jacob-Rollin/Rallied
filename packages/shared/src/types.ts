@@ -120,6 +120,11 @@ export interface ServerSettings {
    * Hygiene (anti lobby-spam). Default 3; Settings allow 1–10 on Community+.
    */
   max_open_parties_per_host?: number;
+  /**
+   * Per-guild game name aliases: normalized alias → canonical display.
+   * Resolved at read time for Top games; never rewrites lfg_parties.game.
+   */
+  game_aliases?: Record<string, string>;
   created_at: string;
   updated_at: string;
 }

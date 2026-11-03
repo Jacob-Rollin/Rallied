@@ -18,6 +18,14 @@ import {
 
 type Interval = "month" | "year";
 
+type PriceReadyKey =
+  | "community_month"
+  | "community_year"
+  | "pro_month"
+  | "pro_year"
+  | "founding_pro_month"
+  | "founding_pro_year";
+
 type Props = {
   guildId: string;
   serverName: string | null;
@@ -29,7 +37,13 @@ type Props = {
   stripeCustomerId: string | null;
   billingInterval: "month" | "year" | null;
   foreverPro: boolean;
-  stripeReady: boolean;
+  /** STRIPE_SECRET_KEY present on Worker `rallied` (not folded with servers row). */
+  stripeSecretOk: boolean;
+  /** Live Supabase `servers` row for this guild. */
+  hasServerRow: boolean;
+  /** Missing env *names* only (never values) for secret + price IDs. */
+  missingStripeEnv: string[];
+  priceReady: Record<PriceReadyKey, boolean>;
   checkoutFlash?: "success" | "cancel" | null;
 };
 
@@ -82,7 +96,10 @@ export function BillingClient({
   stripeCustomerId,
   billingInterval,
   foreverPro,
-  stripeReady,
+  stripeSecretOk,
+  hasServerRow,
+  missingStripeEnv,
+  priceReady,
   checkoutFlash,
 }: Props) {
   const router = useRouter();
@@ -91,6 +108,9 @@ export function BillingClient({
   );
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const canBill = stripeSecretOk && hasServerRow;
+  const showStripeGaps = missingStripeEnv.length > 0;
 
   const pro = isProPlan(plan);
   const paid = isPaidPlan(plan);
@@ -249,7 +269,7 @@ export function BillingClient({
             {stripeCustomerId ? (
               <button
                 type="button"
-                disabled={Boolean(busy) || !stripeReady}
+                disabled={Boolean(busy) || !canBill}
                 onClick={() => void openPortal()}
                 className="rounded-brand border border-white/20 px-3 py-1.5 text-sm font-semibold text-white/90 transition hover:border-coral/50 disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -291,13 +311,37 @@ export function BillingClient({
         ) : null}
       </div>
 
-      {!stripeReady ? (
-        <p className="rounded-brand border border-coral/35 bg-coral/10 px-4 py-3 text-sm text-white/80">
-          Stripe is not configured on this Worker yet. Add{" "}
-          <code className="text-coral">STRIPE_SECRET_KEY</code> + price IDs on
-          the web Worker, then Checkout buttons activate. Starter caps stay in
-          force until a paid webhook lands.
+      {!hasServerRow ? (
+        <p className="rounded-brand border border-white/15 bg-white/5 px-4 py-3 text-sm text-white/75">
+          Checkout needs a Rallied <code className="text-coral">servers</code>{" "}
+          row for this guild. Invite the bot to this Discord, run{" "}
+          <code className="text-coral">/setup</code> or{" "}
+          <code className="text-coral">/lfg create</code>, then refresh Billing.
         </p>
+      ) : null}
+
+      {showStripeGaps ? (
+        <div className="rounded-brand border border-coral/35 bg-coral/10 px-4 py-3 text-sm text-white/80">
+          <p>
+            Stripe is not fully configured on Worker{" "}
+            <code className="text-coral">rallied</code> (not{" "}
+            <code className="text-coral">rallied-bot</code>). Missing env vars
+            (names only):
+          </p>
+          <ul className="mt-2 list-inside list-disc space-y-0.5 font-mono text-xs text-coral">
+            {missingStripeEnv.map((name) => (
+              <li key={name}>{name}</li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-white/55">
+            Monthly aliases also work:{" "}
+            <code>STRIPE_PRICE_COMMUNITY</code>, <code>STRIPE_PRICE_PRO</code>,{" "}
+            <code>STRIPE_PRICE_FOUNDING_PRO</code>.{" "}
+            <code>STRIPE_WEBHOOK_SECRET</code> is required for plan updates after
+            pay, not to enable Checkout buttons. Starter caps stay until a paid
+            webhook lands.
+          </p>
+        </div>
       ) : null}
 
       {error ? (
@@ -331,7 +375,12 @@ export function BillingClient({
               <button
                 type="button"
                 disabled={
-                  Boolean(busy) || !stripeReady || (current && paid)
+                  Boolean(busy) ||
+                  !canBill ||
+                  !priceReady[
+                    `${sku.plan}_${interval}` as PriceReadyKey
+                  ] ||
+                  (current && paid)
                 }
                 onClick={() => void startCheckout(sku.plan)}
                 className={`mt-4 w-full rounded-brand px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${

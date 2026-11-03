@@ -78,8 +78,12 @@ export async function resolveSelectedGuild(opts?: {
   }
 
   const guilds = session.guilds ?? [];
+  // Prefer guilds with a servers row (dashboard unlocked), then bot-present.
   const preferred =
-    guilds.find((g) => g.bot_present)?.id || guilds[0]?.id || "";
+    guilds.find((g) => g.setup_ready)?.id ||
+    guilds.find((g) => g.bot_present)?.id ||
+    guilds[0]?.id ||
+    "";
 
   const guildId = (queryGuild || fromCookie || preferred).trim();
   const useMock = shouldUseMockDashboard(guildId, {

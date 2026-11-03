@@ -267,12 +267,72 @@ export const BUTTON_IDS = {
   lfgCreateSubmit: "lfg:createsubmit",
 } as const;
 
-export function buildBotInviteUrl(clientId: string, permissions = BOT_INVITE_PERMISSIONS_VALUE) {
+/** Options for Discord Advanced Bot Authorization (post-install redirect). */
+export type BotInviteUrlOptions = {
+  permissions?: string;
+  /**
+   * Registered OAuth2 redirect (e.g. https://rallied.gg/app/setup).
+   * When set, invite uses Advanced Bot Auth so Discord returns here with
+   * `guild_id` (+ `code` / `permissions`). Requires this URI in the Discord
+   * Developer Portal → OAuth2 → Redirects.
+   */
+  redirectUri?: string;
+  /** Pre-select a guild in Discord’s picker. */
+  guildId?: string;
+  /** Lock the pre-selected guild (requires guildId). */
+  disableGuildSelect?: boolean;
+  /**
+   * Extra scopes beyond `bot` + `applications.commands`.
+   * Advanced redirect needs at least one (default `identify` when redirectUri set).
+   */
+  extraScopes?: string[];
+};
+
+/**
+ * Build the Discord “Add bot” authorize URL.
+ * Second arg may be a permissions bitfield string (legacy) or options.
+ */
+export function buildBotInviteUrl(
+  clientId: string,
+  permissionsOrOpts: string | BotInviteUrlOptions = BOT_INVITE_PERMISSIONS_VALUE,
+) {
+  const opts: BotInviteUrlOptions =
+    typeof permissionsOrOpts === "string"
+      ? { permissions: permissionsOrOpts }
+      : permissionsOrOpts;
+
+  const permissions = opts.permissions ?? BOT_INVITE_PERMISSIONS_VALUE;
+  const scopes = new Set<string>(["bot", "applications.commands"]);
+  for (const s of opts.extraScopes ?? []) {
+    const t = s.trim();
+    if (t) scopes.add(t);
+  }
+
+  // Advanced Bot Auth: any scope outside bot / applications.commands requires
+  // response_type=code and enables redirect_uri → guild_id on return.
+  if (opts.redirectUri?.trim()) {
+    if (![...scopes].some((s) => s !== "bot" && s !== "applications.commands")) {
+      scopes.add("identify");
+    }
+  }
+
   const params = new URLSearchParams({
     client_id: clientId,
     permissions,
-    scope: "bot applications.commands",
+    scope: [...scopes].join(" "),
   });
+
+  if (opts.redirectUri?.trim()) {
+    params.set("response_type", "code");
+    params.set("redirect_uri", opts.redirectUri.trim());
+  }
+  if (opts.guildId?.trim()) {
+    params.set("guild_id", opts.guildId.trim());
+  }
+  if (opts.disableGuildSelect && opts.guildId?.trim()) {
+    params.set("disable_guild_select", "true");
+  }
+
   return `https://discord.com/api/oauth2/authorize?${params.toString()}`;
 }
 

@@ -12,7 +12,11 @@ import {
   resolveSelectedGuild,
 } from "@/lib/guild-context";
 import { isUsableServerName } from "@/lib/server-display-name";
-import { stripeConfigured } from "@/lib/stripe";
+import {
+  getStripePriceId,
+  missingStripeEnvNames,
+  stripeConfigured,
+} from "@/lib/stripe";
 import { getServiceSupabase } from "@/lib/supabase";
 
 type Props = {
@@ -68,6 +72,24 @@ export default async function BillingPage({ searchParams }: Props) {
     }
   }
 
+  // Do NOT fold data.source into "Stripe configured" — an empty servers row
+  // used to falsely show the Stripe banner even when secrets were present.
+  const stripeSecretOk = stripeConfigured();
+  const hasServerRow = data.source === "live";
+  const missingStripeEnv = missingStripeEnvNames({
+    includeYearly: true,
+    includeWebhook: false,
+    includeFoundingYearly: false,
+  });
+  const priceReady = {
+    community_month: Boolean(getStripePriceId("community", "month")),
+    community_year: Boolean(getStripePriceId("community", "year")),
+    pro_month: Boolean(getStripePriceId("pro", "month")),
+    pro_year: Boolean(getStripePriceId("pro", "year")),
+    founding_pro_month: Boolean(getStripePriceId("founding_pro", "month")),
+    founding_pro_year: Boolean(getStripePriceId("founding_pro", "year")),
+  };
+
   return (
     <div className="space-y-8">
       <div>
@@ -91,7 +113,10 @@ export default async function BillingPage({ searchParams }: Props) {
         stripeCustomerId={current?.stripe_customer_id ?? null}
         billingInterval={current?.billing_interval ?? null}
         foreverPro={foreverPro}
-        stripeReady={stripeConfigured() && data.source === "live"}
+        stripeSecretOk={stripeSecretOk}
+        hasServerRow={hasServerRow}
+        missingStripeEnv={missingStripeEnv}
+        priceReady={priceReady}
         checkoutFlash={checkoutFlash}
       />
     </div>

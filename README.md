@@ -91,10 +91,18 @@ Bot presence check: `DISCORD_BOT_TOKEN` (bot’s guild list) or rows in Supabase
 ## Bot invite URL
 
 ```text
-https://discord.com/api/oauth2/authorize?client_id=YOUR_APP_ID&permissions=311671409680&scope=bot%20applications.commands
+https://discord.com/api/oauth2/authorize?client_id=YOUR_APP_ID&permissions=311671409680&scope=bot%20applications.commands%20identify&response_type=code&redirect_uri=https%3A%2F%2Frallied.gg%2Fapp%2Fsetup
 ```
 
-Or `buildBotInviteUrl(clientId)` / web `resolveBotInviteHref()` (never links to the Developer Portal). Set `DISCORD_CLIENT_ID` and/or `NEXT_PUBLIC_DISCORD_CLIENT_ID` on Worker `rallied` so **Add to Discord** / **Invite to another server** open the OAuth authorize screen.
+Or `buildBotInviteUrl(clientId, { redirectUri })` / web `resolveBotInviteHref()` (never links to the Developer Portal). Invites use **Advanced Bot Authorization** (`identify` + `response_type=code` + `redirect_uri`) so Discord returns to `/app/setup` with `guild_id` after Authorize.
+
+**Discord Developer Portal (Jacob):** OAuth2 → Redirects — add exactly:
+
+```text
+https://rallied.gg/app/setup
+```
+
+(Optional local: `http://localhost:3000/app/setup`.) Keep the existing login redirect (`…/api/auth/callback`) as well. Set `DISCORD_CLIENT_ID` and/or `NEXT_PUBLIC_DISCORD_CLIENT_ID` on Worker `rallied`, and `NEXT_PUBLIC_APP_URL=https://rallied.gg` so invite URLs match the registered redirect.
 
 ---
 

@@ -67,14 +67,22 @@ export async function GET(req: NextRequest) {
 
     const safeNext = safePostLoginNext(nextRaw) || "/app";
 
-    // empty=1 is only meaningful for the per-server /app dashboard.
+    // Prefer setup landing when no guild has a servers row yet.
     if (safeNext.startsWith("/app")) {
+      const ready = adminGuilds.filter((g) => g.setup_ready);
       const withBot = adminGuilds.filter((g) => g.bot_present);
-      if (withBot.length === 0) {
-        const emptyUrl = new URL(safeNext, origin);
-        emptyUrl.searchParams.set("empty", "1");
+      if (ready.length === 0) {
+        const setupUrl = new URL("/app/setup", origin);
+        if (withBot[0]?.id) {
+          setupUrl.searchParams.set("guild", withBot[0].id);
+        } else if (adminGuilds[0]?.id) {
+          setupUrl.searchParams.set("guild", adminGuilds[0].id);
+        }
+        if (withBot.length === 0) {
+          setupUrl.searchParams.set("empty", "1");
+        }
         return clearDemoGuildCookie(
-          NextResponse.redirect(emptyUrl.toString()),
+          NextResponse.redirect(setupUrl.toString()),
         );
       }
     }

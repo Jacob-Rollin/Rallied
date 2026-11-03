@@ -46,7 +46,65 @@ export function getStripeWebhookSecret(): string | undefined {
 }
 
 export function stripeConfigured(): boolean {
-  return Boolean(getStripeSecretKey());
+  return Boolean(getStripeSecretKey()?.trim());
+}
+
+/** Preferred env name (first alias) for each Stripe price slot. */
+export function preferredPriceEnvName(key: StripePriceKey): string {
+  return PRICE_ENV[key][0];
+}
+
+/**
+ * Env var *names* that must be non-empty on Worker `rallied` for Checkout.
+ * Never returns values. Webhook secret is listed only when `includeWebhook`
+ * — Checkout itself does not require it (entitlements after pay do).
+ */
+export function missingStripeEnvNames(options?: {
+  includeYearly?: boolean;
+  includeWebhook?: boolean;
+  /** Founding yearly is optional; omit from gaps unless true. */
+  includeFoundingYearly?: boolean;
+}): string[] {
+  const includeYearly = options?.includeYearly !== false;
+  const missing: string[] = [];
+
+  if (!getStripeSecretKey()?.trim()) {
+    missing.push("STRIPE_SECRET_KEY");
+  }
+
+  const priceKeys: StripePriceKey[] = [
+    "community_month",
+    "pro_month",
+    "founding_pro_month",
+  ];
+  if (includeYearly) {
+    priceKeys.push("community_year", "pro_year");
+    if (options?.includeFoundingYearly) {
+      priceKeys.push("founding_pro_year");
+    }
+  }
+
+  for (const key of priceKeys) {
+    if (!firstEnv(PRICE_ENV[key])) {
+      missing.push(preferredPriceEnvName(key));
+    }
+  }
+
+  if (options?.includeWebhook && !getStripeWebhookSecret()?.trim()) {
+    missing.push("STRIPE_WEBHOOK_SECRET");
+  }
+
+  return missing;
+}
+
+/** True when secret + monthly Community/Pro/Founding price IDs are set. */
+export function stripeCheckoutReady(): boolean {
+  return (
+    missingStripeEnvNames({
+      includeYearly: false,
+      includeWebhook: false,
+    }).length === 0
+  );
 }
 
 export function getStripe(): Stripe | null {

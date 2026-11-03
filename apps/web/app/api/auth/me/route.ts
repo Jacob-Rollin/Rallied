@@ -40,6 +40,8 @@ export async function GET() {
         ...g,
         bot_present:
           botGuildIds === null ? g.bot_present : botGuildIds.has(g.id),
+        // Local stub (null bot set): keep ready. Else row in `servers` = unlocked.
+        setup_ready: botGuildIds === null ? true : plans.has(g.id),
         plan: plans.get(g.id) ?? g.plan,
         access: g.access === "mod" ? "mod" : "owner",
       }));

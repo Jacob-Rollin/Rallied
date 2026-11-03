@@ -15,6 +15,7 @@ import { getPublicBotInviteHref } from "@/lib/bot-invite";
 import { resolveServerDisplayName } from "@/lib/server-display-name";
 import { MobileMenuNav } from "@/components/MobileMenuNav";
 import { ReportFeedbackModal } from "@/components/ReportFeedbackModal";
+import { SetupNeededPanel } from "@/components/SetupNeededPanel";
 
 const NAV_ALL = [
   { href: "/app", label: "Overview", access: "any" as const },
@@ -52,6 +53,12 @@ function clearGuildCookie() {
   document.cookie = `${GUILD_COOKIE}=; path=/; max-age=0; samesite=lax`;
 }
 
+function guildSwitcherSuffix(g: AdminGuild): string {
+  if (g.setup_ready) return "";
+  if (g.bot_present) return " — Needs setup";
+  return " — Needs setup";
+}
+
 export function AppShell({
   children,
   inviteHref,
@@ -72,6 +79,9 @@ export function AppShell({
   const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   const mockFlag = searchParams.get("mock") === "1";
+  const onSetupPath =
+    pathname === "/app/setup" || pathname.startsWith("/app/setup/");
+  const installedFlag = searchParams.get("installed") === "1";
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -121,7 +131,8 @@ export function AppShell({
           fromQuery &&
           (allowDemo || !isDemoGuildId(fromQuery) || Boolean(data.mock));
 
-        const firstLive =
+        const firstReady =
+          data.guilds?.find((g) => g.setup_ready)?.id ||
           data.guilds?.find((g) => g.bot_present)?.id ||
           data.guilds?.[0]?.id ||
           "";
@@ -129,8 +140,8 @@ export function AppShell({
         // Authenticated live session: never fall back to MOCK_SERVERS ids.
         const first =
           data.authenticated && !allowDemo
-            ? firstLive
-            : firstLive || MOCK_SERVERS[0].discord_guild_id;
+            ? firstReady
+            : firstReady || MOCK_SERVERS[0].discord_guild_id;
 
         const next = (queryOk ? fromQuery : "") || fromCookie || first;
         setServerId(next);
@@ -142,9 +153,13 @@ export function AppShell({
         if (next && fromQuery !== next) {
           const params = new URLSearchParams(searchParams.toString());
           params.set(GUILD_QUERY, next);
-          // Drop empty=1 once we have a guild with bot
           const chosen = data.guilds?.find((g) => g.id === next);
-          if (chosen?.bot_present) params.delete("empty");
+          if (chosen?.setup_ready) {
+            params.delete("empty");
+            params.delete("installed");
+          } else if (chosen?.bot_present) {
+            params.delete("empty");
+          }
           router.replace(`${pathname}?${params.toString()}`);
         }
       })
@@ -156,12 +171,30 @@ export function AppShell({
   function selectGuild(id: string) {
     setServerId(id);
     writeGuildCookie(id);
+    const chosen = me?.guilds?.find((g) => g.id === id);
     const params = new URLSearchParams(searchParams.toString());
     params.set(GUILD_QUERY, id);
-    const chosen = me?.guilds?.find((g) => g.id === id);
-    if (chosen?.bot_present) params.delete("empty");
-    else if (me?.authenticated && !me.mock) params.set("empty", "1");
-    router.push(`${pathname}?${params.toString()}`);
+    params.delete("empty");
+    params.delete("installed");
+
+    if (chosen?.setup_ready) {
+      router.push(`${pathname === "/app/setup" ? "/app" : pathname}?${params.toString()}`);
+      router.refresh();
+      return;
+    }
+
+    // Bot in guild but no servers row — setup interstitial, not empty Billing.
+    if (chosen?.bot_present) {
+      router.push(`/app/setup?${params.toString()}`);
+      router.refresh();
+      return;
+    }
+
+    // Manage Guild without bot: invite / needs-setup checklist.
+    if (me?.authenticated && !me.mock) {
+      params.set("empty", "1");
+    }
+    router.push(`/app/setup?${params.toString()}`);
     router.refresh();
   }
 
@@ -181,6 +214,7 @@ export function AppShell({
             name: s.name,
             icon: null,
             bot_present: true,
+            setup_ready: true,
             plan: s.plan,
             access:
               s.discord_guild_id === "demo-guild-mod"
@@ -194,10 +228,25 @@ export function AppShell({
     (item) => item.access === "any" || access === "owner",
   );
   const withBot = guilds.filter((g) => g.bot_present);
-  const empty =
+  const withReady = guilds.filter((g) => g.setup_ready);
+  const noBotsYet =
     !loading &&
     (searchParams.get("empty") === "1" ||
-      (liveAuthed && withBot.length === 0));
+      (liveAuthed && withBot.length === 0 && guilds.length === 0));
+
+  const selectedNeedsSetup =
+    liveAuthed &&
+    Boolean(server?.id) &&
+    !server?.setup_ready &&
+    !onSetupPath;
+
+  // Full dashboard only when the selected guild has a servers row.
+  const showDashboard =
+    !loading &&
+    !noBotsYet &&
+    !onSetupPath &&
+    !selectedNeedsSetup &&
+    (Boolean(server?.setup_ready) || !liveAuthed);
 
   const inviteUrl = inviteHref || getPublicBotInviteHref();
 
@@ -214,7 +263,7 @@ export function AppShell({
 
   // Mods who deep-link to Settings/Billing get bounced to Overview.
   useEffect(() => {
-    if (access !== "mod" || !server?.id) return;
+    if (access !== "mod" || !server?.id || !showDashboard) return;
     if (
       pathname.startsWith("/app/settings") ||
       pathname.startsWith("/app/billing")
@@ -224,14 +273,30 @@ export function AppShell({
       if (mockFlag) params.set("mock", "1");
       router.replace(`/app?${params.toString()}`);
     }
-  }, [access, pathname, router, server?.id, mockFlag]);
+  }, [access, pathname, router, server?.id, mockFlag, showDashboard]);
+
+  // Soft redirect: ?installed=1 on /app → setup path with guild.
+  useEffect(() => {
+    if (!installedFlag || onSetupPath || loading) return;
+    if (server?.setup_ready) return;
+    const params = new URLSearchParams();
+    if (server?.id) params.set(GUILD_QUERY, server.id);
+    params.set("installed", "1");
+    router.replace(`/app/setup?${params.toString()}`);
+  }, [installedFlag, onSetupPath, loading, server?.id, server?.setup_ready, router]);
 
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 border-b border-white/10 bg-slate/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-2.5 sm:gap-3 sm:py-3">
           <Link
-            href={navHref("/app")}
+            href={
+              server?.setup_ready
+                ? navHref("/app")
+                : server?.id
+                  ? `/app/setup?${GUILD_QUERY}=${encodeURIComponent(server.id)}`
+                  : "/app/setup"
+            }
             className="flex-none"
             aria-label="Rallied dashboard"
           >
@@ -262,7 +327,7 @@ export function AppShell({
                         oauthName: s.name,
                         guildId: s.id,
                       })}
-                      {!s.bot_present ? " (add bot)" : ""}
+                      {guildSwitcherSuffix(s)}
                     </option>
                   ))}
                 </select>
@@ -347,17 +412,20 @@ export function AppShell({
         <div className="mx-auto max-w-lg px-4 py-20 text-center text-sm text-muted">
           Loading your servers…
         </div>
-      ) : empty ? (
+      ) : onSetupPath ? (
+        <main className="min-w-0">{children}</main>
+      ) : noBotsYet ? (
         <div className="mx-auto max-w-lg px-4 py-20 text-center">
-          <h1 className="font-display text-3xl tracking-wide">No servers yet</h1>
+          <h1 className="font-display text-3xl tracking-wide">
+            Add Rallied to get started
+          </h1>
           <p className="mt-3 text-sm text-muted">
-            Add Rallied to a Discord server you manage, then refresh. Owners need
-            Manage Server (or Administrator). On Community+, owners can also
-            grant <strong className="font-semibold text-white">Rallied Mod</strong>{" "}
-            Discord roles in Settings so mods open Overview / LFG / People /
-            Disputes / Analytics (not Billing). After the bot joins and runs a
-            command, the guild appears with{" "}
-            <code className="text-coral">bot_present</code>.
+            Add Rallied → run <code className="text-coral">/setup</code> in your
+            LFG channel → dashboard unlocks. Owners need Manage Server (or
+            Administrator). On Community+, owners can grant{" "}
+            <strong className="font-semibold text-white">Rallied Mod</strong>{" "}
+            roles in Settings for Overview / LFG / People / Disputes / Analytics
+            (not Billing).
           </p>
           {guilds.length > 0 ? (
             <ul className="mt-6 space-y-2 text-left text-sm text-white/75">
@@ -371,7 +439,11 @@ export function AppShell({
                     guildId: g.id,
                   })}
                   <span className="ml-2 text-xs text-muted">
-                    {g.bot_present ? "bot ready" : "bot not detected"}
+                    {g.setup_ready
+                      ? "Ready"
+                      : g.bot_present
+                        ? "Needs /setup"
+                        : "Needs invite"}
                   </span>
                 </li>
               ))}
@@ -390,7 +462,23 @@ export function AppShell({
             </Link>
           </p>
         </div>
-      ) : (
+      ) : selectedNeedsSetup || (installedFlag && !server?.setup_ready) ? (
+        <SetupNeededPanel
+          guildId={server?.id}
+          guildName={
+            server
+              ? resolveServerDisplayName({
+                  oauthName: server.name,
+                  guildId: server.id,
+                })
+              : null
+          }
+          guilds={guilds}
+          inviteHref={inviteUrl}
+          installed={installedFlag || Boolean(server?.bot_present)}
+          authenticated={Boolean(me?.authenticated)}
+        />
+      ) : showDashboard ? (
         <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[200px_1fr]">
           <nav className="flex gap-2 overflow-x-auto lg:flex-col lg:gap-1">
             {nav.map((item) => {
@@ -438,10 +526,34 @@ export function AppShell({
               Plan: {server?.plan ?? "—"}
               <br />
               Access: {access === "mod" ? "Rallied Mod" : "Owner"}
+              {withReady.length > 0 && withReady.length < guilds.length ? (
+                <>
+                  <br />
+                  <span className="text-white/50">
+                    {withReady.length} of {guilds.length} servers ready
+                  </span>
+                </>
+              ) : null}
             </p>
           </nav>
           <main className="min-w-0">{children}</main>
         </div>
+      ) : (
+        <SetupNeededPanel
+          guildId={server?.id}
+          guildName={
+            server
+              ? resolveServerDisplayName({
+                  oauthName: server.name,
+                  guildId: server.id,
+                })
+              : null
+          }
+          guilds={guilds}
+          inviteHref={inviteUrl}
+          installed={Boolean(server?.bot_present)}
+          authenticated={Boolean(me?.authenticated)}
+        />
       )}
 
       <ReportFeedbackModal

@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error: "stripe_not_configured",
-        hint: "Set STRIPE_SECRET_KEY on the web Worker.",
+        hint: "Set STRIPE_SECRET_KEY on Worker rallied (not rallied-bot).",
       },
       { status: 503 },
     );

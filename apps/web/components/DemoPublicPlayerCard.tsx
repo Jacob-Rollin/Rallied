@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import type { GhostlessStats, Member } from "@rallied/shared";
+import type { AggregatedVibeTag, GhostlessStats, Member } from "@rallied/shared";
 import { CopyLinkWithOrigin } from "@/components/CopyLinkWithOrigin";
 import { DemoPublicVanityUnlock } from "@/components/DemoPublicVanityUnlock";
 import { GhostlessBadge } from "@/components/GhostlessBadge";
+import { RecentVibes } from "@/components/RecentVibes";
 import type { PublicServerBundle } from "@/lib/public-data";
 
 function PlayerCardBody({
@@ -12,6 +13,7 @@ function PlayerCardBody({
   member,
   ghostless,
   inGoodStanding,
+  recentVibes,
   showPoweredBy,
   accent,
 }: {
@@ -19,6 +21,7 @@ function PlayerCardBody({
   member: Member;
   ghostless: GhostlessStats | null;
   inGoodStanding: boolean;
+  recentVibes: AggregatedVibeTag[];
   showPoweredBy: boolean;
   accent: string | null;
 }) {
@@ -103,6 +106,10 @@ function PlayerCardBody({
             ))}
           </div>
 
+          <div className="mt-8 border-t border-white/10 pt-6">
+            <RecentVibes tags={recentVibes} />
+          </div>
+
           <p className="mt-6 text-xs text-muted">
             Strike history is private to server mods — not shown on this card.
           </p>
@@ -127,6 +134,7 @@ export function DemoPublicPlayerCard(props: {
   member: Member;
   ghostless: GhostlessStats | null;
   inGoodStanding: boolean;
+  recentVibes: AggregatedVibeTag[];
 }) {
   return (
     <DemoPublicVanityUnlock serverName={props.bundle.server.name}>
@@ -146,6 +154,7 @@ export function LivePublicPlayerCard(props: {
   member: Member;
   ghostless: GhostlessStats | null;
   inGoodStanding: boolean;
+  recentVibes: AggregatedVibeTag[];
 }) {
   return (
     <PlayerCardBody

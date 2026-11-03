@@ -198,6 +198,11 @@ export interface VibeCheck {
   showed_up: boolean;
   vibe_score: number | null;
   ghosted: boolean;
+  /**
+   * Optional play tag after Showed up (reliable / toxic / …).
+   * Null when skipped or Ghosted. Does not affect Ghostless math.
+   */
+  vibe_tag?: string | null;
   note: string | null;
   created_at: string;
 }

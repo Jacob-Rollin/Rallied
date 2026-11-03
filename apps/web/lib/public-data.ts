@@ -3,6 +3,7 @@
  * Strikes never appear on public surfaces.
  */
 import type {
+  AggregatedVibeTag,
   GhostlessStats,
   LfgParty,
   Member,
@@ -26,12 +27,14 @@ import {
   MOCK_SETTINGS,
   getMember,
   lockoutFor,
+  mockRecentVibesFor,
 } from "./mock-data";
 import { isDemoGuildId } from "./guild-params";
 import { buildMonthlyLeaderboard } from "./leaderboard";
 import { repairServerNameInDb } from "./auth/discord";
 import { isUsableServerName, resolveServerDisplayName } from "./server-display-name";
 import { getServiceSupabase } from "./supabase";
+import { loadRecentVibeTagsForMember } from "./vibe-tags-data";
 
 export type PublicParty = LfgParty & {
   host_name: string;
@@ -597,6 +600,7 @@ export async function resolvePublicPlayer(
   member: Member;
   ghostless: GhostlessStats | null;
   inGoodStanding: boolean;
+  recentVibes: AggregatedVibeTag[];
 } | null> {
   const bundle = await resolvePublicServer(slugOrGuildId);
   if (!bundle) return null;
@@ -614,7 +618,13 @@ export async function resolvePublicPlayer(
     if (!member) return null;
     const ghostless = MOCK_GHOSTLESS[member.id] ?? null;
     const lockout = lockoutFor(member.id);
-    return { bundle, member, ghostless, inGoodStanding: !lockout };
+    return {
+      bundle,
+      member,
+      ghostless,
+      inGoodStanding: !lockout,
+      recentVibes: mockRecentVibesFor(member.id),
+    };
   }
 
   const sb = getServiceSupabase();
@@ -669,11 +679,14 @@ export async function resolvePublicPlayer(
     .limit(1)
     .maybeSingle();
 
+  const recentVibes = await loadRecentVibeTagsForMember(member.id);
+
   return {
     bundle,
     member,
     ghostless,
     inGoodStanding: !lockout,
+    recentVibes,
   };
 }
 

@@ -3,6 +3,7 @@
  * Service role is required for live reads (RLS has no anon policies).
  */
 import type {
+  AggregatedVibeTag,
   Dispute,
   GhostlessStats,
   Lockout,
@@ -42,8 +43,10 @@ import {
   MOCK_STRIKES,
   getMember,
   lockoutFor,
+  mockRecentVibesFor,
   strikesFor,
 } from "./mock-data";
+import { loadRecentVibeTagsForMember } from "./vibe-tags-data";
 import {
   buildMonthlyLeaderboard,
   type MonthlyLeaderboard,
@@ -95,6 +98,8 @@ export type DashboardPerson = {
   ghostless: GhostlessStats | null;
   strikes: Strike[];
   lockout: Lockout | null;
+  /** Thresholded Recent vibes (30d · ≥2 distinct raters). Empty on list rows. */
+  recentVibes?: AggregatedVibeTag[];
 };
 
 export type AnalyticsTrendPoint = {
@@ -1438,12 +1443,16 @@ export async function loadPerson(
       ghostless: MOCK_GHOSTLESS[member.id] ?? null,
       strikes: strikesFor(member.id),
       lockout: lockoutFor(member.id),
+      recentVibes: mockRecentVibesFor(member.id),
     };
   }
   if (!guildId.trim() || isDemoGuildId(guildId)) return null;
 
   const bundle = await loadLiveBundle(guildId);
-  return bundle.members.find((m) => m.member.id === memberId) ?? null;
+  const person = bundle.members.find((m) => m.member.id === memberId) ?? null;
+  if (!person) return null;
+  const recentVibes = await loadRecentVibeTagsForMember(person.member.id);
+  return { ...person, recentVibes };
 }
 
 /** Plans keyed by discord_guild_id from servers (for session guild enrichment). */

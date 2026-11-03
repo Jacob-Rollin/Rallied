@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DemoDataBanner } from "@/components/DemoDataBanner";
 import { GhostlessBadge } from "@/components/GhostlessBadge";
+import { RecentVibes } from "@/components/RecentVibes";
 import { StrikeBadge } from "@/components/StrikeBadge";
 import { DEMO_GUILD_ID, demoHref } from "@/lib/demo";
 import { loadPerson } from "@/lib/dashboard-data";
@@ -15,7 +16,7 @@ export default async function DemoPersonPage({ params }: Props) {
   const person = await loadPerson(DEMO_GUILD_ID, id, true);
   if (!person) notFound();
 
-  const { member, ghostless, strikes, lockout } = person;
+  const { member, ghostless, strikes, lockout, recentVibes } = person;
 
   return (
     <div className="space-y-8">
@@ -66,6 +67,8 @@ export default async function DemoPersonPage({ params }: Props) {
           </div>
         ))}
       </section>
+
+      <RecentVibes tags={recentVibes ?? []} />
 
       <section>
         <h2 className="font-display text-xl tracking-wide">Strikes</h2>

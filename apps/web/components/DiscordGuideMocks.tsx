@@ -395,7 +395,7 @@ export function FindPartyGuideMock() {
   );
 }
 
-/** 5 — Post-session Vibe Check. */
+/** 5 — Post-session Vibe Check (+ optional play tags after Showed up). */
 export function VibeCheckGuideMock() {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
@@ -412,6 +412,19 @@ export function VibeCheckGuideMock() {
             <DiscBtn label="Vibe Check" tone="blurple" />
           </ButtonRow>
         </BotChrome>
+        <p className="mb-2 mt-4 text-[11px] font-medium text-white/50">
+          After Showed up — play tag (optional)
+        </p>
+        <BotChrome>
+          <p className="text-[14px] leading-snug text-[#dbdee1]">
+            Vibe Check saved for @Kai.
+            <br />
+            <strong className="text-[#f2f3f5]">How’d they play?</strong>
+          </p>
+          <div className="mt-1.5 rounded border border-[#1e1f22] bg-[#1e1f22] px-2.5 py-2 text-[12px] text-[#949ba4]">
+            Reliable · Communicator · Clutch · Friendly · Toxic · AFK · Skip
+          </div>
+        </BotChrome>
       </div>
       <div>
         <p className="mb-2 text-[11px] font-medium text-white/50">
@@ -424,8 +437,9 @@ export function VibeCheckGuideMock() {
           </p>
           <EmbedShell accent="lime">
             <EmbedDesc>
-              Tap a quick result, or pick a vibe score 1–5. After grace, Ghosted
-              issues a strike on Community+. Dispute is for the flagged player.
+              Tap Showed up or pick a vibe score 1–5 — then optionally tag how
+              they played. After grace, Ghosted issues a strike on Community+.
+              Dispute is for the flagged player.
             </EmbedDesc>
           </EmbedShell>
           <ButtonRow>

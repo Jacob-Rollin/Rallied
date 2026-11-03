@@ -11,8 +11,15 @@ import {
   type Interaction,
 } from "../lib/discord.js";
 import {
+  isVibeTagId,
+  type VibeTagId,
+  VIBE_TAG_LABELS,
+  VIBE_TAG_SKIP_VALUE,
+} from "@rallied/shared";
+import {
   vibeCheckMessage,
   vibeGhostDisputeMessage,
+  vibeTagSelectMessage,
 } from "../lib/embeds.js";
 import { formatError } from "../lib/errors.js";
 import { postThreadMessage } from "../lib/party-message.js";
@@ -355,9 +362,37 @@ export async function recordVibe(opts: {
     }
   }
 
+  const rateeMention = `<@${opts.rateeDiscordId}>`;
+
+  // After Showed up (or score path) — offer fixed play tags. Ghosted skips tags.
+  if (showedUp && !ghosted) {
+    let preface: string;
+    if (!isNew) {
+      preface = `Updated Vibe Check for ${rateeMention} (stats unchanged — already counted).`;
+    } else if (!reliabilityOn && env) {
+      preface = `Vibe Check noted for ${rateeMention} — Ghostless stats & strikes stay off on Starter. ${freeReadyCheckNote()}`;
+    } else {
+      const showNote = readyOwnsShows
+        ? " · shows/ghosts owned by Ready Check (vibe score only)"
+        : "";
+      preface = `Vibe Check saved for ${rateeMention} (this server).${opts.vibeScore != null ? ` score=${opts.vibeScore}` : ""}${showNote}`;
+    }
+
+    const payload = vibeTagSelectMessage({
+      rateeMention,
+      partyId: opts.partyId,
+      rateeMemberId: opts.rateeId,
+      preface,
+    });
+    return {
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: payload,
+    };
+  }
+
   if (!isNew) {
     return ephemeral(
-      `Updated Vibe Check for <@${opts.rateeDiscordId}> (stats unchanged — already counted).`,
+      `Updated Vibe Check for ${rateeMention} (stats unchanged — already counted).`,
     );
   }
 
@@ -371,7 +406,7 @@ export async function recordVibe(opts: {
       ...upgrade,
       data: {
         ...upgrade.data,
-        content: `Vibe Check noted for <@${opts.rateeDiscordId}> — Ghostless stats & strikes stay off on Starter. ${freeReadyCheckNote()}`,
+        content: `Vibe Check noted for ${rateeMention} — Ghostless stats & strikes stay off on Starter. ${freeReadyCheckNote()}`,
       },
     };
   }
@@ -386,7 +421,119 @@ export async function recordVibe(opts: {
       : "";
 
   return ephemeral(
-    `Vibe Check saved for <@${opts.rateeDiscordId}> (this server). showed_up=${showedUp} ghosted=${ghosted}${opts.vibeScore != null ? ` score=${opts.vibeScore}` : ""}${showNote}${strikeNote}`,
+    `Vibe Check saved for ${rateeMention} (this server). showed_up=${showedUp} ghosted=${ghosted}${opts.vibeScore != null ? ` score=${opts.vibeScore}` : ""}${showNote}${strikeNote}`,
+  );
+}
+
+/**
+ * Upsert/overwrite vibe_tag for an existing (party, rater, ratee) check.
+ * Does not touch Ghostless shows/ghosts/vibe_score aggregates.
+ * Skip leaves tag null (clears a prior misclick if they choose Skip).
+ */
+export async function recordVibeTag(opts: {
+  sb: SupabaseClient;
+  guildId: string;
+  serverId: string;
+  partyId: string;
+  raterId: string;
+  rateeId: string;
+  rateeDiscordId: string;
+  /** Tag id, or skip value to clear. */
+  selected: string;
+}) {
+  const { sb } = opts;
+  const rateeMention = `<@${opts.rateeDiscordId}>`;
+
+  if (opts.selected === VIBE_TAG_SKIP_VALUE) {
+    const { data: existing } = await sb
+      .from("vibe_checks")
+      .select("id, ghosted, showed_up")
+      .eq("party_id", opts.partyId)
+      .eq("rater_id", opts.raterId)
+      .eq("ratee_id", opts.rateeId)
+      .maybeSingle();
+
+    if (!existing) {
+      return ephemeral(
+        "Save Showed up first, then you can tag how they played.",
+      );
+    }
+    if (existing.ghosted) {
+      return ephemeral("Ghosted checks don't get play tags.");
+    }
+
+    const { error } = await sb
+      .from("vibe_checks")
+      .update({ vibe_tag: null })
+      .eq("id", existing.id);
+
+    if (error) return ephemeral(`Could not clear tag: ${error.message}`);
+    return ephemeral(`Skipped play tag for ${rateeMention}.`);
+  }
+
+  if (!isVibeTagId(opts.selected)) {
+    return ephemeral("Pick a play tag from the list (or Skip).");
+  }
+  const tag = opts.selected as VibeTagId;
+
+  const { data: raterMem } = await sb
+    .from("lfg_party_members")
+    .select("id")
+    .eq("party_id", opts.partyId)
+    .eq("member_id", opts.raterId)
+    .in("role", ["host", "member"])
+    .maybeSingle();
+  const { data: rateeMem } = await sb
+    .from("lfg_party_members")
+    .select("id")
+    .eq("party_id", opts.partyId)
+    .eq("member_id", opts.rateeId)
+    .in("role", ["host", "member"])
+    .maybeSingle();
+
+  if (!raterMem || !rateeMem) {
+    return ephemeral(
+      "Both players must be in that party to Vibe Check (this server).",
+    );
+  }
+
+  const { data: party } = await sb
+    .from("lfg_parties")
+    .select("id, server_id")
+    .eq("id", opts.partyId)
+    .maybeSingle();
+
+  if (!party || party.server_id !== opts.serverId) {
+    return ephemeral("Party not found in this server.");
+  }
+
+  const { data: existing } = await sb
+    .from("vibe_checks")
+    .select("id, ghosted, showed_up")
+    .eq("party_id", opts.partyId)
+    .eq("rater_id", opts.raterId)
+    .eq("ratee_id", opts.rateeId)
+    .maybeSingle();
+
+  if (!existing) {
+    return ephemeral(
+      "Save Showed up first, then you can tag how they played.",
+    );
+  }
+
+  if (existing.ghosted) {
+    return ephemeral("Ghosted checks don't get play tags.");
+  }
+
+  const { error } = await sb
+    .from("vibe_checks")
+    .update({ vibe_tag: tag, note: `select:tag:${tag}` })
+    .eq("id", existing.id);
+
+  if (error) return ephemeral(`Could not save tag: ${error.message}`);
+
+  return ephemeral(
+    `Tagged ${rateeMention} as **${VIBE_TAG_LABELS[tag]}** (this server). Re-pick anytime to fix a misclick.`,
   );
 }
 

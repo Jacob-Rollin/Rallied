@@ -1,4 +1,12 @@
-import { BRAND, GAME_CATALOG, GHOSTLESS } from "@rallied/shared";
+import {
+  BRAND,
+  GAME_CATALOG,
+  GHOSTLESS,
+  VIBE_TAG_IDS,
+  VIBE_TAG_LABELS,
+  VIBE_TAG_SKIP_VALUE,
+  type VibeTagId,
+} from "@rallied/shared";
 import { InteractionResponseType } from "./discord.js";
 
 /** Discord embed / component helpers (Phase 1.5). */
@@ -589,8 +597,8 @@ export function vibeCheckMessage(opts: {
     embeds: [
       {
         description: reliabilityOn
-          ? "Tap a quick result, or pick a vibe score 1–5. After grace, **Ghosted** issues a strike (this server) when Ready Check did not run. Ready Check owns shows/ghosts once it starts. Dispute is for the flagged player."
-          : "Tap a quick result, or pick a vibe score 1–5. Soft on Starter — **Ghosted** does not issue a strike or Ghostless stats. Community adds strikes + Ghostless.",
+          ? "Tap **Showed up** or pick a vibe score 1–5 — then optionally tag how they played. After grace, **Ghosted** issues a strike (this server) when Ready Check did not run. Ready Check owns shows/ghosts once it starts. Dispute is for the flagged player."
+          : "Tap **Showed up** or pick a vibe score 1–5 — then optionally tag how they played. Soft on Starter — **Ghosted** does not issue a strike or Ghostless stats. Community adds strikes + Ghostless.",
         color: LIME,
       },
     ],
@@ -632,6 +640,59 @@ export function vibeCheckMessage(opts: {
         ],
       },
     ],
+  };
+}
+
+const VIBE_TAG_OPTION_DESCRIPTIONS: Record<VibeTagId, string> = {
+  reliable: "Showed up solid — dependable teammate",
+  communicator: "Clear calls / good comms",
+  clutch: "Came through in key moments",
+  friendly: "Good vibes / easy to play with",
+  toxic: "Needs multiple raters to show publicly",
+  afk: "Checked out mid-session",
+};
+
+/** After Showed up / score — string select for fixed play tags (+ Skip). Not shown after Ghosted. */
+export function vibeTagSelectMessage(opts: {
+  rateeMention: string;
+  partyId: string;
+  rateeMemberId: string;
+  /** Short status line above the select (e.g. saved confirmation). */
+  preface?: string;
+}) {
+  const preface =
+    opts.preface ??
+    `Vibe Check saved for ${opts.rateeMention} (this server).`;
+
+  return {
+    content: `${preface}\n**How'd they play?** (optional — one tag, change anytime)`,
+    components: [
+      {
+        type: 1,
+        components: [
+          {
+            type: 3,
+            custom_id: `vibe:tag:${opts.partyId}:${opts.rateeMemberId}`,
+            placeholder: "How'd they play?",
+            min_values: 1,
+            max_values: 1,
+            options: [
+              ...VIBE_TAG_IDS.map((id: VibeTagId) => ({
+                label: VIBE_TAG_LABELS[id],
+                value: id,
+                description: VIBE_TAG_OPTION_DESCRIPTIONS[id],
+              })),
+              {
+                label: "Skip",
+                value: VIBE_TAG_SKIP_VALUE,
+                description: "No play tag this time",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    flags: 64,
   };
 }
 

@@ -147,10 +147,10 @@ export function GhostlessBadgeMock() {
 /** @deprecated Prefer GhostlessBadgeMock — kept as alias for older imports. */
 export const VibeCheckCardMock = GhostlessBadgeMock;
 
-/** Compact post-session Vibe Check (Showed up / Ghosted) — matches bot. */
+/** Compact post-session Vibe Check (Showed up → play tags / Ghosted) — matches bot. */
 export function VibeCheckActionsMock() {
   return (
-    <div className="mt-5" aria-hidden>
+    <div className="mt-5 space-y-3" aria-hidden>
       <BotChrome>
         <p className="text-[14px] leading-snug text-[#dbdee1]">
           <strong className="text-[#f2f3f5]">Vibe Check</strong> for @Kai — how
@@ -158,8 +158,8 @@ export function VibeCheckActionsMock() {
         </p>
         <EmbedShell accent="lime">
           <EmbedDesc>
-            Tap a quick result, or pick a vibe score 1–5. After grace, Ghosted
-            issues a strike. Dispute is for the flagged player.
+            Tap Showed up or pick a vibe score 1–5 — then optionally tag how
+            they played. After grace, Ghosted issues a strike.
           </EmbedDesc>
         </EmbedShell>
         <ButtonRow>
@@ -168,6 +168,18 @@ export function VibeCheckActionsMock() {
         </ButtonRow>
         <div className="mt-1.5 rounded border border-[#1e1f22] bg-[#1e1f22] px-2.5 py-2 text-[12px] text-[#949ba4]">
           Rate vibe 1–5 (optional score)
+        </div>
+      </BotChrome>
+      <BotChrome>
+        <p className="text-[14px] leading-snug text-[#dbdee1]">
+          Vibe Check saved for @Kai (this server).
+          <br />
+          <strong className="text-[#f2f3f5]">How’d they play?</strong>{" "}
+          (optional — one tag)
+        </p>
+        <div className="mt-1.5 rounded border border-[#1e1f22] bg-[#1e1f22] px-2.5 py-2 text-[12px] text-[#949ba4]">
+          How’d they play? · Reliable · Communicator · Clutch · Friendly ·
+          Toxic · AFK · Skip
         </div>
       </BotChrome>
     </div>

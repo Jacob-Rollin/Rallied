@@ -9,3 +9,4 @@ export * from "./ops-usage";
 export * from "./server-name";
 export * from "./supabase-url";
 export * from "./types";
+export * from "./vibe-tags";

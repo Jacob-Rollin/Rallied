@@ -6,6 +6,7 @@ import { MonthlyLeaderboard } from "@/components/MonthlyLeaderboard";
 import { PlanBanner } from "@/components/PlanBanner";
 import { ReliabilityHealth } from "@/components/ReliabilityHealth";
 import { StandbyPromotions } from "@/components/StandbyPromotions";
+import { TopGamesList } from "@/components/TopGamesList";
 import { UpcomingScheduled } from "@/components/UpcomingScheduled";
 import { loadDashboard } from "@/lib/dashboard-data";
 import {
@@ -117,6 +118,10 @@ export default async function OverviewPage({ searchParams }: Props) {
             data.monthlyLeaderboard.mostReliableIsLifetime
           }
         />
+      ) : null}
+
+      {reliabilityOn ? (
+        <TopGamesList games={data.topGames} rangeLabel={rangeLabel} />
       ) : null}
 
       {reliabilityOn && data.reliabilityHealth ? (

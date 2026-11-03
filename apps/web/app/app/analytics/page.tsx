@@ -35,8 +35,8 @@ export default async function AnalyticsPage({ searchParams }: Props) {
         <div>
           <h1 className="font-display text-3xl tracking-wide">Analytics</h1>
           <p className="mt-1 text-sm text-muted">
-            {name} · volume, totals, soft reliability, top players. Pro unlocks
-            charts + CSV; Community sees period counts.
+            {name} · volume, totals, soft reliability, top games, top players.
+            Pro unlocks charts + CSV; Community sees period counts + top games.
           </p>
         </div>
         <DashboardRangeControl
@@ -56,6 +56,7 @@ export default async function AnalyticsPage({ searchParams }: Props) {
         priorTrend={data.analyticsTrendPrior}
         extras={data.analyticsExtras}
         topPlayers={data.analyticsTopPlayers}
+        topGames={data.topGames}
         billingHref={withDashboardQuery("/app/billing", q)}
         overviewHref={withDashboardQuery("/app", q)}
         sourceLabel={data.source}

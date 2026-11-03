@@ -16,6 +16,7 @@ import type {
 import {
   DEFAULT_DASHBOARD_RANGE,
   monthStartUtc,
+  rankTopGames,
   resolveDashboardRange,
   utcDayKey,
   utcDayOfMonthLabel,
@@ -24,6 +25,7 @@ import {
   utcWeekdayLabel,
   weekStartUtc,
   type DashboardRangeKey,
+  type LeaderboardGameEntry,
 } from "@rallied/shared";
 import {
   MOCK_ANALYTICS_EXTRAS,
@@ -143,6 +145,11 @@ export type DashboardBundle = {
   analyticsTopPlayers: AnalyticsTopPlayer[];
   /** Per-server Most reliable (lifetime) + Top hosts (range-scoped). */
   monthlyLeaderboard: MonthlyLeaderboard | null;
+  /**
+   * Top LFG games for the selected dashboard range (includes soft-closed).
+   * Blank titles excluded; case-insensitive grouping.
+   */
+  topGames: LeaderboardGameEntry[];
   /** Overview reliability health (Community lite / Pro trends). */
   reliabilityHealth: ReliabilityHealth | null;
   /** Next open/filled parties with scheduled_start_at. */
@@ -467,6 +474,16 @@ function buildMockBundle(
       since: range.start,
       periodLabel: range.heading,
     }),
+    topGames: rankTopGames(
+      parties
+        .filter(
+          (p) =>
+            range.start == null ||
+            new Date(p.created_at).getTime() >= range.start.getTime(),
+        )
+        .map((p) => p.game),
+      { limit: 10 },
+    ),
     reliabilityHealth: {
       ...MOCK_RELIABILITY_HEALTH,
       openDisputes: disputes.filter((d) => d.status === "open").length,
@@ -504,6 +521,7 @@ function emptyBundle(
     analyticsExtras: null,
     analyticsTopPlayers: [],
     monthlyLeaderboard: null,
+    topGames: [],
     reliabilityHealth: null,
     upcomingScheduled: [],
     notice,
@@ -699,7 +717,7 @@ async function loadLiveBundle(
 
   let hostPartiesQuery = sb
     .from("lfg_parties")
-    .select("host_member_id, created_at")
+    .select("host_member_id, created_at, game")
     .eq("server_id", serverId);
   if (rangeStartIso) {
     hostPartiesQuery = hostPartiesQuery.gte("created_at", rangeStartIso);
@@ -1345,6 +1363,12 @@ async function loadLiveBundle(
       since: range.start,
       periodLabel: range.heading,
     }),
+    topGames: rankTopGames(
+      ((monthHostPartiesRes.data ?? []) as {
+        game?: string | null;
+      }[]).map((p) => p.game),
+      { limit: 10 },
+    ),
     reliabilityHealth,
     upcomingScheduled,
     notice: null,

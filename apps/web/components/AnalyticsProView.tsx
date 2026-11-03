@@ -1,5 +1,6 @@
 "use client";
 
+import type { LeaderboardGameEntry } from "@rallied/shared";
 import type {
   AnalyticsExtras,
   AnalyticsTopPlayer,
@@ -11,6 +12,7 @@ import {
   AnalyticsSoftMetric,
   AnalyticsWeekBarChart,
 } from "@/components/AnalyticsCharts";
+import { TopGamesList } from "@/components/TopGamesList";
 
 type Props = {
   serverName: string;
@@ -19,6 +21,7 @@ type Props = {
   priorTrend?: AnalyticsTrendPoint[];
   extras?: AnalyticsExtras | null;
   topPlayers?: AnalyticsTopPlayer[];
+  topGames?: LeaderboardGameEntry[];
   onExport: () => void;
   exportDisabled?: boolean;
   rangeLabel?: string;
@@ -31,6 +34,7 @@ export function AnalyticsProView({
   priorTrend = [],
   extras = null,
   topPlayers = [],
+  topGames = [],
   onExport,
   exportDisabled = false,
   rangeLabel = "This month",
@@ -175,49 +179,55 @@ export function AnalyticsProView({
               </p>
             )}
           </section>
-
-          <section className="space-y-3">
-            <div>
-              <h2 className="font-display text-xl tracking-wide">
-                Top players
-              </h2>
-              <p className="mt-1 text-sm text-muted">
-                By Ghostless show rate, then avg vibe (lifetime board stats).
-              </p>
-            </div>
-            {topPlayers.length > 0 ? (
-              <ol className="divide-y divide-white/10 border-y border-white/10">
-                {topPlayers.map((p, i) => (
-                  <li
-                    key={`${p.name}-${i}`}
-                    className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-2.5 text-sm"
-                  >
-                    <span className="text-white/90">
-                      <span className="tabular-nums text-muted">{i + 1}. </span>
-                      {p.name}
-                    </span>
-                    <span className="tabular-nums text-xs text-muted">
-                      {p.showRatePct != null ? (
-                        <span className="text-lime">{p.showRatePct}% show</span>
-                      ) : (
-                        "—"
-                      )}
-                      {p.vibeAvg != null ? (
-                        <span className="text-white/45">
-                          {" · vibe "}
-                          {p.vibeAvg}
-                        </span>
-                      ) : null}
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <p className="text-sm text-muted">No ranked players yet.</p>
-            )}
-          </section>
         </>
       )}
+
+      <TopGamesList
+        games={topGames}
+        rangeLabel={rangeLabel}
+        variant="analytics"
+      />
+
+      {!empty ? (
+        <section className="space-y-3">
+          <div>
+            <h2 className="font-display text-xl tracking-wide">Top players</h2>
+            <p className="mt-1 text-sm text-muted">
+              By Ghostless show rate, then avg vibe (lifetime board stats).
+            </p>
+          </div>
+          {topPlayers.length > 0 ? (
+            <ol className="divide-y divide-white/10 border-y border-white/10">
+              {topPlayers.map((p, i) => (
+                <li
+                  key={`${p.name}-${i}`}
+                  className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-2.5 text-sm"
+                >
+                  <span className="text-white/90">
+                    <span className="tabular-nums text-muted">{i + 1}. </span>
+                    {p.name}
+                  </span>
+                  <span className="tabular-nums text-xs text-muted">
+                    {p.showRatePct != null ? (
+                      <span className="text-lime">{p.showRatePct}% show</span>
+                    ) : (
+                      "—"
+                    )}
+                    {p.vibeAvg != null ? (
+                      <span className="text-white/45">
+                        {" · vibe "}
+                        {p.vibeAvg}
+                      </span>
+                    ) : null}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="text-sm text-muted">No ranked players yet.</p>
+          )}
+        </section>
+      ) : null}
     </div>
   );
 }

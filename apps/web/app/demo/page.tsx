@@ -4,6 +4,7 @@ import { DemoDataBanner } from "@/components/DemoDataBanner";
 import { MonthlyLeaderboard } from "@/components/MonthlyLeaderboard";
 import { ReliabilityHealth } from "@/components/ReliabilityHealth";
 import { StandbyPromotions } from "@/components/StandbyPromotions";
+import { TopGamesList } from "@/components/TopGamesList";
 import { UpcomingScheduled } from "@/components/UpcomingScheduled";
 import { DEMO_GUILD_ID, demoHref } from "@/lib/demo";
 import { loadDashboard } from "@/lib/dashboard-data";
@@ -84,6 +85,8 @@ export default async function DemoOverviewPage({ searchParams }: Props) {
           }
         />
       ) : null}
+
+      <TopGamesList games={data.topGames} rangeLabel={rangeLabel} />
 
       {data.reliabilityHealth ? (
         <ReliabilityHealth

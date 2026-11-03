@@ -16,6 +16,12 @@ export type LeaderboardHostEntry = {
   partiesHosted: number;
 };
 
+export type LeaderboardGameEntry = {
+  /** Display label (most common casing among grouped titles). */
+  game: string;
+  parties: number;
+};
+
 /** UTC start of the calendar month containing `now`. */
 export function monthStartUtc(now = new Date()): Date {
   return new Date(
@@ -102,6 +108,59 @@ export function rankTopHosts(
         return b.partiesHosted - a.partiesHosted;
       }
       return a.displayName.localeCompare(b.displayName);
+    })
+    .slice(0, limit);
+}
+
+/**
+ * Rank games by LFG party create count for a guild window.
+ * Blank / null / whitespace-only titles are excluded (not "Unspecified").
+ * Groups case-insensitively after trim + whitespace collapse; display label
+ * prefers the most common casing (ties → localeCompare).
+ * Count every party create — including soft-closed (`deleted_at` set), same
+ * rule as Top hosts.
+ */
+export function rankTopGames(
+  games: (string | null | undefined)[],
+  opts?: { limit?: number },
+): LeaderboardGameEntry[] {
+  const limit = opts?.limit ?? 5;
+  type Acc = { count: number; labels: Map<string, number> };
+  const byKey = new Map<string, Acc>();
+
+  for (const raw of games) {
+    if (raw == null) continue;
+    const trimmed = String(raw).trim().replace(/\s+/g, " ");
+    if (!trimmed) continue;
+    const key = trimmed.toLowerCase();
+    let acc = byKey.get(key);
+    if (!acc) {
+      acc = { count: 0, labels: new Map() };
+      byKey.set(key, acc);
+    }
+    acc.count += 1;
+    acc.labels.set(trimmed, (acc.labels.get(trimmed) ?? 0) + 1);
+  }
+
+  return [...byKey.values()]
+    .map((acc) => {
+      const rankedLabels = [...acc.labels.entries()].sort((a, b) => {
+        if (b[1] !== a[1]) return b[1] - a[1];
+        // Prefer title-ish (leading capital) over all-lower / ALL-CAPS ties.
+        const aTitle = /^[A-Z]/.test(a[0]) && /[a-z]/.test(a[0]) ? 2
+          : /^[A-Z]/.test(a[0]) ? 1
+          : 0;
+        const bTitle = /^[A-Z]/.test(b[0]) && /[a-z]/.test(b[0]) ? 2
+          : /^[A-Z]/.test(b[0]) ? 1
+          : 0;
+        if (bTitle !== aTitle) return bTitle - aTitle;
+        return a[0].localeCompare(b[0]);
+      });
+      return { game: rankedLabels[0]![0], parties: acc.count };
+    })
+    .sort((a, b) => {
+      if (b.parties !== a.parties) return b.parties - a.parties;
+      return a.game.localeCompare(b.game);
     })
     .slice(0, limit);
 }

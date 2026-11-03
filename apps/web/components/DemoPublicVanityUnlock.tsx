@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { PRO_PRICE_USD, buildBotInviteUrl } from "@rallied/shared";
+import { PRO_PRICE_USD } from "@rallied/shared";
+import { useBotInviteHref } from "@/components/BotInviteProvider";
 
 /**
  * Demo-only Pro vanity unlock on public mock pages (e.g. /s/demo-esports).
@@ -24,10 +25,7 @@ export function DemoPublicVanityUnlock({
   const [hidePoweredBy, setHidePoweredBy] = useState(true);
   const [accent, setAccent] = useState("#B8F000");
 
-  const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
-  const inviteHref = clientId
-    ? buildBotInviteUrl(clientId)
-    : "https://discord.com/developers/applications";
+  const inviteHref = useBotInviteHref();
 
   const showPoweredBy = unlocked ? !hidePoweredBy : true;
   const effectiveAccent = unlocked ? accent : null;

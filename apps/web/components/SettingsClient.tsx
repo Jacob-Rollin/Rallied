@@ -11,7 +11,6 @@ import {
   PRO_PRICE_USD,
   STARTER_MAX_CREATES_PER_24H,
   STARTER_MAX_OPEN_PARTIES,
-  buildBotInviteUrl,
   formatAdminPlanLine,
   isProPlan,
   isStarterPlan,
@@ -23,6 +22,7 @@ import {
 import { FieldInfo } from "@/components/FieldInfo";
 import { GameNamesHygiene } from "@/components/GameNamesHygiene";
 import { NumberField } from "@/components/NumberField";
+import { useBotInviteHref } from "@/components/BotInviteProvider";
 
 type DiscordRoleOption = {
   id: string;
@@ -148,6 +148,7 @@ export function SettingsClient({
   const [icalBusy, setIcalBusy] = useState(false);
   const [icalMsg, setIcalMsg] = useState<string | null>(null);
   const [copyMsg, setCopyMsg] = useState<string | null>(null);
+  const inviteHref = useBotInviteHref();
 
   useEffect(() => {
     setIcalToken(base.ical_token ?? null);
@@ -207,10 +208,6 @@ export function SettingsClient({
   }, [canWrite, discordGuildId, modRolesOn]);
 
   const previewPath = `/s/${slug || discordGuildId}`;
-  const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
-  const inviteHref = clientId
-    ? buildBotInviteUrl(clientId)
-    : "https://discord.com/developers/applications";
 
   async function saveSettings() {
     if (!canWrite) return;

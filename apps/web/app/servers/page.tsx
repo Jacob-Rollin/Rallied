@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { BRAND } from "@rallied/shared";
 import { SiteFooter } from "../../components/SiteFooter";
 import { SiteHeader } from "../../components/SiteHeader";
+import { resolveBotInviteHref } from "../../lib/bot-invite";
 import { listDirectoryServers } from "../../lib/public-data";
 
 export const metadata: Metadata = {
@@ -13,10 +14,11 @@ export const metadata: Metadata = {
 
 export default async function ServersDirectoryPage() {
   const servers = await listDirectoryServers();
+  const inviteHref = resolveBotInviteHref();
 
   return (
     <div className="min-h-screen">
-      <SiteHeader variant="solid" />
+      <SiteHeader variant="solid" inviteHref={inviteHref} />
 
       <main className="mx-auto max-w-5xl px-4 pb-20 pt-10 sm:pt-12">
         <p className="font-display text-xs tracking-[0.16em] text-coral">

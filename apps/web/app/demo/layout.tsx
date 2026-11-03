@@ -1,5 +1,7 @@
 import { Suspense } from "react";
+import { BotInviteProvider } from "@/components/BotInviteProvider";
 import { DemoShell } from "@/components/DemoShell";
+import { resolveBotInviteHref } from "@/lib/bot-invite";
 
 export const metadata = {
   title: "Demo admin · Rallied",
@@ -12,9 +14,12 @@ export default function DemoLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const inviteHref = resolveBotInviteHref();
   return (
     <Suspense fallback={<div className="p-8 text-muted">Loading demo…</div>}>
-      <DemoShell>{children}</DemoShell>
+      <BotInviteProvider href={inviteHref}>
+        <DemoShell inviteHref={inviteHref}>{children}</DemoShell>
+      </BotInviteProvider>
     </Suspense>
   );
 }

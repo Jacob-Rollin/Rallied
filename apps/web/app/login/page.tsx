@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { buildBotInviteUrl } from "@rallied/shared";
 import {
   discordOAuthConfigured,
   mockAuthEnabled,
   oauthConfigProblems,
 } from "@/lib/auth/config";
 import { safePostLoginNext } from "@/lib/auth/safe-next";
+import { resolveBotInviteHref } from "@/lib/bot-invite";
 
 type Props = { searchParams: Promise<{ error?: string; next?: string }> };
 
@@ -38,8 +38,7 @@ export default async function LoginPage({ searchParams }: Props) {
   const discordHref = nextPath
     ? `/api/auth/discord?next=${encodeURIComponent(nextPath)}`
     : "/api/auth/discord";
-  const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
-  const inviteHref = clientId ? buildBotInviteUrl(clientId) : "#add-bot";
+  const inviteHref = resolveBotInviteHref();
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">

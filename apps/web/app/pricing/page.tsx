@@ -11,12 +11,12 @@ import {
   PRO_PRICE_USD,
   STARTER_MAX_CREATES_PER_24H,
   STARTER_MAX_OPEN_PARTIES,
-  buildBotInviteUrl,
 } from "@rallied/shared";
 import { AddToDiscordButton } from "../../components/AddToDiscordButton";
 import { TierCheck } from "../../components/LandingFeatureMocks";
 import { SiteFooter } from "../../components/SiteFooter";
 import { SiteHeader } from "../../components/SiteHeader";
+import { resolveBotInviteHref } from "../../lib/bot-invite";
 
 export const metadata: Metadata = {
   title: `Pricing — ${BRAND.name}`,
@@ -217,12 +217,11 @@ function CellValue({ value }: { value: Cell }) {
 }
 
 export default function PricingPage() {
-  const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
-  const inviteHref = clientId ? buildBotInviteUrl(clientId) : "#add-bot";
+  const inviteHref = resolveBotInviteHref();
 
   return (
     <div className="min-h-screen">
-      <SiteHeader variant="solid" />
+      <SiteHeader variant="solid" inviteHref={inviteHref} />
 
       <main className="mx-auto max-w-5xl px-4 pb-20 pt-10 sm:pt-12">
         <p className="font-display text-xs tracking-[0.16em] text-coral">

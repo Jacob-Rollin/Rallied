@@ -7,7 +7,6 @@ import {
   PRO_PRICE_USD,
   STARTER_MAX_CREATES_PER_24H,
   STARTER_MAX_OPEN_PARTIES,
-  buildBotInviteUrl,
 } from "@rallied/shared";
 import { AddToDiscordButton } from "../components/AddToDiscordButton";
 import { FeatureStepIcon } from "../components/FeatureStepIcon";
@@ -21,6 +20,7 @@ import {
 } from "../components/LandingFeatureMocks";
 import { SiteFooter } from "../components/SiteFooter";
 import { SiteHeader } from "../components/SiteHeader";
+import { resolveBotInviteHref } from "../lib/bot-invite";
 
 const HOW_IT_WORKS: {
   title: string;
@@ -153,12 +153,11 @@ function FeaturePreview({ kind }: { kind: "lfg" | "play" | "vibe" }) {
 }
 
 export default function MarketingPage() {
-  const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
-  const inviteHref = clientId ? buildBotInviteUrl(clientId) : "#add-bot";
+  const inviteHref = resolveBotInviteHref();
 
   return (
     <div className="min-h-screen">
-      <SiteHeader variant="hero" />
+      <SiteHeader variant="hero" inviteHref={inviteHref} />
 
       {/* Negative margin pulls hero atmosphere under the sticky translucent header */}
       <section className="hero-stage relative -mt-[3.25rem] flex min-h-[100svh] flex-col overflow-hidden pt-[3.25rem] sm:-mt-14 sm:pt-14">

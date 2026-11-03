@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { BRAND } from "@rallied/shared";
+import { BotInviteProvider } from "@/components/BotInviteProvider";
 import { OpsChrome } from "@/components/OpsChrome";
+import { resolveBotInviteHref } from "@/lib/bot-invite";
 
 export const metadata: Metadata = {
   title: `Ops — ${BRAND.name}`,
@@ -9,10 +11,13 @@ export const metadata: Metadata = {
 };
 
 export default function OpsLayout({ children }: { children: React.ReactNode }) {
+  const inviteHref = resolveBotInviteHref();
   return (
     <div className="min-h-screen bg-slate text-white">
-      <OpsChrome />
-      {children}
+      <BotInviteProvider href={inviteHref}>
+        <OpsChrome inviteHref={inviteHref} />
+        {children}
+      </BotInviteProvider>
     </div>
   );
 }

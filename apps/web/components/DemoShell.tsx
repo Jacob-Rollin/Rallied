@@ -2,19 +2,22 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { buildBotInviteUrl } from "@rallied/shared";
 import {
   DEMO_NAV,
   DEMO_PUBLIC_PATH,
   DEMO_SERVER_NAME,
 } from "@/lib/demo";
+import { getPublicBotInviteHref } from "@/lib/bot-invite";
 
-export function DemoShell({ children }: { children: React.ReactNode }) {
+export function DemoShell({
+  children,
+  inviteHref,
+}: {
+  children: React.ReactNode;
+  inviteHref?: string;
+}) {
   const pathname = usePathname();
-  const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
-  const inviteUrl = clientId
-    ? buildBotInviteUrl(clientId)
-    : "https://discord.com/developers/applications";
+  const inviteUrl = inviteHref || getPublicBotInviteHref();
 
   return (
     <div className="min-h-screen">

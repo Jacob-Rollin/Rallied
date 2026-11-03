@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { isProPlan } from "@rallied/shared";
+import { BotInviteProvider } from "@/components/BotInviteProvider";
 import { DemoPublicServerPage } from "@/components/DemoPublicServerPage";
 import { PublicServerView } from "@/components/PublicServerView";
+import { resolveBotInviteHref } from "@/lib/bot-invite";
 import { isDemoGuildId } from "@/lib/guild-params";
 import { resolvePublicServer } from "@/lib/public-data";
 
@@ -27,7 +29,11 @@ export default async function PublicServerPage({ params }: Props) {
   // Community/trial demo pages: Upgrade unlocks Pro vanity preview (no Stripe).
   // Live guilds and already-Pro demo founding stay plan-gated.
   if (isDemoSurface && !isProPlan(bundle.server.plan)) {
-    return <DemoPublicServerPage bundle={bundle} />;
+    return (
+      <BotInviteProvider href={resolveBotInviteHref()}>
+        <DemoPublicServerPage bundle={bundle} />
+      </BotInviteProvider>
+    );
   }
 
   return <PublicServerView bundle={bundle} />;

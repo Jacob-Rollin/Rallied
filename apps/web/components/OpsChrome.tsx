@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
-import { buildBotInviteUrl } from "@rallied/shared";
 import { MobileMenuNav } from "@/components/MobileMenuNav";
 import { ReportFeedbackModal } from "@/components/ReportFeedbackModal";
+import { getPublicBotInviteHref } from "@/lib/bot-invite";
 
 type MeResponse = {
   authenticated: boolean;
@@ -17,7 +17,7 @@ type MeResponse = {
  * Logo → /app; coral OPS mark; desktop Dashboard + Report + Log out;
  * mobile hamburger uses the shared signed-in sheet (Account + site + legal).
  */
-export function OpsChrome() {
+export function OpsChrome({ inviteHref }: { inviteHref?: string }) {
   const [me, setMe] = useState<MeResponse | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -25,10 +25,7 @@ export function OpsChrome() {
   const menuPanelRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
 
-  const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
-  const inviteUrl = clientId
-    ? buildBotInviteUrl(clientId)
-    : "https://discord.com/developers/applications";
+  const inviteUrl = inviteHref || getPublicBotInviteHref();
 
   useEffect(() => {
     fetch("/api/auth/me")

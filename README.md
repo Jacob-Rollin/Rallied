@@ -94,7 +94,7 @@ Bot presence check: `DISCORD_BOT_TOKEN` (bot’s guild list) or rows in Supabase
 https://discord.com/api/oauth2/authorize?client_id=YOUR_APP_ID&permissions=311671409680&scope=bot%20applications.commands
 ```
 
-Or `buildBotInviteUrl(clientId)` from `@rallied/shared`. Set `NEXT_PUBLIC_DISCORD_CLIENT_ID` so the landing **Add to Discord** button works.
+Or `buildBotInviteUrl(clientId)` / web `resolveBotInviteHref()` (never links to the Developer Portal). Set `DISCORD_CLIENT_ID` and/or `NEXT_PUBLIC_DISCORD_CLIENT_ID` on Worker `rallied` so **Add to Discord** / **Invite to another server** open the OAuth authorize screen.
 
 ---
 

@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
 import { isProPlan } from "@rallied/shared";
+import { BotInviteProvider } from "@/components/BotInviteProvider";
 import {
   DemoPublicPlayerCard,
   LivePublicPlayerCard,
 } from "@/components/DemoPublicPlayerCard";
+import { resolveBotInviteHref } from "@/lib/bot-invite";
 import { isDemoGuildId } from "@/lib/guild-params";
 import { resolvePublicPlayer } from "@/lib/public-data";
 
@@ -33,9 +35,11 @@ export default async function PublicPlayerCardPage({ params }: Props) {
 
   if (isDemoSurface && !isProPlan(bundle.server.plan)) {
     return (
-      <div className="min-h-screen">
-        <DemoPublicPlayerCard {...cardProps} />
-      </div>
+      <BotInviteProvider href={resolveBotInviteHref()}>
+        <div className="min-h-screen">
+          <DemoPublicPlayerCard {...cardProps} />
+        </div>
+      </BotInviteProvider>
     );
   }
 

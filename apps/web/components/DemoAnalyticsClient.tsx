@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import {
   PRO_PRICE_USD,
-  buildBotInviteUrl,
   type LeaderboardGameEntry,
 } from "@rallied/shared";
 import type {
@@ -12,6 +11,7 @@ import type {
   AnalyticsTrendPoint,
 } from "@/lib/dashboard-data";
 import { AnalyticsProView } from "@/components/AnalyticsProView";
+import { useBotInviteHref } from "@/components/BotInviteProvider";
 import { TopGamesList } from "@/components/TopGamesList";
 import { sumTrend } from "@/lib/analytics-stats";
 
@@ -44,10 +44,7 @@ export function DemoAnalyticsClient({
   const weekParties = sumTrend(trend, "parties");
   const weekVibes = sumTrend(trend, "vibes");
 
-  const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "";
-  const inviteHref = clientId
-    ? buildBotInviteUrl(clientId)
-    : "https://discord.com/developers/applications";
+  const inviteHref = useBotInviteHref();
 
   function exportCsv() {
     const header = "day,parties,vibes,ghosts\n";

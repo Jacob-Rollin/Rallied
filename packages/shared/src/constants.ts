@@ -247,6 +247,8 @@ export const BUTTON_IDS = {
   vibeGhosted: "vibe:ghosted",
   vibeScore: "vibe:score",
   vibePick: "vibe:pick",
+  /** String select: How’d they play? (6 tags + Skip) */
+  vibeTag: "vibe:tag",
   disputeOpen: "dispute:open",
   lfgJoin: "lfg:join",
   lfgLeave: "lfg:leave",

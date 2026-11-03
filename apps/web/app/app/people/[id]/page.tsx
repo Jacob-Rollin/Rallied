@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DataSourceBanner } from "@/components/DataSourceBanner";
 import { GhostlessBadge } from "@/components/GhostlessBadge";
+import { RecentVibes } from "@/components/RecentVibes";
 import { StrikeBadge } from "@/components/StrikeBadge";
 import { loadDashboard, loadPerson } from "@/lib/dashboard-data";
 import { resolveSelectedGuild, withGuildQuery } from "@/lib/guild-context";
@@ -19,7 +20,7 @@ export default async function PersonPage({ params, searchParams }: Props) {
   if (!person) notFound();
 
   const meta = await loadDashboard(guildId, useMock);
-  const { member, ghostless, strikes, lockout } = person;
+  const { member, ghostless, strikes, lockout, recentVibes } = person;
 
   return (
     <div className="space-y-8">
@@ -70,6 +71,8 @@ export default async function PersonPage({ params, searchParams }: Props) {
           </div>
         ))}
       </section>
+
+      <RecentVibes tags={recentVibes ?? []} />
 
       <section>
         <h2 className="font-display text-xl tracking-wide">Strikes</h2>

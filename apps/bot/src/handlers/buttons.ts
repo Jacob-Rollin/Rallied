@@ -23,13 +23,14 @@ import {
   promptCloseParty,
 } from "./lfg.js";
 import { markReady, startReadyCheck } from "./ready-check.js";
-import { recordVibe } from "./vibe.js";
+import { recordVibe, recordVibeTag } from "./vibe.js";
 import { ensureServerAndMember } from "../lib/supabase.js";
 
 /**
  * custom_id formats:
  *   vibe:showed|good|ghosted:<partyId>:<rateeMemberId>
  *   vibe:score:<partyId>:<rateeMemberId>  (+ values[0] = 1–5)
+ *   vibe:tag:<partyId>:<rateeMemberId>    (+ values[0] = tag id | skip)
  *   vibe:pick:<partyId>                   (+ values[0] = ratee member id)
  *   dispute:open:<partyId>:<rateeMemberId>
  *   lfg:join|leave|close|vibe|ready|readyup:<partyId>
@@ -257,6 +258,36 @@ export async function handleButton(
       vibeScore: score,
       ghosted: false,
       note: `select:score:${score}`,
+    });
+  }
+
+  if (ns === "vibe" && action === "tag" && partyId && rateeMemberId && selected) {
+    const { server, member: rater } = await ensureServerAndMember(
+      sb,
+      interaction.guild_id,
+      interaction.guild?.name,
+      user.id,
+      displayName(interaction),
+      null,
+      interactionGuildIdentity(interaction).iconUrl,
+      env,
+    );
+
+    const { data: ratee } = await sb
+      .from("members")
+      .select("discord_user_id")
+      .eq("id", rateeMemberId)
+      .maybeSingle();
+
+    return recordVibeTag({
+      sb,
+      guildId: interaction.guild_id,
+      serverId: server.id,
+      partyId,
+      raterId: rater.id,
+      rateeId: rateeMemberId,
+      rateeDiscordId: ratee?.discord_user_id ?? rateeMemberId,
+      selected,
     });
   }
 

@@ -7,8 +7,10 @@ import type {
   Server,
   ServerSettings,
   Strike,
+  VibeTagId,
+  VibeTagRow,
 } from "@rallied/shared";
-import { PLANS } from "@rallied/shared";
+import { PLANS, aggregateRecentVibeTags } from "@rallied/shared";
 
 /** Demo Discord guild icon (Community+ public/directory mark; not Pro vanity). */
 export const DEMO_GUILD_ICON_URL = "/brand/demo-guild-icon.svg";
@@ -278,6 +280,150 @@ export const MOCK_GHOSTLESS: Record<string, GhostlessStats> = {
     updated_at: "2026-10-20T00:00:00Z",
   },
 };
+
+/**
+ * Sample vibe_tag rows for demo player cards.
+ * Dates are relative so the 30-day window always includes them.
+ * Includes a single-rater toxic on Ben (must NOT surface) and multi-rater
+ * positives on Aria/Casey so UI chips aren’t empty.
+ */
+function daysAgo(days: number): string {
+  return new Date(Date.now() - days * 86400_000).toISOString();
+}
+
+type MockVibeTagRow = VibeTagRow & { rateeId: string };
+
+export const MOCK_VIBE_TAG_ROWS: MockVibeTagRow[] = [
+  // Aria — reliable ×3 raters, communicator ×2, clutch ×2
+  {
+    rateeId: MOCK_MEMBERS[0].id,
+    tag: "reliable" as VibeTagId,
+    raterId: MOCK_MEMBERS[1].id,
+    createdAt: daysAgo(2),
+  },
+  {
+    rateeId: MOCK_MEMBERS[0].id,
+    tag: "reliable" as VibeTagId,
+    raterId: MOCK_MEMBERS[2].id,
+    createdAt: daysAgo(5),
+  },
+  {
+    rateeId: MOCK_MEMBERS[0].id,
+    tag: "reliable" as VibeTagId,
+    raterId: MOCK_MEMBERS[3].id,
+    createdAt: daysAgo(8),
+  },
+  {
+    rateeId: MOCK_MEMBERS[0].id,
+    tag: "communicator" as VibeTagId,
+    raterId: MOCK_MEMBERS[1].id,
+    createdAt: daysAgo(3),
+  },
+  {
+    rateeId: MOCK_MEMBERS[0].id,
+    tag: "communicator" as VibeTagId,
+    raterId: MOCK_MEMBERS[2].id,
+    createdAt: daysAgo(10),
+  },
+  {
+    rateeId: MOCK_MEMBERS[0].id,
+    tag: "clutch" as VibeTagId,
+    raterId: MOCK_MEMBERS[2].id,
+    createdAt: daysAgo(4),
+  },
+  {
+    rateeId: MOCK_MEMBERS[0].id,
+    tag: "clutch" as VibeTagId,
+    raterId: MOCK_MEMBERS[3].id,
+    createdAt: daysAgo(12),
+  },
+  // Ben — single-rater toxic (hidden) + friendly ×2 (shown)
+  {
+    rateeId: MOCK_MEMBERS[1].id,
+    tag: "toxic" as VibeTagId,
+    raterId: MOCK_MEMBERS[0].id,
+    createdAt: daysAgo(1),
+  },
+  {
+    rateeId: MOCK_MEMBERS[1].id,
+    tag: "friendly" as VibeTagId,
+    raterId: MOCK_MEMBERS[0].id,
+    createdAt: daysAgo(6),
+  },
+  {
+    rateeId: MOCK_MEMBERS[1].id,
+    tag: "friendly" as VibeTagId,
+    raterId: MOCK_MEMBERS[2].id,
+    createdAt: daysAgo(7),
+  },
+  // Casey — friendly ×3, reliable ×2; afk ×2 distinct (surfaces muted)
+  {
+    rateeId: MOCK_MEMBERS[2].id,
+    tag: "friendly" as VibeTagId,
+    raterId: MOCK_MEMBERS[0].id,
+    createdAt: daysAgo(2),
+  },
+  {
+    rateeId: MOCK_MEMBERS[2].id,
+    tag: "friendly" as VibeTagId,
+    raterId: MOCK_MEMBERS[1].id,
+    createdAt: daysAgo(9),
+  },
+  {
+    rateeId: MOCK_MEMBERS[2].id,
+    tag: "friendly" as VibeTagId,
+    raterId: MOCK_MEMBERS[3].id,
+    createdAt: daysAgo(14),
+  },
+  {
+    rateeId: MOCK_MEMBERS[2].id,
+    tag: "reliable" as VibeTagId,
+    raterId: MOCK_MEMBERS[0].id,
+    createdAt: daysAgo(3),
+  },
+  {
+    rateeId: MOCK_MEMBERS[2].id,
+    tag: "reliable" as VibeTagId,
+    raterId: MOCK_MEMBERS[1].id,
+    createdAt: daysAgo(11),
+  },
+  {
+    rateeId: MOCK_MEMBERS[2].id,
+    tag: "afk" as VibeTagId,
+    raterId: MOCK_MEMBERS[0].id,
+    createdAt: daysAgo(4),
+  },
+  {
+    rateeId: MOCK_MEMBERS[2].id,
+    tag: "afk" as VibeTagId,
+    raterId: MOCK_MEMBERS[3].id,
+    createdAt: daysAgo(15),
+  },
+  // Dev — only one rater on toxic + afk (both hidden)
+  {
+    rateeId: MOCK_MEMBERS[3].id,
+    tag: "toxic" as VibeTagId,
+    raterId: MOCK_MEMBERS[0].id,
+    createdAt: daysAgo(2),
+  },
+  {
+    rateeId: MOCK_MEMBERS[3].id,
+    tag: "afk" as VibeTagId,
+    raterId: MOCK_MEMBERS[1].id,
+    createdAt: daysAgo(5),
+  },
+];
+
+export function mockRecentVibesFor(memberId: string) {
+  const rows = MOCK_VIBE_TAG_ROWS.filter((r) => r.rateeId === memberId).map(
+    (r) => ({
+      tag: r.tag,
+      raterId: r.raterId,
+      createdAt: r.createdAt,
+    }),
+  );
+  return aggregateRecentVibeTags(rows);
+}
 
 export const MOCK_STRIKES: Strike[] = [
   {

@@ -22,14 +22,14 @@ export default async function PublicPlayerCardPage({ params }: Props) {
   const result = await resolvePublicPlayer(slugOrGuildId, discordUserId);
   if (!result) notFound();
 
-  const { bundle, member, ghostless, inGoodStanding } = result;
+  const { bundle, member, ghostless, inGoodStanding, recentVibes } = result;
   const key = slugOrGuildId.toLowerCase();
   const isDemoSurface =
     DEMO_PUBLIC_KEYS.has(key) ||
     DEMO_PUBLIC_KEYS.has(bundle.pathKey) ||
     isDemoGuildId(bundle.server.discord_guild_id);
 
-  const cardProps = { bundle, member, ghostless, inGoodStanding };
+  const cardProps = { bundle, member, ghostless, inGoodStanding, recentVibes };
 
   if (isDemoSurface && !isProPlan(bundle.server.plan)) {
     return (

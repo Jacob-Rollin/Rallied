@@ -32,6 +32,8 @@ export function LfgDeskMock() {
               in this server
             </strong>{" "}
             only.
+            <br />
+            Parties post below · use Jump from Create/Find.
           </EmbedDesc>
           <EmbedFooter text="Rallied · pin this message in your LFG channel" />
         </EmbedShell>

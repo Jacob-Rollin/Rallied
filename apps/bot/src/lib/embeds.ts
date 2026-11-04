@@ -8,6 +8,10 @@ import {
   type VibeTagId,
 } from "@rallied/shared";
 import { InteractionResponseType } from "./discord.js";
+import {
+  discordMessageUrl,
+  discordThreadUrl,
+} from "./voice.js";
 
 /** Discord embed / component helpers (Phase 1.5). */
 
@@ -227,6 +231,75 @@ export function lfgPartyEmbed(opts: {
   };
 }
 
+/** Link-button row: Jump to party card (+ Open party thread when present). */
+export function lfgPartyJumpButtons(opts: {
+  guildId: string;
+  channelId: string;
+  messageId: string;
+  threadId?: string | null;
+}): unknown[] {
+  const buttons: unknown[] = [
+    {
+      type: 2,
+      style: 5,
+      label: "Jump to party",
+      url: discordMessageUrl(opts.guildId, opts.channelId, opts.messageId),
+    },
+  ];
+  if (opts.threadId) {
+    buttons.push({
+      type: 2,
+      style: 5,
+      label: "Open party thread",
+      url: discordThreadUrl(opts.guildId, opts.threadId),
+    });
+  }
+  return [{ type: 1, components: buttons.slice(0, 5) }];
+}
+
+/** Ephemeral after Create: host gets Jump without another public desk reply. */
+export function lfgPartyCreatedJumpMessage(opts: {
+  game: string;
+  guildId: string;
+  channelId: string;
+  messageId: string;
+  threadId?: string | null;
+}) {
+  return {
+    content: [
+      `**${opts.game}** party is live in the channel.`,
+      "Discord won’t auto-scroll — use **Jump** if the card scrolled away from the desk.",
+    ].join("\n"),
+    flags: 64,
+    components: lfgPartyJumpButtons(opts),
+  };
+}
+
+/**
+ * Append Jump link buttons to an ephemeral payload when the party card is known.
+ * Caps at Discord’s 5 action-row limit.
+ */
+export function withPartyJumpComponents(
+  data: {
+    content?: string;
+    embeds?: unknown[];
+    components?: unknown[];
+    flags?: number;
+    [key: string]: unknown;
+  },
+  jump: {
+    guildId: string;
+    channelId: string;
+    messageId: string;
+    threadId?: string | null;
+  } | null,
+) {
+  if (!jump) return data;
+  const existing = Array.isArray(data.components) ? data.components : [];
+  const rows = [...existing, ...lfgPartyJumpButtons(jump)].slice(0, 5);
+  return { ...data, components: rows };
+}
+
 /** Ephemeral find results: pick a party from a select (mobile-friendly). */
 export function lfgFindMessage(opts: {
   lines: string[];
@@ -238,6 +311,7 @@ export function lfgFindMessage(opts: {
     region?: string;
     slots: number;
     filled: number;
+    jumpUrl?: string | null;
   }[];
   gameFilter?: string | null;
   filterSummary?: string | null;
@@ -250,6 +324,7 @@ export function lfgFindMessage(opts: {
   if (opts.filterSummary) {
     headerParts.push(`_Filters: ${opts.filterSummary}_`);
   }
+  headerParts.push("_Private to you — desk pin stays put. Tap Jump or Join._");
   const header = headerParts.join("\n");
 
   const options = opts.parties.slice(0, 25).map((p, i) => {
@@ -263,24 +338,36 @@ export function lfgFindMessage(opts: {
     };
   });
 
-  const components =
-    options.length > 0
-      ? [
-          {
-            type: 1,
-            components: [
-              {
-                type: 3,
-                custom_id: "lfg:joinselect",
-                placeholder: "Tap to join a party…",
-                min_values: 1,
-                max_values: 1,
-                options,
-              },
-            ],
-          },
-        ]
-      : [];
+  const components: unknown[] = [];
+  if (options.length > 0) {
+    components.push({
+      type: 1,
+      components: [
+        {
+          type: 3,
+          custom_id: "lfg:joinselect",
+          placeholder: "Tap to join a party…",
+          min_values: 1,
+          max_values: 1,
+          options,
+        },
+      ],
+    });
+  }
+
+  // Link buttons for the first few parties (Discord: 5 buttons/row, leave room for select).
+  const jumpButtons = opts.parties
+    .filter((p) => p.jumpUrl)
+    .slice(0, 5)
+    .map((p, i) => ({
+      type: 2,
+      style: 5,
+      label: `Jump ${i + 1}`.slice(0, 80),
+      url: p.jumpUrl as string,
+    }));
+  if (jumpButtons.length > 0) {
+    components.push({ type: 1, components: jumpButtons });
+  }
 
   return {
     content: `${header}\n${opts.lines.join("\n")}`,
@@ -778,7 +865,7 @@ export function lfgDeskMessage() {
       {
         title: "Rallied LFG — find or start a squad",
         description:
-          "Tap a button below — no slash commands needed. Parties stay **in this server** only.",
+          "Tap a button below — no slash commands needed. Parties stay **in this server** only.\nParties post below · use Jump from Create/Find.",
         color: CORAL,
         footer: { text: "Rallied · pin this message in your LFG channel" },
       },
@@ -1124,14 +1211,14 @@ export function lfgHowItWorksMessage() {
       "**How Rallied LFG works** (this server only)",
       "• **Starter** — matching under caps (2 open · 5 creates/24h for this server). Soft Ready/Vibe — no strikes. Upgrade to Community for Ghostless.",
       "• **Per-host open cap** — you can host a few open parties at once (Community+ default 3; admins set 1–10). Stops lobby spam — not a plan limit. Close or finish one to free a slot.",
-      "• **Create party** — pick a game → size, mic, rank, region, optional start → card + **temp voice** + squad thread. You are seated as host.",
+      "• **Create party** — pick a game → size, mic, rank, region, optional start → card + **temp voice** + squad thread. You get an ephemeral **Jump** to the card (Discord can’t auto-scroll).",
       "• **Join / Waitlist** — Join seats you; when full, **Waitlist** promotes when someone Leaves.",
       "• **Voice** — tap **Join VC** on the card (bot needs **Manage Channels**).",
       "• **Schedule** — optional start (`in 30m` / UTC time); reminder ~10 minutes before.",
       "• **Ready Check** — on fill (or host tap): Ready / Waiting + grace; no-shows struck on Community+.",
       "• **Standby** — ready-fail opens a seat → next waitlist promotes + ping (if any).",
       "• **Leave / Close** — Leave (or leave waitlist); hosts Confirm-close (voice deleted), then **Vibe Check**.",
-      "• **Find** — browse / filter by game, mic, region.",
+      "• **Find / Board / Mine / How it works** — ephemeral only (won’t bury the pinned desk). Find lists Jump per party.",
       "• **Board / `/leaderboard`** — monthly Most reliable + Top hosts (this server).",
       "• **`/ghostless`** — this-server show rate (not a global grade).",
       "Slash: `/lfg create` · `/lfg find` · `/vibe` · `/ghostless` · `/leaderboard`",
@@ -1144,26 +1231,48 @@ export function lfgHowItWorksMessage() {
 export function lfgMyPartiesMessage(opts: {
   lines: string[];
   hostParties: { id: string; game: string }[];
+  jumpParties?: {
+    game: string;
+    guildId: string;
+    channelId: string;
+    messageId: string;
+    threadId?: string | null;
+  }[];
 }) {
-  const components =
-    opts.hostParties.length > 0
-      ? [
-          {
-            type: 1,
-            components: opts.hostParties.slice(0, 5).map((p) => ({
-              type: 2,
-              style: 4,
-              label: `Close ${p.game}`.slice(0, 80),
-              custom_id: `lfg:close:${p.id}`,
-            })),
-          },
-        ]
-      : [];
+  const components: unknown[] = [];
+
+  if (opts.hostParties.length > 0) {
+    components.push({
+      type: 1,
+      components: opts.hostParties.slice(0, 5).map((p) => ({
+        type: 2,
+        style: 4,
+        label: `Close ${p.game}`.slice(0, 80),
+        custom_id: `lfg:close:${p.id}`,
+      })),
+    });
+  }
+
+  const jumps = (opts.jumpParties ?? []).slice(0, 5);
+  if (jumps.length > 0) {
+    components.push({
+      type: 1,
+      components: jumps.map((p, i) => ({
+        type: 2,
+        style: 5,
+        label: (jumps.length === 1 ? "Jump to party" : `Jump ${i + 1}`).slice(
+          0,
+          80,
+        ),
+        url: discordMessageUrl(p.guildId, p.channelId, p.messageId),
+      })),
+    });
+  }
 
   return {
     content:
       opts.lines.length > 0
-        ? `**Your open parties**\n${opts.lines.join("\n")}`
+        ? `**Your open parties** _(private)_\n${opts.lines.join("\n")}`
         : "You're not in any open parties in this server.",
     flags: 64,
     components,

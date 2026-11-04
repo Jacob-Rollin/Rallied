@@ -8,7 +8,11 @@ import {
   type InteractionMessageData,
   type InteractionResponse,
 } from "./discord.js";
-import { lfgDeskPinHintMessage, lfgVibeNudgeMessage } from "./embeds.js";
+import {
+  lfgDeskPinHintMessage,
+  lfgPartyCreatedJumpMessage,
+  lfgVibeNudgeMessage,
+} from "./embeds.js";
 import {
   persistPartyMessageIds,
   refreshPartyCard,
@@ -200,7 +204,12 @@ async function afterPartyPosted(
   channelId: string,
   messageId: string,
   guildId?: string | null,
-): Promise<void> {
+): Promise<{
+  game: string;
+  channelId: string;
+  messageId: string;
+  threadId: string | null;
+} | null> {
   type PostedPartyRow = {
     id: string;
     game: string;
@@ -250,7 +259,7 @@ async function afterPartyPosted(
 
   if (!party) {
     await persistPartyMessageIds(sb, partyId, { channelId, messageId });
-    return;
+    return { game: "Party", channelId, messageId, threadId: null };
   }
 
   const threadId = await startPartyThread(env, channelId, messageId, party.game);
@@ -290,6 +299,13 @@ async function afterPartyPosted(
     discord_guild_id: guildId ?? null,
   };
   await refreshPartyCard(env, sb, card, { guildId: guildId ?? undefined });
+
+  return {
+    game: party.game,
+    channelId,
+    messageId,
+    threadId,
+  };
 }
 
 /**
@@ -355,7 +371,7 @@ export async function deliverDeferredResponse(
     if (channelId) {
       const sb = createServiceClient(env);
       if (sb) {
-        await afterPartyPosted(
+        const posted = await afterPartyPosted(
           env,
           sb,
           meta.persistPartyMessage.partyId,
@@ -363,6 +379,24 @@ export async function deliverDeferredResponse(
           postedMessage.id,
           interaction.guild_id,
         );
+        // Ephemeral Jump for the host — Discord cannot force channel scroll.
+        if (
+          meta.partyJumpFollowup !== false &&
+          posted &&
+          interaction.guild_id
+        ) {
+          await createFollowupMessage(
+            env,
+            interaction,
+            lfgPartyCreatedJumpMessage({
+              game: posted.game,
+              guildId: interaction.guild_id,
+              channelId: posted.channelId,
+              messageId: posted.messageId,
+              threadId: posted.threadId,
+            }),
+          );
+        }
       }
     }
   }

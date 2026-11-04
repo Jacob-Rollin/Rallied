@@ -39,6 +39,11 @@ export type InteractionMessageData = {
 export type InteractionResponseMeta = {
   /** After public party post: save message ids + start squad thread. */
   persistPartyMessage?: { partyId: string };
+  /**
+   * After public party post: ephemeral Jump to party (+ thread) for the clicker.
+   * Sent only when persistPartyMessage succeeds with message ids.
+   */
+  partyJumpFollowup?: boolean;
   /** After /setup or /lfg desk: ephemeral pin tip. */
   pinHint?: boolean;
   /** After fill/close: ephemeral Vibe Check nudge. */
@@ -53,6 +58,7 @@ export type InteractionResponseMeta = {
    * Delete this interaction's ephemeral @original after N ms.
    * Only clears *this* private note — Discord cannot delete older ephemerals
    * from a later click (different interaction tokens).
+   * Skip when Jump link buttons are present so the clicker can use them.
    */
   dismissAfterMs?: number;
 };

@@ -36,7 +36,9 @@ import {
   normalizeRegion,
   publicEmbed,
   resolveCreateGameKey,
+  withPartyJumpComponents,
 } from "../lib/embeds.js";
+import { discordMessageUrl } from "../lib/voice.js";
 import { loadGuildGameSuggestionContext } from "../lib/game-suggestions.js";
 import { formatError } from "../lib/errors.js";
 import {
@@ -287,7 +289,35 @@ export async function createParty(opts: {
 
   return {
     ...publicEmbed(embed, lfgPartyComponents(party.id, "open")),
-    meta: { persistPartyMessage: { partyId: party.id } },
+    meta: {
+      persistPartyMessage: { partyId: party.id },
+      partyJumpFollowup: true,
+    },
+  };
+}
+
+function partyJumpTarget(
+  guildId: string,
+  party: {
+    discord_channel_id?: string | null;
+    discord_message_id?: string | null;
+    discord_thread_id?: string | null;
+  },
+  fallback?: { channelId?: string; messageId?: string },
+): {
+  guildId: string;
+  channelId: string;
+  messageId: string;
+  threadId?: string | null;
+} | null {
+  const channelId = party.discord_channel_id || fallback?.channelId || null;
+  const messageId = party.discord_message_id || fallback?.messageId || null;
+  if (!channelId || !messageId) return null;
+  return {
+    guildId,
+    channelId,
+    messageId,
+    threadId: party.discord_thread_id ?? null,
   };
 }
 
@@ -326,6 +356,9 @@ export async function findParties(opts: {
     status: string;
     host_member_id: string;
     expires_at: string | null;
+    discord_message_id?: string | null;
+    discord_channel_id?: string | null;
+    discord_thread_id?: string | null;
   };
 
   let parties: FindRow[] | null = null;
@@ -335,7 +368,7 @@ export async function findParties(opts: {
     const res = await sb
       .from("lfg_parties")
       .select(
-        "id, game, rank_text, mic, region, slots, status, host_member_id, expires_at",
+        "id, game, rank_text, mic, region, slots, status, host_member_id, expires_at, discord_message_id, discord_channel_id, discord_thread_id",
       )
       .eq("server_id", server.id)
       .in("status", ["open", "filled"])
@@ -347,7 +380,21 @@ export async function findParties(opts: {
     error = res.error;
   }
 
-  if (error && /mic|region/i.test(error.message ?? "")) {
+  if (error && /mic|region|discord_message_id|discord_channel_id|discord_thread_id/i.test(error.message ?? "")) {
+    const res = await sb
+      .from("lfg_parties")
+      .select("id, game, rank_text, slots, status, host_member_id, expires_at, discord_message_id, discord_channel_id, discord_thread_id")
+      .eq("server_id", server.id)
+      .in("status", ["open", "filled"])
+      .is("deleted_at", null)
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+      .order("created_at", { ascending: false })
+      .limit(25);
+    parties = (res.data as FindRow[] | null) ?? null;
+    error = res.error;
+  }
+
+  if (error && /discord_message_id|discord_channel_id|discord_thread_id/i.test(error.message ?? "")) {
     const res = await sb
       .from("lfg_parties")
       .select("id, game, rank_text, slots, status, host_member_id, expires_at")
@@ -390,18 +437,26 @@ export async function findParties(opts: {
   const withCounts = await Promise.all(
     filtered.slice(0, 10).map(async (p) => {
       const filled = await countSeated(sb, p.id);
+      const channelId = p.discord_channel_id ?? null;
+      const messageId = p.discord_message_id ?? null;
+      const jumpUrl =
+        channelId && messageId
+          ? discordMessageUrl(opts.guildId, channelId, messageId)
+          : null;
       return {
         ...p,
         mic: String((p as { mic?: string }).mic ?? ""),
         region: String((p as { region?: string }).region ?? ""),
         filled,
+        jumpUrl,
       };
     }),
   );
 
   const lines = withCounts.map((p, i) => {
     const bits = [p.rank_text, p.mic, p.region].filter(Boolean).join(" · ");
-    return `${i + 1}. **${p.game}**${bits ? ` (${bits})` : ""} — ${p.filled}/${p.slots} · \`${p.id.slice(0, 8)}\``;
+    const jump = p.jumpUrl ? ` · [Jump](${p.jumpUrl})` : "";
+    return `${i + 1}. **${p.game}**${bits ? ` (${bits})` : ""} — ${p.filled}/${p.slots} · \`${p.id.slice(0, 8)}\`${jump}`;
   });
 
   const filterBits = [
@@ -767,7 +822,7 @@ async function listMyParties(opts: {
   const { data: memberships, error } = await sb
     .from("lfg_party_members")
     .select(
-      "role, party:lfg_parties!inner(id, game, rank_text, slots, status, host_member_id, server_id, deleted_at)",
+      "role, party:lfg_parties!inner(id, game, rank_text, slots, status, host_member_id, server_id, deleted_at, discord_message_id, discord_channel_id, discord_thread_id)",
     )
     .eq("member_id", member.id);
 
@@ -782,6 +837,9 @@ async function listMyParties(opts: {
     host_member_id: string;
     server_id: string;
     deleted_at: string | null;
+    discord_message_id?: string | null;
+    discord_channel_id?: string | null;
+    discord_thread_id?: string | null;
   };
 
   const open = (memberships ?? [])
@@ -807,16 +865,33 @@ async function listMyParties(opts: {
   const lines = withCounts.map((row) => {
     const hostTag = row.party.host_member_id === member.id ? " · host" : "";
     const waitTag = row.role === "waitlist" ? " · waitlist" : "";
-    return `• **${row.party.game}** — ${row.filled}/${row.party.slots}${hostTag}${waitTag} · \`${row.party.id.slice(0, 8)}\``;
+    const jump =
+      row.party.discord_channel_id && row.party.discord_message_id
+        ? ` · [Jump](${discordMessageUrl(opts.guildId, row.party.discord_channel_id, row.party.discord_message_id)})`
+        : "";
+    return `• **${row.party.game}** — ${row.filled}/${row.party.slots}${hostTag}${waitTag} · \`${row.party.id.slice(0, 8)}\`${jump}`;
   });
 
   const hostParties = withCounts
     .filter((row) => row.party.host_member_id === member.id)
     .map((row) => ({ id: row.party.id, game: row.party.game }));
 
+  const jumpParties = withCounts
+    .filter(
+      (row) => row.party.discord_channel_id && row.party.discord_message_id,
+    )
+    .slice(0, 5)
+    .map((row) => ({
+      game: row.party.game,
+      guildId: opts.guildId,
+      channelId: row.party.discord_channel_id as string,
+      messageId: row.party.discord_message_id as string,
+      threadId: row.party.discord_thread_id ?? null,
+    }));
+
   return {
     type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-    data: lfgMyPartiesMessage({ lines, hostParties }),
+    data: lfgMyPartiesMessage({ lines, hostParties, jumpParties }),
   };
 }
 
@@ -913,9 +988,17 @@ export async function joinParty(opts: {
     const voice = party.discord_voice_channel_id
       ? ` Voice: <#${party.discord_voice_channel_id}>.`
       : "";
-    return ephemeral(
-      `You're already the host of **${party.game}** (${seated}/${party.slots}).${thread}${voice}`,
-    );
+    const jump = partyJumpTarget(opts.guildId, party, opts.messageFallback);
+    return {
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: withPartyJumpComponents(
+        {
+          content: `You're already the host of **${party.game}** (${seated}/${party.slots}).${thread}${voice}`,
+          flags: 64,
+        },
+        jump,
+      ),
+    };
   }
 
   const { data: alreadyIn } = await sb
@@ -991,9 +1074,17 @@ export async function joinParty(opts: {
     }
   } else if (alreadyIn.role === "waitlist") {
     const waiting = await countWaitlist(sb, party.id);
-    return ephemeral(
-      `You're already on the waitlist for **${party.game}** (#${waiting}). Leave to drop off.`,
-    );
+    const jump = partyJumpTarget(opts.guildId, party, opts.messageFallback);
+    return {
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: withPartyJumpComponents(
+        {
+          content: `You're already on the waitlist for **${party.game}** (#${waiting}). Leave to drop off.`,
+          flags: 64,
+        },
+        jump,
+      ),
+    };
   } else {
     // Already seated — refresh card and remind.
     const nextFilled = await countSeated(sb, party.id);
@@ -1001,9 +1092,17 @@ export async function joinParty(opts: {
       ...opts.messageFallback,
       guildId: opts.guildId,
     });
-    return ephemeral(
-      `You're already in **${party.game}** (${nextFilled}/${party.slots}).`,
-    );
+    const jump = partyJumpTarget(opts.guildId, party, opts.messageFallback);
+    return {
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: withPartyJumpComponents(
+        {
+          content: `You're already in **${party.game}** (${nextFilled}/${party.slots}).`,
+          flags: 64,
+        },
+        jump,
+      ),
+    };
   }
 
   const nextFilled = await countSeated(sb, party.id);
@@ -1061,17 +1160,23 @@ export async function joinParty(opts: {
     );
   }
 
+  const jump = partyJumpTarget(opts.guildId, party, opts.messageFallback);
+
   if (joinedAsWaitlist) {
     return {
       type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-      data: {
-        content: [
-          `You're **#${waitCount}** on the waitlist for **${party.game}**.`,
-          "You'll be promoted when a seat frees (someone Leaves).",
-        ].join("\n"),
-        flags: 64,
-      },
-      meta: { dismissAfterMs: 12_000 },
+      data: withPartyJumpComponents(
+        {
+          content: [
+            `You're **#${waitCount}** on the waitlist for **${party.game}**.`,
+            "You'll be promoted when a seat frees (someone Leaves).",
+          ].join("\n"),
+          flags: 64,
+        },
+        jump,
+      ),
+      // Keep Jump usable — no auto-dismiss when link buttons are present.
+      meta: jump ? undefined : { dismissAfterMs: 12_000 },
     };
   }
 
@@ -1096,8 +1201,10 @@ export async function joinParty(opts: {
 
   const response: InteractionResponse = {
     type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-    data: { content, flags: 64 },
-    meta: { dismissAfterMs: becameFull ? 6_000 : 20_000 },
+    data: withPartyJumpComponents({ content, flags: 64 }, jump),
+    meta: jump
+      ? undefined
+      : { dismissAfterMs: becameFull ? 6_000 : 20_000 },
   };
 
   if (becameFull) {
@@ -1231,13 +1338,12 @@ export async function leaveParty(opts: {
       : `Left **${party.game}**. You’re off the squad list.\n` +
         `_Older “Only you can see this” notes above can’t be deleted by the bot — tap **Dismiss message** on those._`;
 
+  const jump = partyJumpTarget(opts.guildId, party, opts.messageFallback);
+
   return {
     type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-    data: {
-      content,
-      flags: 64,
-    },
-    meta: { dismissAfterMs: 6_000 },
+    data: withPartyJumpComponents({ content, flags: 64 }, jump),
+    meta: jump ? undefined : { dismissAfterMs: 6_000 },
   };
 }
 

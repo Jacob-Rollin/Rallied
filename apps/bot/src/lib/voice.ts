@@ -128,3 +128,17 @@ export async function cleanupPartyVoice(
 export function discordChannelUrl(guildId: string, channelId: string): string {
   return `https://discord.com/channels/${guildId}/${channelId}`;
 }
+
+/** Deep-link to a channel message (party card). */
+export function discordMessageUrl(
+  guildId: string,
+  channelId: string,
+  messageId: string,
+): string {
+  return `https://discord.com/channels/${guildId}/${channelId}/${messageId}`;
+}
+
+/** Deep-link to a thread (thread id is the channel id in the URL). */
+export function discordThreadUrl(guildId: string, threadId: string): string {
+  return `https://discord.com/channels/${guildId}/${threadId}`;
+}

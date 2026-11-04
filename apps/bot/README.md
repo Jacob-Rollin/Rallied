@@ -14,7 +14,9 @@ Slash commands + message component buttons. Runs as a **Cloudflare Worker** or *
 | `/strikes` | mod | list / add / remove; lockout from `server_settings` |
 | `/dispute` | anyone / mod | open appeal; resolve upheld/overturned |
 
-**LFG desk (no slash needed):** Create → game select → modal (size + notes; Other = free-text game) → party embed + squad thread. Find → game filter → join select (updates in place). My parties → Confirm-close. Live party cards refresh slots/roster; filled/closed strip Join. Slash `/lfg create|find` and `/vibe` stay as backups.
+**LFG desk (no slash needed):** Create → game select → modal (size + notes; Other = free-text game) → party embed + squad thread + **ephemeral Jump** for the host. Find / Mine / Board / How it works stay **ephemeral** (Jump links per party on Find/Mine) so the pinned desk isn’t buried. Join/Leave ephemerals include Jump when the party card is known. Live party cards refresh slots/roster; filled/closed strip Join. Slash `/lfg create|find` and `/vibe` stay as backups.
+
+**Channel cleanliness:** Public channel = pinned desk + party cards (+ threads) only. Browse/help (Find / Board / How it works / Mine) = ephemeral only. Create = public party card + ephemeral Jump for the host. Discord cannot force channel auto-scroll — use Jump instead.
 
 **Game autocomplete:** `/lfg create` and `/lfg find` use catalog autocomplete. Desk create uses a select (top catalog + Other) then modal; Other free text is normalized via the same catalog.
 

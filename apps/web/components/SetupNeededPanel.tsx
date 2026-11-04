@@ -145,7 +145,9 @@ export function SetupNeededPanel({
       <p className="mt-4 text-sm text-muted">
         Add Rallied → run <code className="text-coral">/setup</code> (or{" "}
         <code className="text-coral">/lfg desk</code>) in your LFG channel →
-        this dashboard unlocks for that server.
+        this dashboard unlocks for that server. Slash commands usually appear
+        within a few seconds after Authorize; if Discord shows none, reopen the
+        app or type <code className="text-coral">/</code> again.
         {focusName ? (
           <>
             {" "}

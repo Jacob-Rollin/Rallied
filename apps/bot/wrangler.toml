@@ -17,7 +17,9 @@ keep_vars = true
 #                  wrangler secret put SUPABASE_URL
 #                  wrangler secret put SUPABASE_SERVICE_ROLE_KEY
 # Optional (phone register): wrangler secret put REGISTER_COMMANDS_SECRET
-# Optional guild for /register-commands: wrangler secret put DISCORD_DEV_GUILD_ID
+# Optional dogfood guild for /register-commands?scope=guild only:
+#   wrangler secret put DISCORD_DEV_GUILD_ID
+# Default /register-commands (no guild_id) registers GLOBAL commands.
 #   (or set as a plain var in the CF dashboard — not committed here)
 # Optional staff inbox for /feedback embeds: wrangler secret put OPS_FEEDBACK_CHANNEL_ID
 #   (Discord channel snowflake; fail open when unset)

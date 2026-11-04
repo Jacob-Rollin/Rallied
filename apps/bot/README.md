@@ -32,7 +32,7 @@ Slash commands + message component buttons. Runs as a **Cloudflare Worker** or *
 DISCORD_PUBLIC_KEY=
 DISCORD_BOT_TOKEN=
 DISCORD_APP_ID=
-DISCORD_DEV_GUILD_ID=
+DISCORD_DEV_GUILD_ID=          # optional; only for scope=guild dogfood register
 REGISTER_COMMANDS_SECRET=
 SUPABASE_URL=                 # project URL only: https://xxx.supabase.co (not …/rest/v1)
 SUPABASE_SERVICE_ROLE_KEY=
@@ -68,13 +68,19 @@ Required Runtime secrets: `DISCORD_PUBLIC_KEY`, `DISCORD_BOT_TOKEN`, `DISCORD_AP
 
 ## Register commands
 
+Slash payloads live in `@rallied/shared` (`commandDefinitions`). **Production needs global registration** so every invited guild gets `/setup`, `/lfg`, etc. Guild-scoped register is for instant dogfood on one server only — it does **not** publish commands to other guilds.
+
+Invite URLs already include `applications.commands` (`buildBotInviteUrl`). Missing slash commands after Authorize almost always means commands were never registered globally (or only for `DISCORD_DEV_GUILD_ID`).
+
+HTTP interactions bots have **no Gateway**, so there is no `GUILD_CREATE` hook. New installs also get a guild-scoped PUT from web `/app/setup` when Discord returns `guild_id` (uses `DISCORD_BOT_TOKEN` on Worker **rallied**). Still register **global** once so servers that skip the setup redirect get commands too.
+
 ### CLI (laptop)
 
 ```bash
-npm run register-commands   # from monorepo root
+npm run register-commands                 # global (default)
+npm run register-commands -- --guild <id> # one guild, instant
+REGISTER_SCOPE=guild npm run register-commands  # uses DISCORD_DEV_GUILD_ID
 ```
-
-Guild-scoped when `DISCORD_DEV_GUILD_ID` is set (instant); otherwise global (~1h).
 
 ### Phone-friendly (Worker HTTP)
 
@@ -82,17 +88,23 @@ Use this when you cannot run the CLI. No bot token goes in the browser URL — o
 
 1. In **Cloudflare → Workers → rallied-bot → Settings → Variables and Secrets**, set:
    - `REGISTER_COMMANDS_SECRET` — long random string (secret)
-   - `DISCORD_DEV_GUILD_ID` — your test server ID (plain text is fine)
    - Confirm `DISCORD_BOT_TOKEN` and `DISCORD_APP_ID` (or `DISCORD_CLIENT_ID`) are already set
+   - Optional: `DISCORD_DEV_GUILD_ID` only if you use `&scope=guild`
 2. **Redeploy** the Worker (or save secrets and wait for the next deploy if auto-deploy is on).
 3. On your phone, open once:
 
-   `https://<your-worker-host>/register-commands?key=<REGISTER_COMMANDS_SECRET>`
+   **Global (recommended for product):**  
+   `https://<your-worker-host>/register-commands?key=<REGISTER_COMMANDS_SECRET>`  
+   Expect `{ "ok": true, "count": 8, "guildId": null }` — Discord may take up to ~1h to show global commands.
 
-   Optional override: `&guild_id=<id>` if the env guild is unset.
+   **One new test guild (instant):**  
+   `https://<your-worker-host>/register-commands?key=<REGISTER_COMMANDS_SECRET>&guild_id=<GUILD_ID>`
 
-   Expect JSON like `{ "ok": true, "count": 6, "guildId": "…" }` (includes `/setup`). Wrong/missing key → `401`; secret unset → `404`.
-4. In Discord, try a slash command (e.g. `/setup`, `/lfg desk`, or `/ghostless`) in that guild — guild commands appear within seconds.
+   **Dogfood Official only:**  
+   `…/register-commands?key=…&scope=guild` (uses `DISCORD_DEV_GUILD_ID`)
+
+   Wrong/missing key → `401`; secret unset → `404`.
+4. In Discord, try `/setup` (or `/lfg desk` / `/ghostless`). Guild commands appear within seconds; global may need a client refresh and up to ~1h.
 5. **Remove or rotate** `REGISTER_COMMANDS_SECRET` in CF after use so the route stops working.
 
 You can also send `X-Register-Commands-Key: <secret>` or `Authorization: Bearer <secret>` instead of `?key=`.

@@ -98,6 +98,15 @@ export default function TermsPage() {
                 may limit or end parts of the Service. We are not responsible for
                 Discord’s platform decisions or downtime.
               </p>
+              <p>
+                The Service also depends on infrastructure and payment providers
+                (including Cloudflare, Supabase, and Stripe). How those parties
+                process data is described in our{" "}
+                <Link href="/privacy" className="text-coral hover:underline">
+                  Privacy Policy
+                </Link>
+                , which lists processors and links to their privacy policies.
+              </p>
             </>
           ),
         },

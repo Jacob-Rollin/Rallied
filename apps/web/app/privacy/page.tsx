@@ -150,9 +150,10 @@ export default function PrivacyPage() {
               </p>
               <p>
                 Inviting the bot grants the permissions requested at install
-                (including application commands). We use guild data to run LFG
-                desks, ready checks, reliability features, and related admin
-                tools.
+                (including application commands). Discord API and OAuth data are
+                used only to provide Rallied’s stated features — LFG desks, ready
+                checks, reliability tools, billing entitlements, and related
+                admin dashboard access — not for unrelated advertising or sale.
               </p>
               <p>
                 Use of Rallied is subject to Discord’s{" "}
@@ -166,12 +167,21 @@ export default function PrivacyPage() {
                 </a>{" "}
                 and{" "}
                 <a
-                  href="https://discord.com/developers/docs/policies-and-agreements/developer-policy"
+                  href="https://support-dev.discord.com/hc/en-us/articles/8563934450327-Discord-Developer-Policy"
                   className="text-coral hover:underline"
                   rel="noopener noreferrer"
                   target="_blank"
                 >
                   Developer Policy
+                </a>
+                . Discord also processes data under its{" "}
+                <a
+                  href="https://discord.com/privacy"
+                  className="text-coral hover:underline"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Privacy Policy
                 </a>
                 .
               </p>
@@ -194,30 +204,100 @@ export default function PrivacyPage() {
         },
         {
           id: "processors",
-          title: "Processors",
+          title: "Processors and Platforms",
           children: (
             <>
-              <ul className="list-disc space-y-2 pl-5">
+              <p>
+                Rallied is responsible for providing this Privacy notice to
+                end users. The providers below process information on our behalf
+                and/or as the platforms we build on, as applicable. Data
+                processing agreements (DPAs) or equivalent terms may apply
+                between Rallied and these vendors; we do not host those DPAs on
+                this site.
+              </p>
+              <ul className="list-disc space-y-3 pl-5">
                 <li>
                   <strong className="font-semibold text-white">Discord</strong> —
-                  auth, bot/API
+                  authentication, bot messaging, and guild APIs. Privacy:{" "}
+                  <a
+                    href="https://discord.com/privacy"
+                    className="text-coral hover:underline"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    discord.com/privacy
+                  </a>
+                  . Developer Policy:{" "}
+                  <a
+                    href="https://support-dev.discord.com/hc/en-us/articles/8563934450327-Discord-Developer-Policy"
+                    className="text-coral hover:underline"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    Discord Developer Policy
+                  </a>
+                  . Developer Terms:{" "}
+                  <a
+                    href="https://discord.com/developers/docs/policies-and-agreements/developer-terms-of-service"
+                    className="text-coral hover:underline"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    Developer Terms of Service
+                  </a>
+                  .
                 </li>
                 <li>
                   <strong className="font-semibold text-white">Stripe</strong> —
-                  checkout, billing
+                  Checkout, Customer Portal, invoices, and payment processing.
+                  Card numbers are handled by Stripe; we do not store full card
+                  data. Privacy:{" "}
+                  <a
+                    href="https://stripe.com/privacy"
+                    className="text-coral hover:underline"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    stripe.com/privacy
+                  </a>
+                  .
                 </li>
                 <li>
                   <strong className="font-semibold text-white">Cloudflare</strong>{" "}
-                  — Workers hosting / edge
+                  — Workers / edge hosting for the website, dashboard, and bot
+                  Worker. May process request logs, IP addresses, and related
+                  technical data to deliver and secure the Service. Privacy:{" "}
+                  <a
+                    href="https://www.cloudflare.com/privacypolicy/"
+                    className="text-coral hover:underline"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    cloudflare.com/privacypolicy
+                  </a>
+                  .
                 </li>
                 <li>
                   <strong className="font-semibold text-white">Supabase</strong> —
-                  database
+                  primary application database and related backend storage; acts
+                  as a processor for Rallied app data. Privacy:{" "}
+                  <a
+                    href="https://supabase.com/privacy"
+                    className="text-coral hover:underline"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    supabase.com/privacy
+                  </a>
+                  .
                 </li>
               </ul>
               <p>
-                Each processes data under their own policies as needed to run
-                Rallied.
+                We do not currently use a separate transactional email provider
+                (e.g. Resend) or third-party advertising / end-user analytics
+                pixels on the marketing site. Staff-only operational tooling
+                (such as Cloudflare account analytics for Worker usage) is not
+                an end-user tracking product.
               </p>
             </>
           ),
@@ -231,14 +311,28 @@ export default function PrivacyPage() {
                 <strong className="font-semibold text-white">
                   We do not sell personal data.
                 </strong>{" "}
-                We share data with processors above, or when required by law, or
-                to protect users and the Service.
+                We share data with the processors and platforms listed above as
+                needed to operate the Service, or when required by law, or to
+                protect users and the Service.
               </p>
               <p>
                 Public directory pages or shareable cards show summaries only
                 when admins opt in; they remain server-scoped.
               </p>
             </>
+          ),
+        },
+        {
+          id: "international",
+          title: "International Transfers",
+          children: (
+            <p>
+              Rallied’s infrastructure may process data in the United States and
+              other regions where Discord, Stripe, Cloudflare, and/or Supabase
+              operate their services and edge networks. By using the Service, you
+              understand that your information may be transferred to and
+              processed in those locations.
+            </p>
           ),
         },
         {

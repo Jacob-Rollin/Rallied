@@ -12,49 +12,37 @@ export default function PrivacyPage() {
     <LegalDoc
       eyebrow="LEGAL"
       title="Privacy Policy"
-      description={`How ${BRAND.name} (${BRAND.domain}) handles data for the Discord bot and OAuth web dashboard.`}
+      description={`This Privacy Policy describes how Rallied ("we", "us", "our") processes information when you use the Rallied Discord bot, the rallied.gg website, and the web dashboard at /app.`}
+      lastUpdated="November 4, 2026"
+      draft={false}
       sections={[
         {
           id: "who",
-          title: "Who we are",
+          title: "Who We Are",
           children: (
             <>
-              <p>
-                This draft Privacy Policy describes how{" "}
-                <strong className="font-semibold text-white">Rallied</strong>{" "}
-                (“we”, “us”) processes information when you use the Rallied
-                Discord bot, the rallied.gg website, and the Discord OAuth
-                dashboard at{" "}
-                <code className="rounded bg-white/10 px-1.5 py-0.5 text-white/85">
-                  /app
-                </code>
-                .
-              </p>
-              <p>
-                <strong className="font-semibold text-white">Operator:</strong>{" "}
-                Jacob / the Rallied product. Replace before treating this as a
-                binding policy:
-              </p>
+              <p>Rallied operates as an independent software project.</p>
               <ul className="list-disc space-y-1 pl-5 text-white/70">
                 <li>
-                  Legal entity:{" "}
-                  <span className="text-coral/90">[Legal entity name]</span>
+                  <strong className="font-semibold text-white">
+                    Project Name:
+                  </strong>{" "}
+                  Rallied
                 </li>
                 <li>
-                  Mailing address:{" "}
-                  <span className="text-coral/90">[Mailing address]</span>
+                  <strong className="font-semibold text-white">Website:</strong>{" "}
+                  rallied.gg
                 </li>
                 <li>
-                  Privacy / support contact:{" "}
+                  <strong className="font-semibold text-white">
+                    Privacy &amp; Support Contact:
+                  </strong>{" "}
                   <a
                     href="mailto:support@rallied.gg"
                     className="text-coral hover:underline"
                   >
                     support@rallied.gg
-                  </a>{" "}
-                  <span className="text-white/45">
-                    (provisional — replace if you use a different inbox)
-                  </span>
+                  </a>
                 </li>
               </ul>
             </>
@@ -62,87 +50,90 @@ export default function PrivacyPage() {
         },
         {
           id: "scope",
-          title: "What this covers",
+          title: "What This Covers",
           children: (
             <>
               <p>
-                Rallied is a Discord LFG and per-server reliability product.
-                Ghostless is a <em>per-server</em> reliability badge and related
-                stats — not a cross-server public shame or grade database.
+                Rallied is a Discord LFG and per-server reliability utility.
+                Ghostless tracks per-server reliability metrics — it is siloed
+                per Discord server and is not a cross-server public grade or
+                blacklist network.
               </p>
               <p>
-                Accounts are Discord OAuth only. We do not offer email/password
-                signup. Players primarily use Discord; server admins and
-                designated Rallied Mods use the web dashboard.
+                Sign-in uses Discord OAuth only. We do not offer email/password
+                accounts.
               </p>
             </>
           ),
         },
         {
+          id: "isolation",
+          title: "Data Isolation",
+          children: (
+            <p>
+              Reliability and strike-style data are scoped to each Discord
+              server. We do not publish a cross-server player grade database.
+              Stats and strikes for Server A are not exposed as a shared
+              reputation network for Server B.
+            </p>
+          ),
+        },
+        {
           id: "collect",
-          title: "What we collect",
+          title: "What We Collect",
           children: (
             <>
-              <p>Depending on how you use Rallied, we may process:</p>
+              <p>Depending on use, we may process:</p>
               <ul className="list-disc space-y-2 pl-5">
                 <li>
                   <strong className="font-semibold text-white">
-                    Discord identifiers
+                    Discord identifiers:
                   </strong>{" "}
-                  — guild (server) IDs, user IDs, usernames/display names and
-                  avatars Discord provides via OAuth or the bot API, and role
-                  IDs you configure for Rallied Mod access.
+                  Guild IDs, user IDs, usernames/display names, avatars from
+                  Discord OAuth or the Bot API, and role IDs used for Rallied Mod
+                  access.
                 </li>
                 <li>
                   <strong className="font-semibold text-white">
-                    Server settings
+                    Server settings:
                   </strong>{" "}
-                  — LFG desk configuration, join gates (e.g. min Ghostless %),
-                  lockouts, public page / directory toggles, vanity options on
-                  paid plans, and related admin preferences.
+                  LFG desk settings, join gates, lockouts, public page toggles,
+                  game-name aliases, and related admin configuration.
                 </li>
                 <li>
                   <strong className="font-semibold text-white">
-                    LFG activity
+                    LFG activity:
                   </strong>{" "}
-                  — parties, membership, waitlists, ready checks, scheduled
-                  starts, and related event history for that Discord server.
+                  Parties, membership, waitlists, ready checks, schedules, and
+                  related event history for that server.
                 </li>
                 <li>
                   <strong className="font-semibold text-white">
-                    Reliability data (per server)
+                    Reliability data (per-server):
                   </strong>{" "}
-                  — Vibe Check responses, Ghostless scores/badges, strikes,
-                  disputes, and host/leaderboard aggregates. These stay scoped
-                  to each Discord guild; we do not operate a public
-                  cross-server player grade network.
+                  Vibe Checks / vibe tags, Ghostless stats, strikes, disputes,
+                  host/leaderboard aggregates.
                 </li>
                 <li>
-                  <strong className="font-semibold text-white">Billing</strong> —
-                  plan, trial status, and Stripe customer/subscription
-                  identifiers needed to run Checkout and Customer Portal. Card
-                  numbers are handled by Stripe, not stored on Rallied servers.
+                  <strong className="font-semibold text-white">Billing:</strong>{" "}
+                  Plan, trial markers, Stripe customer/subscription IDs. Card
+                  data is handled by Stripe — we do not store full card numbers.
                 </li>
                 <li>
-                  <strong className="font-semibold text-white">Feedback</strong>{" "}
-                  — bug and suggestion reports from Discord{" "}
+                  <strong className="font-semibold text-white">Feedback:</strong>{" "}
+                  Reports via{" "}
                   <code className="rounded bg-white/10 px-1 py-0.5 text-white/85">
                     /feedback
                   </code>{" "}
-                  or Report in{" "}
-                  <code className="rounded bg-white/10 px-1 py-0.5 text-white/85">
-                    /app
-                  </code>
-                  , including the Discord user who submitted them and optional
-                  guild context, stored for ops triage.
+                  or dashboard Report, including Discord user ID and optional
+                  guild context.
                 </li>
                 <li>
                   <strong className="font-semibold text-white">
-                    Technical logs
+                    Technical logs:
                   </strong>{" "}
-                  — routine request, error, and operational logs from hosting
-                  (e.g. Cloudflare Workers) as needed to run and secure the
-                  service.
+                  Request/error/hosting logs (e.g. Cloudflare Workers) for
+                  security and reliability.
                 </li>
               </ul>
             </>
@@ -150,106 +141,102 @@ export default function PrivacyPage() {
         },
         {
           id: "oauth",
-          title: "Discord OAuth and the bot",
+          title: "Discord OAuth and Bot API",
           children: (
             <>
               <p>
-                When you Log in on rallied.gg, Discord OAuth authenticates you.
-                We use the resulting session to show servers you can administer
-                (or access as a Rallied Mod) and to apply permissions. We do not
-                replace Discord accounts with a separate email/password login.
+                Discord OAuth identifies you for dashboard access and to check
+                Manage Server / Administrator / Rallied Mod access.
               </p>
               <p>
-                When a server admin adds the Rallied bot, Discord grants the bot
-                access to that guild within the permissions requested at invite
-                time. The bot reads and writes messages, channels, and related
-                guild data needed for LFG desks, ready checks, and reliability
-                features.
+                Inviting the bot grants the permissions requested at install
+                (including application commands). We use guild data to run LFG
+                desks, ready checks, reliability features, and related admin
+                tools.
+              </p>
+              <p>
+                Use of Rallied is subject to Discord’s{" "}
+                <a
+                  href="https://discord.com/developers/docs/policies-and-agreements/developer-terms-of-service"
+                  className="text-coral hover:underline"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Developer Terms of Service
+                </a>{" "}
+                and{" "}
+                <a
+                  href="https://discord.com/developers/docs/policies-and-agreements/developer-policy"
+                  className="text-coral hover:underline"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Developer Policy
+                </a>
+                .
               </p>
             </>
           ),
         },
         {
           id: "use",
-          title: "How we use information",
+          title: "How We Use Information",
           children: (
-            <>
-              <ul className="list-disc space-y-2 pl-5">
-                <li>Provide LFG matching, desks, and party tooling in Discord.</li>
-                <li>
-                  Compute and display per-server Ghostless / vibe / strike
-                  reliability features and admin analytics.
-                </li>
-                <li>
-                  Authenticate dashboard users and enforce owner vs Rallied Mod
-                  access.
-                </li>
-                <li>
-                  Process subscriptions, trials, and cancellations via Stripe.
-                </li>
-                <li>
-                  Triage feedback in a private ops inbox (and optional staff
-                  Discord mirror).
-                </li>
-                <li>Maintain, secure, and improve the service.</li>
-              </ul>
-            </>
+            <ul className="list-disc space-y-2 pl-5">
+              <li>Provide LFG matching and party flows in Discord</li>
+              <li>Compute and show per-server Ghostless, vibes, and strikes</li>
+              <li>Authenticate dashboard users and enforce access roles</li>
+              <li>Run Stripe billing, trials, and plan entitlements</li>
+              <li>Triage feedback and bugs</li>
+              <li>Secure, operate, and improve the Service</li>
+            </ul>
           ),
         },
         {
           id: "processors",
-          title: "Processors and infrastructure",
+          title: "Processors",
           children: (
             <>
-              <p>
-                We use service providers (“processors”) to operate Rallied.
-                Current core stack:
-              </p>
               <ul className="list-disc space-y-2 pl-5">
                 <li>
                   <strong className="font-semibold text-white">Discord</strong> —
-                  authentication, bot messaging, and guild APIs.
+                  auth, bot/API
                 </li>
                 <li>
                   <strong className="font-semibold text-white">Stripe</strong> —
-                  Checkout, Customer Portal, invoices, and payment processing.
+                  checkout, billing
                 </li>
                 <li>
-                  <strong className="font-semibold text-white">
-                    Cloudflare Workers
-                  </strong>{" "}
-                  — hosting the web app / Worker edge runtime.
+                  <strong className="font-semibold text-white">Cloudflare</strong>{" "}
+                  — Workers hosting / edge
                 </li>
                 <li>
                   <strong className="font-semibold text-white">Supabase</strong> —
-                  primary application database and related backend storage.
+                  database
                 </li>
               </ul>
               <p>
-                These providers process data under their own terms and privacy
-                policies, limited to what is needed to provide their services to
-                us.
+                Each processes data under their own policies as needed to run
+                Rallied.
               </p>
             </>
           ),
         },
         {
           id: "sharing",
-          title: "Sharing and selling",
+          title: "Sharing and Selling",
           children: (
             <>
               <p>
-                We do <strong className="font-semibold text-white">not sell</strong>{" "}
-                personal data. We share information with processors as above, when
-                required by law, to protect rights and safety, or with your
-                direction (for example, content you choose to make public on an
-                opted-in server page).
+                <strong className="font-semibold text-white">
+                  We do not sell personal data.
+                </strong>{" "}
+                We share data with processors above, or when required by law, or
+                to protect users and the Service.
               </p>
               <p>
-                Public server pages and shareable per-server player cards may
-                show aggregates and Ghostless spotlight information that admins
-                enable for that guild — still per server, not a cross-server
-                grade network.
+                Public directory pages or shareable cards show summaries only
+                when admins opt in; they remain server-scoped.
               </p>
             </>
           ),
@@ -260,75 +247,78 @@ export default function PrivacyPage() {
           children: (
             <>
               <p>
-                Re-running Discord{" "}
+                Re-running{" "}
                 <code className="rounded bg-white/10 px-1 py-0.5 text-white/85">
                   /setup
                 </code>{" "}
-                or reinstalling the bot is intended to keep historical LFG,
-                Ghostless, strike, and related guild data so reliability history
-                is not wiped by setup.
+                or reinstalling the bot does not wipe historical LFG/reliability
+                history for that guild while the bot remains in use.
               </p>
               <p>
                 After prolonged inactivity (default about{" "}
                 <strong className="font-semibold text-white">90 days</strong> with
-                no meaningful guild activity), we may soft-archive a server’s
-                data rather than treat setup as a wipe. Soft-archive is
-                operational retention hygiene, not a promise of indefinite
-                storage. Billing and trial-consumption records may be kept as
-                needed for subscriptions and anti-abuse (including one Community
-                trial per Discord guild).
-              </p>
-              <p>
-                Feedback reports are retained as needed for triage and product
-                improvement, then deleted or minimized when no longer useful.
+                no meaningful activity), we may soft-archive server data. Billing
+                records and trial-eligibility markers (including one Community
+                trial per guild and per Discord user) may be kept for accounting,
+                compliance, and anti-abuse.
               </p>
             </>
           ),
         },
         {
           id: "kids",
-          title: "Children and Discord rules",
+          title: "Children and Discord Policies",
           children: (
-            <>
-              <p>
-                Rallied is designed for Discord communities and is not directed at
-                children under 13 (or the minimum age Discord requires in your
-                region). You must comply with Discord’s Terms of Service and
-                policies, including age requirements, when using Rallied.
-              </p>
-              <p>
-                Server admins are responsible for how their community uses
-                reliability features (including strikes and public pages) in line
-                with Discord rules and applicable law.
-              </p>
-            </>
+            <p>
+              Rallied is not for children under 13 (or older if Discord requires
+              a higher age in your region). Use must comply with Discord’s Terms
+              and Developer Policy.
+            </p>
           ),
         },
         {
-          id: "rights",
-          title: "Your choices and requests",
+          id: "choices",
+          title: "Your Choices and Deletion",
           children: (
-            <>
-              <p>
-                You can disconnect OAuth by logging out and revoking Rallied’s
-                access in Discord’s authorized-app settings. Server admins can
-                remove the bot from a guild. Removing the bot does not
-                automatically erase historical guild data we retain under the
-                retention rules above.
-              </p>
-              <p>
-                To ask about access, correction, or deletion of personal data we
-                hold, contact{" "}
+            <ul className="list-disc space-y-2 pl-5">
+              <li>
+                <strong className="font-semibold text-white">
+                  Revoke web access:
+                </strong>{" "}
+                Log out of rallied.gg and revoke Rallied under Discord → User
+                Settings → Authorized Apps. Admins can remove the bot from the
+                server.
+              </li>
+              <li>
+                <strong className="font-semibold text-white">
+                  Delete / access requests:
+                </strong>{" "}
+                Email{" "}
                 <a
                   href="mailto:support@rallied.gg"
                   className="text-coral hover:underline"
                 >
                   support@rallied.gg
-                </a>
-                . We may need to verify you control the relevant Discord account
-                or guild.
-              </p>
-            </>
+                </a>{" "}
+                from an account we can associate with your Discord user ID
+                (include your Discord user ID). We will delete or anonymize
+                personal data tied to that user where feasible within{" "}
+                <strong className="font-semibold text-white">30 days</strong> of
+                a verified request, except data we must keep for law, security,
+                billing, or anti-abuse (e.g. trial-consumption markers), or
+                aggregate/server records that do not identify you. We also honor
+                verified deletion requests and Discord / developer-policy
+                deletion requirements within that same reasonable period.
+              </li>
+              <li>
+                <strong className="font-semibold text-white">
+                  Server-owned data:
+                </strong>{" "}
+                Removing the bot stops new collection; historical server
+                aggregates may remain per retention rules above until
+                archive/deletion cycles run.
+              </li>
+            </ul>
           ),
         },
         {
@@ -336,12 +326,8 @@ export default function PrivacyPage() {
           title: "Changes",
           children: (
             <p>
-              We may update this Privacy Policy as the product evolves. The “Last
-              updated” date at the top will change when we post a revision.
-              Material changes may also be noted on the site changelog or in
-              product communications. Continued use after an update means you
-              acknowledge the revised draft (subject to counsel review before this
-              document is treated as binding).
+              We may update this Policy and the Last Updated date. Material
+              changes may also appear in our changelog or product notices.
             </p>
           ),
         },
@@ -349,22 +335,14 @@ export default function PrivacyPage() {
           id: "contact",
           title: "Contact",
           children: (
-            <>
-              <p>
-                Questions about privacy:{" "}
-                <a
-                  href="mailto:support@rallied.gg"
-                  className="text-coral hover:underline"
-                >
-                  support@rallied.gg
-                </a>
-                .
-              </p>
-              <p className="text-white/55">
-                Replace entity name, mailing address, and contact email before
-                relying on this as an official policy.
-              </p>
-            </>
+            <p>
+              <a
+                href="mailto:support@rallied.gg"
+                className="text-coral hover:underline"
+              >
+                support@rallied.gg
+              </a>
+            </p>
           ),
         },
       ]}

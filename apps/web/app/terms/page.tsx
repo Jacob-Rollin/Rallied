@@ -13,46 +13,48 @@ export default function TermsPage() {
     <LegalDoc
       eyebrow="LEGAL"
       title="Terms of Service"
-      description={`Rules for using ${BRAND.name} (${BRAND.domain}) — Discord LFG, Ghostless, and the admin dashboard.`}
+      description={`These Terms of Service ("Terms") govern your access to and use of Rallied's Discord bot, website, and Discord OAuth dashboard (together, the "Service"). By installing the bot, logging in, or otherwise using the Service, you agree to these Terms.`}
+      lastUpdated="November 4, 2026"
+      draft={false}
       sections={[
         {
           id: "agreement",
-          title: "Agreement",
+          title: "Agreement and Operator",
           children: (
             <>
               <p>
-                These draft Terms of Service (“Terms”) govern access to and use of
-                Rallied’s Discord bot, website, and Discord OAuth dashboard
-                (together, the “Service”). By installing the bot, logging in, or
-                otherwise using the Service, you agree to these Terms.
-              </p>
-              <p>
-                <strong className="font-semibold text-white">Operator:</strong>{" "}
-                Jacob / the Rallied product. Replace before treating this as
-                binding:
+                The Service is operated as an independent software project under
+                the brand name Rallied.
               </p>
               <ul className="list-disc space-y-1 pl-5 text-white/70">
                 <li>
-                  Legal entity:{" "}
-                  <span className="text-coral/90">[Legal entity name]</span>
+                  <strong className="font-semibold text-white">
+                    Project Name:
+                  </strong>{" "}
+                  Rallied
                 </li>
                 <li>
-                  Mailing address:{" "}
-                  <span className="text-coral/90">[Mailing address]</span>
+                  <strong className="font-semibold text-white">Website:</strong>{" "}
+                  rallied.gg
                 </li>
                 <li>
-                  Support:{" "}
+                  <strong className="font-semibold text-white">
+                    Support Contact:
+                  </strong>{" "}
                   <a
                     href="mailto:support@rallied.gg"
                     className="text-coral hover:underline"
                   >
                     support@rallied.gg
-                  </a>{" "}
-                  <span className="text-white/45">
-                    (provisional — replaceable)
-                  </span>
+                  </a>
                 </li>
               </ul>
+              <p>
+                By using the Service, you confirm you meet Discord’s minimum age
+                requirements in your region (at least 13, or older where
+                required) and that you have authority to bind your server or
+                organization to these Terms.
+              </p>
             </>
           ),
         },
@@ -62,168 +64,168 @@ export default function TermsPage() {
           children: (
             <>
               <p>
-                Rallied provides Discord LFG tooling and per-server reliability
-                features. Ghostless is a per-server reliability badge and related
-                stats — not a cross-server public shame or grade database.
+                Rallied provides Discord LFG (Looking For Group) tools and
+                per-server community reliability features. Ghostless tracks
+                per-server reliability metrics; it is siloed to each Discord
+                server and is not a public, cross-server shaming or blacklist
+                database.
               </p>
               <p>
-                The Service includes the Discord bot, public marketing pages,
-                optional public server/player pages, and an admin web dashboard
-                authenticated only via Discord OAuth (no email/password
-                accounts). Feature availability depends on plan (Starter,
-                Community, Pro, Founding) as described on{" "}
+                The Service includes our Discord bot, marketing pages, optional
+                public server pages, and an admin dashboard via Discord OAuth
+                only. Features and limits depend on your plan (Starter,
+                Community, Pro, Founding) as described on our{" "}
                 <Link href="/pricing" className="text-coral hover:underline">
                   Pricing
-                </Link>
-                .
+                </Link>{" "}
+                page.
               </p>
             </>
           ),
         },
         {
           id: "discord",
-          title: "Discord dependency",
+          title: "Discord Platform Dependency",
           children: (
             <>
               <p>
-                Rallied depends on Discord. You must comply with Discord’s Terms
-                of Service, Community Guidelines, and Developer / Bot policies.
-                Outages, API changes, permission models, or enforcement actions
-                by Discord may limit or interrupt the Service. We are not
-                responsible for Discord’s platforms or decisions.
+                Rallied is a third-party app on Discord. Use of Rallied requires
+                ongoing compliance with Discord’s Terms, Community Guidelines,
+                and Developer/Bot Policies.
               </p>
               <p>
-                Removing the bot from a guild, revoking OAuth, or losing Discord
-                access may prevent use of Rallied for that server or account.
+                Outages, API changes, permission changes, or Discord enforcement
+                may limit or end parts of the Service. We are not responsible for
+                Discord’s platform decisions or downtime.
               </p>
             </>
           ),
         },
         {
           id: "accounts",
-          title: "Accounts and admin responsibility",
+          title: "Accounts and Administration",
           children: (
             <>
               <p>
-                Dashboard access requires Discord OAuth. Server owners /
-                administrators (typically Manage Guild or Administrator plus bot
-                present) control Settings and Billing. On Community+ plans,
-                owners may grant Rallied Mod Discord role(s) for limited
-                dashboard areas (not Billing or Settings writes).
+                Dashboard login uses Discord OAuth. Server owners and users with
+                Manage Server or Administrator control configuration and billing
+                for that server. On paid tiers that support it, owners may grant
+                limited dashboard access via designated Discord roles (Rallied
+                Mod).
               </p>
               <p>
-                You are responsible for activity under your Discord account and
-                for how your guild configures and uses reliability features
-                (strikes, lockouts, public pages, Ghostless displays). Keep bot
-                permissions appropriate and do not share dashboard sessions.
+                You are responsible for activity under your Discord account.
+                Server admins are responsible for how they configure and use
+                reliability features (strikes, lockouts, join gates, public
+                pages). Keep bot permissions appropriate and do not share live
+                dashboard sessions.
               </p>
             </>
           ),
         },
         {
           id: "acceptable-use",
-          title: "Acceptable use",
+          title: "Acceptable Use",
           children: (
             <>
-              <p>You agree not to:</p>
+              <p>You will not, and will not allow others to:</p>
               <ul className="list-disc space-y-2 pl-5">
                 <li>
-                  Use Rallied to harass, dox, or unlawfully shame people, or to
-                  operate an unlawful cross-server blacklist.
+                  Use Rallied to stalk, harass, dox, or maliciously shame users,
+                  or to run an unlawful cross-server punitive blacklist.
                 </li>
+                <li>Misrepresent reliability data or abuse dispute flows.</li>
                 <li>
-                  Abuse, disrupt, or overload the Service; scrape or reverse
-                  engineer except as allowed by law; or bypass plan caps,
-                  trials, or access controls.
+                  Interfere with, disrupt, or overload our systems, scrape the
+                  Service systematically, or reverse-engineer the Service except
+                  as allowed by law.
                 </li>
+                <li>Bypass plan caps, trial limits, or admin controls.</li>
                 <li>
-                  Misrepresent affiliation with Rallied, or use the Service in
-                  violation of Discord rules or applicable law.
-                </li>
-                <li>
-                  Submit malware, spam, or abusive content via feedback channels
-                  or bot interactions.
+                  Send malware, spam, or abusive content through feedback,
+                  Report, or bot inputs.
                 </li>
               </ul>
               <p>
-                We may suspend or terminate access for violations, abuse, or risk
-                to the Service or other users.
+                We may suspend, rate-limit, or terminate access for violations.
               </p>
             </>
           ),
         },
         {
           id: "billing",
-          title: "Subscriptions, trials, and cancel",
+          title: "Subscriptions, Trials, and Cancellations",
           children: (
             <>
               <p>
-                Plans are billed <strong className="font-semibold text-white">per Discord server</strong>{" "}
-                (Path B):
+                Paid plans are billed{" "}
+                <strong className="font-semibold text-white">
+                  per Discord server
+                </strong>{" "}
+                via Stripe:
               </p>
               <ul className="list-disc space-y-2 pl-5">
                 <li>
-                  <strong className="font-semibold text-white">Starter</strong> —
-                  free, tightly capped matching (e.g. limited open parties and
-                  creates per day); no Ghostless / strikes / public Ghostless
-                  features as described on Pricing.
+                  <strong className="font-semibold text-white">
+                    Starter (Free):
+                  </strong>{" "}
+                  Capped LFG only (including limits such as open parties and
+                  creates per day). No Ghostless, strikes, or public Ghostless
+                  directory features as described on Pricing.
                 </li>
                 <li>
-                  <strong className="font-semibold text-white">Community</strong>{" "}
-                  — $4.99/mo (annual option as listed on Pricing).
+                  <strong className="font-semibold text-white">Community:</strong>{" "}
+                  $4.99/mo (or annual pricing on the website).
                 </li>
                 <li>
-                  <strong className="font-semibold text-white">Pro</strong> —
-                  $9.99/mo (annual option as listed on Pricing).
+                  <strong className="font-semibold text-white">Pro:</strong>{" "}
+                  $9.99/mo (or annual pricing on the website).
                 </li>
                 <li>
-                  <strong className="font-semibold text-white">Founding</strong> —
-                  Pro features locked at $8.99/mo, limited to ≤10 seats /
-                  servers as offered.
+                  <strong className="font-semibold text-white">
+                    Founding Pro:
+                  </strong>{" "}
+                  $8.99/mo with Pro features, limited to ≤10 founding seats.
                 </li>
               </ul>
               <p>
                 <strong className="font-semibold text-white">
                   Community trial:
                 </strong>{" "}
-                Checkout requires a payment card. Eligible guilds get one 14-day
-                Community trial; we charge after the trial unless you cancel in
-                time. <em>One trial per Discord guild forever</em> —
-                uninstalling, canceling, or reinstalling does not grant another
-                trial.
+                14-day trial requires a card at Stripe Checkout. You are charged
+                the standard rate when the trial ends unless you cancel first.
+                Eligibility is{" "}
+                <strong className="font-semibold text-white">
+                  one Community trial per Discord guild forever and one per
+                  Discord user (the Checkout initiator)
+                </strong>
+                . Both must be eligible. Uninstalling, canceling, or moving the
+                bot does not grant another trial.
               </p>
               <p>
-                <strong className="font-semibold text-white">Cancel:</strong>{" "}
-                Canceling during a trial keeps Community access until the trial
-                ends, then Starter (no charge if canceled before the first
-                charge). Canceling after paying keeps the paid plan until the end
-                of the current billing period (`cancel_at_period_end`), then
-                Starter. Cancel does not immediately cut access mid-period or
-                mid-trial.
-              </p>
-              <p>
-                Payments are processed by Stripe. Taxes may apply. Prices may
-                change for future periods with notice on the site or in product
-                communications; Founding locks apply only as described in the
-                offer.
+                <strong className="font-semibold text-white">
+                  Cancellation:
+                </strong>{" "}
+                Cancel anytime in the Stripe Customer Portal. Cancel during trial
+                → keep Community until trial end, then Starter (no charge).
+                Cancel after paying → keep the paid plan until the end of the
+                current period (
+                <code className="rounded bg-white/10 px-1 py-0.5 text-white/85">
+                  cancel_at_period_end
+                </code>
+                ), then Starter. Taxes may apply.
               </p>
             </>
           ),
         },
         {
           id: "refunds",
-          title: "No money-back guarantee",
+          title: "No Money-Back Guarantee",
           children: (
             <p>
-              Rallied does{" "}
-              <strong className="font-semibold text-white">
-                not
-              </strong>{" "}
-              market a first-month money-back guarantee. Except where required by
-              law, fees are non-refundable. Canceling stops future charges
-              according to the trial / period rules above; it does not entitle
-              you to a refund for time already paid unless we expressly agree in
-              writing or law requires it.
+              Fees are non-refundable. We do not offer a first-month money-back
+              guarantee. Canceling stops future charges but does not refund
+              unused time in the current period, except where required by law.
             </p>
           ),
         },
@@ -232,62 +234,53 @@ export default function TermsPage() {
           title: "Feedback",
           children: (
             <p>
-              You may submit bugs or suggestions via Discord{" "}
+              Feedback via{" "}
               <code className="rounded bg-white/10 px-1 py-0.5 text-white/85">
                 /feedback
-              </code>{" "}
-              or Report in{" "}
-              <code className="rounded bg-white/10 px-1 py-0.5 text-white/85">
-                /app
               </code>
-              . Feedback is triaged in a private ops inbox. You grant Rallied a
-              non-exclusive, royalty-free license to use feedback to operate and
-              improve the Service. Feedback is not a support SLA.
+              , Report, or similar grants Rallied a perpetual, irrevocable,
+              royalty-free, worldwide license to use it to improve the Service.
+              Feedback is not an SLA.
             </p>
           ),
         },
         {
           id: "ip",
-          title: "Intellectual property",
+          title: "Intellectual Property",
           children: (
             <p>
-              Rallied, the rallied.gg site, bot branding, and related materials
-              are owned by us or our licensors. Ghostless branding refers to
-              Rallied’s reliability feature/badge. You retain rights in content
-              you submit, subject to the licenses needed for us to host and
-              display it in the Service (including Discord-facing messages and
-              opted-in public pages).
+              Rallied, rallied.gg, bot branding, and Ghostless marks are owned by
+              the project and its licensors. You keep rights to your content; you
+              grant us a license to process and display it as needed to operate
+              the Service.
             </p>
           ),
         },
         {
           id: "disclaimer",
-          title: "Disclaimer of warranties",
+          title: "Disclaimer of Warranties",
           children: (
             <p>
-              THE SERVICE IS PROVIDED “AS IS” AND “AS AVAILABLE.” TO THE MAXIMUM
-              EXTENT PERMITTED BY LAW, WE DISCLAIM ALL WARRANTIES, EXPRESS OR
-              IMPLIED, INCLUDING MERCHANTABILITY, FITNESS FOR A PARTICULAR
-              PURPOSE, AND NON-INFRINGEMENT. We do not warrant uninterrupted or
-              error-free operation, or that reliability scores will prevent
-              no-shows or disputes in your community.
+              THE SERVICE IS PROVIDED &quot;AS IS&quot; AND &quot;AS
+              AVAILABLE.&quot; TO THE MAXIMUM EXTENT PERMITTED BY LAW, WE
+              DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
+              MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+              NON-INFRINGEMENT. WE DO NOT WARRANT ERROR-FREE OPERATION OR THAT
+              GHOSTLESS WILL ELIMINATE NO-SHOWS OR DISPUTES.
             </p>
           ),
         },
         {
           id: "liability",
-          title: "Limitation of liability",
+          title: "Limitation of Liability",
           children: (
             <p>
               TO THE MAXIMUM EXTENT PERMITTED BY LAW, RALLIED AND ITS OPERATORS
-              WILL NOT BE LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL,
-              CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR FOR LOST PROFITS, DATA, OR
-              GOODWILL. OUR TOTAL LIABILITY FOR CLAIMS ARISING OUT OF THE SERVICE
-              WILL NOT EXCEED THE AMOUNTS YOU PAID US FOR THE SERVICE IN THE
-              TWELVE (12) MONTHS BEFORE THE CLAIM (OR USD $50 IF YOU HAVE NOT
-              PAID). Some jurisdictions do not allow certain limitations; in
-              those cases, our liability is limited to the fullest extent
-              allowed.
+              ARE NOT LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR
+              PUNITIVE DAMAGES, INCLUDING LOST PROFITS OR DATA. TOTAL LIABILITY
+              FOR CLAIMS ARISING FROM THE SERVICE WILL NOT EXCEED THE AMOUNTS YOU
+              PAID TO RALLIED IN THE 12 MONTHS BEFORE THE CLAIM (OR USD $50 IF
+              YOU USED ONLY THE FREE TIER).
             </p>
           ),
         },
@@ -296,49 +289,35 @@ export default function TermsPage() {
           title: "Termination",
           children: (
             <p>
-              You may stop using the Service at any time (remove the bot, cancel
-              subscriptions via Stripe Customer Portal, revoke OAuth). We may
-              suspend or terminate access for breach of these Terms, non-payment,
-              abuse, legal risk, or discontinuation of the Service. Upon
-              termination, paid access continues only through the applicable
-              trial or paid period end as described in Billing; data retention
-              follows our{" "}
-              <Link href="/privacy" className="text-coral hover:underline">
-                Privacy Policy
-              </Link>
-              .
+              You may stop using the Service by removing the bot, revoking
+              Discord authorization, or canceling in Stripe. We may suspend or
+              end access for non-payment, abuse, legal risk, or if we shut down
+              the project.
             </p>
           ),
         },
         {
           id: "law",
-          title: "Governing law",
+          title: "Governing Law",
           children: (
             <p>
-              These Terms are governed by the laws of{" "}
-              <span className="text-coral/90">[State]</span>, USA, without regard
-              to conflict-of-law rules, except where mandatory consumer
-              protections apply. Courts in{" "}
-              <span className="text-coral/90">[State]</span>, USA, will have
-              exclusive jurisdiction, subject to applicable law.{" "}
-              <span className="text-white/55">
-                Jacob fills governing law / venue before relying on this as
-                binding.
-              </span>
+              These Terms are governed by the laws of the United States, without
+              regard to conflict-of-law rules, except where mandatory consumer
+              protections apply. Venue for disputes will be determined under
+              applicable law until a specific state venue is designated by the
+              operator.
             </p>
           ),
         },
         {
           id: "changes",
-          title: "Changes to these Terms",
+          title: "Changes",
           children: (
             <p>
-              We may update these Terms as the product evolves. The “Last
-              updated” date will change when we post a revision. Material changes
-              may be noted on the changelog or in product communications.
-              Continued use after an update constitutes acceptance of the revised
-              draft, subject to counsel review before this document is treated as
-              binding.
+              We may update these Terms by changing the Last Updated date.
+              Material billing or platform changes may also be noted in our
+              changelog or product messaging. Continued use after changes means
+              you accept the updated Terms.
             </p>
           ),
         },
@@ -346,23 +325,14 @@ export default function TermsPage() {
           id: "contact",
           title: "Contact",
           children: (
-            <>
-              <p>
-                Questions about these Terms:{" "}
-                <a
-                  href="mailto:support@rallied.gg"
-                  className="text-coral hover:underline"
-                >
-                  support@rallied.gg
-                </a>
-                .
-              </p>
-              <p className="text-white/55">
-                Replace entity name, mailing address, support email, and
-                governing law placeholders before relying on this as official
-                Terms.
-              </p>
-            </>
+            <p>
+              <a
+                href="mailto:support@rallied.gg"
+                className="text-coral hover:underline"
+              >
+                support@rallied.gg
+              </a>
+            </p>
           ),
         },
       ]}

@@ -19,6 +19,7 @@ import {
 import { formatError } from "./lib/errors.js";
 import {
   putApplicationCommands,
+  resolveRegisterGuildId,
   secretsMatch,
 } from "./lib/register-commands.js";
 import {
@@ -59,13 +60,20 @@ async function handleRegisterCommands(c: AppContext) {
     return c.json({ ok: false, error: "Unauthorized" }, 401);
   }
 
-  const guildId =
-    c.req.query("guild_id")?.trim() || c.env.DISCORD_DEV_GUILD_ID || null;
+  const resolved = resolveRegisterGuildId({
+    guildIdQuery: c.req.query("guild_id"),
+    scopeQuery: c.req.query("scope"),
+    devGuildId: c.env.DISCORD_DEV_GUILD_ID,
+  });
+  if (resolved.error) {
+    return c.json({ ok: false, error: resolved.error }, 400);
+  }
+
   const appId = discordAppId(c.env);
   const result = await putApplicationCommands({
     token: c.env.DISCORD_BOT_TOKEN,
     appId,
-    guildId,
+    guildId: resolved.guildId,
   });
 
   if (!result.ok) {

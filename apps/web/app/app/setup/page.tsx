@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth/session";
 import { resolveBotInviteHref } from "@/lib/bot-invite";
 import { GUILD_QUERY } from "@/lib/guild-params";
 import { BotInviteReturnCleanup } from "@/components/BotInviteReturnCleanup";
+import { ensureGuildSlashCommands } from "@/lib/register-guild-commands";
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -19,6 +20,9 @@ function one(
  * Post–Add-to-Discord landing. Discord Advanced Bot Auth redirects here with
  * `guild_id` (and unused `code` / `permissions` / `iss` which we strip client-side).
  * Also reachable as `/app/setup?guild=…` or `/app?installed=1`.
+ *
+ * When `guild_id` is present we also PUT guild-scoped slash commands so `/setup`
+ * appears immediately (HTTP interactions bots never get GUILD_CREATE).
  */
 export default async function AppSetupPage({ searchParams }: Props) {
   const sp = await searchParams;
@@ -34,6 +38,11 @@ export default async function AppSetupPage({ searchParams }: Props) {
   const inviteHref = resolveBotInviteHref(
     guildId ? { guildId, disableGuildSelect: true } : undefined,
   );
+
+  // Instant slash commands for the just-authorized guild (fail-open).
+  if (guildId) {
+    await ensureGuildSlashCommands(guildId);
+  }
 
   return (
     <>

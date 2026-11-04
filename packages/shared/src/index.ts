@@ -1,5 +1,6 @@
 export * from "./constants";
 export * from "./dashboard-range";
+export * from "./discord-commands";
 export * from "./entitlements";
 export * from "./feedback";
 export * from "./game-aliases";

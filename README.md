@@ -116,7 +116,10 @@ https://rallied.gg/app/setup
 | `/strikes list\|add\|remove` | Mods; lockout uses `server_settings.strike_threshold` |
 | `/dispute open\|resolve` | Ratee opens; mods resolve in Discord (`/dispute resolve`) |
 
-Register: `npm run register-commands`  
+Register slash commands (global by default — required for new guilds): `npm run register-commands`  
+One guild (instant): `npm run register-commands -- --guild <id>`  
+Phone: `GET https://<rallied-bot>/register-commands?key=…` (global) or `&guild_id=…`  
+Post-invite `/app/setup` also PUTs guild commands when Discord returns `guild_id`.  
 Weekly digest stub: `npx tsx apps/bot/scripts/weekly-digest.ts`
 
 ---

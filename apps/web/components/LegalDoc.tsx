@@ -15,9 +15,19 @@ type Props = {
   title: string;
   description: string;
   sections: Section[];
+  lastUpdated: string;
+  /** When true, shows the customer-facing draft banner. Product-finalized legal pages pass false. */
+  draft?: boolean;
 };
 
-export function LegalDoc({ eyebrow, title, description, sections }: Props) {
+export function LegalDoc({
+  eyebrow,
+  title,
+  description,
+  sections,
+  lastUpdated,
+  draft = true,
+}: Props) {
   const inviteHref = resolveBotInviteHref();
   return (
     <div className="min-h-screen">
@@ -32,21 +42,23 @@ export function LegalDoc({ eyebrow, title, description, sections }: Props) {
         </h1>
         <p className="mt-3 max-w-xl text-white/75">{description}</p>
         <p className="mt-2 font-mono text-xs tabular-nums text-white/45">
-          Last updated: October 30, 2026
+          Last updated: {lastUpdated}
         </p>
 
-        <aside
-          className="mt-8 border-l-2 border-coral/70 bg-slate-elevated/50 px-4 py-3 text-sm leading-relaxed text-white/80"
-          role="note"
-        >
-          <strong className="font-semibold text-white">Draft</strong> for product
-          use — not legal advice; have counsel review before relying on this as
-          binding policy.
-        </aside>
+        {draft ? (
+          <aside
+            className="mt-8 border-l-2 border-coral/70 bg-slate-elevated/50 px-4 py-3 text-sm leading-relaxed text-white/80"
+            role="note"
+          >
+            <strong className="font-semibold text-white">Draft</strong> for
+            product use — not legal advice; have counsel review before relying
+            on this as binding policy.
+          </aside>
+        ) : null}
 
         <nav
           aria-label="On this page"
-          className="mt-10 border-b border-white/10 pb-8"
+          className={`border-b border-white/10 pb-8 ${draft ? "mt-10" : "mt-8"}`}
         >
           <p className="font-display text-xs tracking-[0.14em] text-white/45">
             SECTIONS
